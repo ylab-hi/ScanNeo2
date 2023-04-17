@@ -1,0 +1,15 @@
+from snakemake.utils import min_version
+
+##### set minimum snakemake version #####
+min_version("6.4.1")
+
+#### setup #######
+configfile: "config/config.yaml"
+
+#### load rules ####
+include: "rules/common.smk"
+include: "rules/preproc.smk"
+include: "rules/genefusion.smk"
+include: "rules/splicing.smk"
+include: "rules/exitron.smk"
+
