@@ -1,0 +1,7 @@
+channels:
+ - anaconda
+dependencies:
+- pip
+- pip:
+  - spladder==3.0.4
+

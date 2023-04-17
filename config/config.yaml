@@ -1,0 +1,15 @@
+refgen: testdata/GRCh38_chr1.fa
+annotation: testdata/GRCh38_chr1.gtf  
+samples:
+  rep1: testdata/rawtest/LNCaP_001_1M.fastq
+  rep2: testdata/rawtest/LNCaP_002_1M.fastq
+  rep3: testdata/rawtest/LNCaP_003_1M.fastq 
+
+mapq: 30
+chimsegmin: 20
+threads: 8
+
+bam: data
+
+
+

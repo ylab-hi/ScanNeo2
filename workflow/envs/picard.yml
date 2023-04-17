@@ -1,0 +1,4 @@
+channels:
+ - bioconda
+dependencies:
+ - picard=3.0.0
