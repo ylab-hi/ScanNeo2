@@ -8,6 +8,7 @@ configfile: "config/config.yaml"
 
 #### load rules ####
 include: "rules/common.smk"
+include: "rules/hlatyping.smk"
 include: "rules/preproc.smk"
 include: "rules/genefusion.smk"
 include: "rules/splicing.smk"
