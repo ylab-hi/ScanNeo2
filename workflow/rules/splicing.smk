@@ -1,18 +1,19 @@
 def comma_join(file_list):
     return ",".join(file_list)
 
+
 rule spladder:
     input:
-        bam = expand("results/preproc/post/{sample}_dedup.bam", sample=config["samples"]),
-        bamidx = expand("results/preproc/post/{sample}_dedup.bam.bai", sample=config["samples"]),
+        bam = "results/preproc/post/{sample}_dedup.bam",
+        bamidx = "results/preproc/post/{sample}_dedup.bam.bai",
     output:
-       directory("results/as/{sample}") 
+        "results/as/{sample}/merge_graphs.txt"
     conda: 
         "../envs/spladder.yml"
     log:
         "logs/as/spladder_{sample}.log"
     params:
-        bams = comma_join(expand("results/preproc/post/{sample}_dedup.bam", sample=config["samples"])),
+        bams = comma_join(expand("results/preproc/post/{sample}_dedup.bam", sample=config["rnaseq"])),
     shell:
         """
         spladder build -b {params.bams} \
@@ -21,6 +22,27 @@ rule spladder:
         --confidence 2 --quantify-graph \
         --qmode all 2> {log}
         """
+
+rule splicing_to_vcf:
+    input:
+        "results/as/{sample}/merge_graphs.txt"
+    output:
+        "results/as/{sample}.vcf"
+    conda:
+        "../envs/spladder.yml"
+    shell:
+        """
+        """
+
+rule combine_splicing:
+    input:
+        expand("results/as/{sample}.vcf", sample=config["rnaseq"])
+    output:
+        "results/as/all.vcf"
+    shell:
+        """
+        """
+
 
 #TYPE = ["alt_3prime", "alt_5prime", "exon_skip", "intron_retention", "mutex_exons"] 
 #TYPETT = ["A3","A5","ES","IR","MUT"]
