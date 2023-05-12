@@ -19,37 +19,64 @@ def get_bams(wildcards):
 
     return f
 
-
 def change_ext(filename, ext):
     return os.path.splitext(filename)[0] + "." + ext
 
 def file_exists(path):
     return os.path.exists(path)
 
+rule combine_sources:
+    input:
+        "results/indel/transindel/all.indel.vcf",
+    output:
+        "results/variants/variants.vcf"
+    shell:
+        "cat {input} > {output}"
+
+rule variants_gzip:
+    input:
+        "results/variants/variants.vcf"
+    output:
+        "results/variants/variants.vcf.gz",
+    log:
+        "logs/variants/index.log"
+    conda:
+        "../envs/samtools.yml"
+    shell:
+        "bgzip -c {input} > {output}"
+
+
+rule download_vep_plugins:
+    output:
+        directory("resources/vep/plugins")
+    params:
+        release=100
+    wrapper:
+        "v1.29.0/bio/vep/plugins"
 
 rule variant_effect_predictor:
     input: 
-        "results/genefusion/all.vcf", 
-        "results/as/all.vcf", 
-        "results/exitron/all.vcf", 
-        "results/indel/indel.vcf",
-        "results/indel/snp.vcf"
-    output: "results/vep/output.tab"
-    shell:
-        """
-        """
-
-
-
-
-
-
-
-
-
-
-
-
+        calls="results/variants/variants.vcf.gz",
+        plugins="resources/vep/plugins/",
+        fasta="refs/genome.fasta",
+        fai="refs/genome.fasta.fai",
+        gff="refs/genome.gtf.gz",
+        csi="refs/genome.gtf.gz.csi"
+    output:
+        calls="results/variants/variants.annotated.vcf",  # .vcf, .vcf.gz or .bcf
+        stats="results/variants/variants.html",
+    params:
+        # Pass a list of plugins to use, see https://www.ensembl.org/info/docs/tools/vep/script/vep_plugins.html
+        # Plugin args can be added as well, e.g. via an entry "MyPlugin,1,FOO", see docs.
+        plugins=["NMD"],
+        extra="--everything",  # optional: extra arguments
+    log:
+        "logs/vep/annotate.log",
+    threads: 8
+    wrapper:
+        "v1.29.0/bio/vep/annotate"
+    
+        
 
 
 

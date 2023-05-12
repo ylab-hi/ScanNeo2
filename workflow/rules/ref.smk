@@ -27,6 +27,30 @@ rule genome_index:
     wrapper:
         "v1.28.0/bio/samtools/faidx"
 
+
+rule annotation_sort_bgzip:
+    input:
+        "refs/genome.gtf"
+    output:
+        "refs/genome.gtf.gz"
+    shell:
+        """
+            (grep "^#" {input}; grep -v "^#" {input} | sort -t"`printf '\t'`" -k1,1 -k4,4n) | bgzip > {output}
+        """
+
+rule tabix:
+    input:
+        "refs/genome.gtf.gz",
+    output:
+        "refs/genome.gtf.gz.csi",
+    log:
+        "logs/tabix/annotation.log",
+    params:
+        # pass arguments to tabix (e.g. index a vcf)
+        "-C -p gff",
+    wrapper:
+        "v1.29.0/bio/tabix/index"
+
 rule star_index:
     input:
         "refs/genome.fasta"

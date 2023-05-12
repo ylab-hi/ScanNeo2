@@ -1,15 +1,60 @@
-refgen: testdata/GRCh38_chr1.fa
+refgen: testdata/GRCh38.p13.genome.fa
 annotation: testdata/GRCh38_chr1.gtf  
-samples:
-  rep1: testdata/rawtest/LNCaP_001_1M.fastq
-  rep2: testdata/rawtest/LNCaP_002_1M.fastq
-  rep3: testdata/rawtest/LNCaP_003_1M.fastq 
+
+  # 
+rnaseq: LNCAP_bam
+rnaseq-format: bam   # can be fastq or bam
 
 mapq: 30
 chimsegmin: 20
-threads: 8
+threads: 30
 
-bam: data
+ref:
+  species: homo_sapiens
+  release: 109
+  build: GRCh38
+  
+
+
+dnaseq:
+  rep1: testdata/dna/a_1.fished.fastq
+  rep2: testdata/dna/a_2.fished.fastq
+
+#### alternative splicing
+splicing:
+  activate: true   # whether (=true) or not (=false) to include splicing
+
+#### exitron 
+exitron:
+  activate: true
+  vcf: 
+
+### gene fusion
+genefusion:
+  activate: true
+  vcf:
+
+### indel > 75bp
+longindel:
+  activate: true
+  vcf:
+
+### indel 
+shortindel:
+  activate: true
+  vcf:
+
+### snp
+snp:
+  activate: true
+  vcf:
+
+
+
+
+
+
+
 
 
 

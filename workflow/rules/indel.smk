@@ -2,9 +2,9 @@ import os
 
 rule bwa_index:
     input:
-        fasta=expand("{refgen}", refgen=config["refgen"])
+        fasta="refs/genome.fasta"
     output:
-        idx = multiext("misc/refgen/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+        idx = multiext("refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
     log:
         "logs/bwa_index.log",
     params:
@@ -14,7 +14,7 @@ rule bwa_index:
 
 rule realign:
     input:
-        idx = multiext("misc/refgen/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+        idx = multiext("refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
         bam = "results/preproc/post/{sample}_dedup.bam"
     output:
         "results/indel/realign/{sample}.bam",
@@ -22,7 +22,7 @@ rule realign:
         "logs/bwa_realign_{sample}"
     conda:
         "../envs/realign.yml",
-    threads: 8
+    threads: config['threads']
     shell:
         """
         samtools collate -Oun128 {input.bam} \
@@ -61,8 +61,8 @@ rule transindel_build:
         python3 workflow/scripts/transIndel/transIndel_build_RNA.py \
         -i {input.bam} \
         -o {output} \
-        -r {config[refgen]} \
-        -g {config[annotation]} > {log}
+        -r refs/genome.fasta \
+        -g refs/genome.gtf > {log}
         """
 
 rule transindel_call:
@@ -74,11 +74,14 @@ rule transindel_call:
         "logs/transindel_call_{sample}.log"
     conda:
         "../envs/transindel.yml"
+    params:
+        "-m {config[mapq]}"
     shell:
         """
         python workflow/scripts/transIndel/transIndel_call.py \
         -i {input} \
-        -o results/indel/transindel/{wildcards.sample}
+        -o results/indel/transindel/{wildcards.sample} \
+        {params}
         """
 
 rule slippage_removal:
@@ -90,17 +93,18 @@ rule slippage_removal:
         "../envs/transindel.yml"
     shell:
         """
+        cp {input} {output}
         """
 
 rule combine_indels:
     input:
-        expand("results/indel/transindel/{sample}_slip.indel.vcf", sample=config["rnaseq"])
+        expand("results/indel/transindel/{sample}_slip.indel.vcf", sample=rawreads.keys())
     output:
         "results/indel/transindel/all.indel.vcf"
     shell:
         """
+        cat {input} > {output}
         """
-
 
 rule picard_create_dict:
     input:
@@ -242,11 +246,12 @@ rule picard_split_vcfs:
 
 rule merge_indels:
     input:
-        indel="results/haplotypecaller/indel.vcf",
+        #indel="results/haplotypecaller/indel.vcf",
         transindel="results/indel/transindel/all.indel.vcf"
     output:
         "results/indel/indel.vcf"
     shell:
         """
+        cp {input} {output}
         """
 
