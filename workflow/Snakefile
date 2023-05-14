@@ -6,11 +6,18 @@ min_version("6.4.1")
 #### setup #######
 configfile: "config/config.yaml"
 
+rule all:
+    input:
+        "results/neoantigens.txt"
+
 #### load rules ####
+include: "rules/ref.smk"
 include: "rules/common.smk"
 include: "rules/hlatyping.smk"
 include: "rules/preproc.smk"
 include: "rules/genefusion.smk"
 include: "rules/splicing.smk"
 include: "rules/exitron.smk"
+include: "rules/indel.smk"
+include: "rules/neoantigen.smk"
 
