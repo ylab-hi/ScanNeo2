@@ -1,25 +1,45 @@
-if config["rnaseq-format"] == "fastq":
-    rule star_align:
+# if data provided as bam convert to fastq
+if config["rnaseq-format"] == "bam":
+    rule bam_to_fastq:
         input:
-            fq1 = get_fqs,
-            idx = "refs/star/",
+            get_bams,
         output:
-            aln = "results/preproc/align/{sample}.bam",
-            log = "results/preproc/align/{sample}.log",
-            sj = "results/preproc/align/{sample}_SJ.out.tab",
-        conda: 
-            "../envs/star.yml"
+            "results/preproc/pre/{sample}.fq.gz"
+        conda:
+            "../envs/samtools.yml"
         log:
-            "logs/star_align_{sample}.log",
-        params:
-            extra="--outSAMtype BAM SortedByCoordinate --chimSegmentMin 10 --chimOutType WithinBAM HardClip --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --limitBAMsortRAM 11209980843"
+            "logs/bam2fastq_{sample}.log"
         threads: config['threads']
-        wrapper:
-            "v1.26.0/bio/star/align"
-    
+        shell:
+            """
+                samtools collate -Oun128 -@ {threads} {input} \
+                | samtools fastq -OT RG,BC -@ {threads} - | gzip -c - > {output}
+            """
+
+#extra="--outSAMtype BAM SortedByCoordinate --chimSegmentMin 10 --chimOutType WithinBAM HardClip --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --limitBAMsortRAM 11209980843"
+rule star_align:
+    input:
+        fq1 = get_fqs,
+        idx = "resources/refs/star/",
+    output:
+        aln = "results/preproc/align/{sample}.bam",
+        log = "results/preproc/align/{sample}.log",
+        sj = "results/preproc/align/{sample}_SJ.out.tab",
+    conda: 
+        "../envs/star.yml"
+    log:
+        "logs/star_align_{sample}.log",
+    params:
+        extra="--outSAMtype BAM SortedByCoordinate --chimSegmentMin 10 --chimOutType WithinBAM HardClip"
+    threads: config['threads']
+    wrapper:
+        "v1.26.0/bio/star/align"
+
+
 rule filter:
     input:
-        get_bams
+        "results/preproc/align/{sample}.bam"
+        #get_bams
     output:
         bam="results/preproc/post/{sample}_flt.bam",
     conda: 

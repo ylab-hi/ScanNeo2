@@ -1,7 +1,7 @@
 rule get_genome:
     output:
-        genome="refs/genome.fasta",
-        annotation="refs/genome.gtf"
+        genome="resources/refs/genome.fasta",
+        annotation="resources/refs/genome.gtf"
     log:
         "logs/get-genome.log",
     params:
@@ -11,15 +11,28 @@ rule get_genome:
         release=config["ref"]["release"],
     shell:
         """
-        curl -L https://ftp.ensembl.org/pub/release-109/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.toplevel.fa.gz | gzip -d > {output.genome}
-        curl -L https://ftp.ensembl.org/pub/release-109/gtf/homo_sapiens/Homo_sapiens.GRCh38.109.gtf.gz | gzip -d > {output.annotation}
+        curl -L -o - https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.fna.gz | gzip -d - >{output.genome}
+        curl -L -o - https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf.gz | gzip -d - > {output.annotation}       
         """
+
+rule mod_header:
+    input:
+        "resources/refs/genome.fasta"
+    output:
+        "resources/refs/genome_modheader.fasta"
+    conda:
+        "../envs/basic.yml"
+    log:
+        "logs/ref_modheader.log"
+    shell:
+        "python ./workflow/scripts/modify_fasta_header.py {input} {output} > {log}"
+
 
 rule genome_index: 
     input:
-        "refs/genome.fasta"
+        "resources/refs/genome.fasta"
     output:
-        "refs/genome.fasta.fai",
+        "resources/refs/genome.fasta.fai",
     log:
         "logs/samtools/index_genome.log",
     params:
@@ -30,9 +43,9 @@ rule genome_index:
 
 rule annotation_sort_bgzip:
     input:
-        "refs/genome.gtf"
+        "resources/refs/genome.gtf"
     output:
-        "refs/genome.gtf.gz"
+        "resources/refs/genome.gtf.gz"
     shell:
         """
             (grep "^#" {input}; grep -v "^#" {input} | sort -t"`printf '\t'`" -k1,1 -k4,4n) | bgzip > {output}
@@ -40,9 +53,9 @@ rule annotation_sort_bgzip:
 
 rule tabix:
     input:
-        "refs/genome.gtf.gz",
+        "resources/refs/genome.gtf.gz",
     output:
-        "refs/genome.gtf.gz.csi",
+        "resources/refs/genome.gtf.gz.csi",
     log:
         "logs/tabix/annotation.log",
     params:
@@ -53,15 +66,27 @@ rule tabix:
 
 rule star_index:
     input:
-        "refs/genome.fasta"
+        fasta="resources/refs/genome.fasta"
     output:
-        directory("refs/star/"),
+        directory("resources/refs/star/"),
     message:
         "Creating STAR index",
-    threads: 60
+    threads: config['threads']
     params:
         extra="--genomeSAindexNbases 5 ",
     log:
         "logs/star/create_star_index.log",
     wrapper:
         "v1.26.0/bio/star/index"
+
+rule bwa_index:
+    input:
+        fasta="resources/refs/genome.fasta"
+    output:
+        idx = multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+    log:
+        "logs/bwa_index.log",
+    params:
+        algorithm="bwtsw",
+    wrapper:
+        "v1.26.0/bio/bwa/index"
