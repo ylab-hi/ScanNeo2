@@ -1,20 +1,8 @@
 import os
 
-rule bwa_index:
-    input:
-        fasta="refs/genome.fasta"
-    output:
-        idx = multiext("refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
-    log:
-        "logs/bwa_index.log",
-    params:
-        algorithm="bwtsw",
-    wrapper:
-        "v1.26.0/bio/bwa/index"
-
 rule realign:
     input:
-        idx = multiext("refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+        idx = multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
         bam = "results/preproc/post/{sample}_dedup.bam"
     output:
         "results/indel/realign/{sample}.bam",
@@ -27,7 +15,7 @@ rule realign:
         """
         samtools collate -Oun128 {input.bam} \
         | samtools fastq -OT RG,BC - \
-        | bwa mem -pt8 -CH <(samtools view -H {input.bam}|grep ^@RG) misc/refgen/bwa/genome - \
+        | bwa mem -pt8 -CH <(samtools view -H {input.bam}|grep ^@RG) resources/refs/bwa/genome - \
         | samtools sort -@{threads} -m4g - \
         | samtools addreplacerg -r '@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}' -o {output} -
         """
@@ -61,8 +49,8 @@ rule transindel_build:
         python3 workflow/scripts/transIndel/transIndel_build_RNA.py \
         -i {input.bam} \
         -o {output} \
-        -r refs/genome.fasta \
-        -g refs/genome.gtf > {log}
+        -r resources/refs/genome.fasta \
+        -g resources/refs/genome.gtf > {log}
         """
 
 rule transindel_call:
@@ -75,14 +63,32 @@ rule transindel_call:
     conda:
         "../envs/transindel.yml"
     params:
-        "-m {config[mapq]}"
+        mapq=config['mapq']
     shell:
         """
         python workflow/scripts/transIndel/transIndel_call.py \
         -i {input} \
         -o results/indel/transindel/{wildcards.sample} \
-        {params}
+        -m {params}
         """
+
+
+rule resolve_alleles:
+    input:
+        "results/indel/transindel/{sample}.indel.vcf"
+    output:
+        "results/indel/transindel/{sample}.allele.vcf"
+    log:
+        "logs/indel/transindel/resolve_alleles_{sample}.log"
+    conda:
+        "../envs/transindel.yml"
+    params:
+        
+
+
+
+
+
 
 rule slippage_removal:
     input:
@@ -93,7 +99,8 @@ rule slippage_removal:
         "../envs/transindel.yml"
     shell:
         """
-        cp {input} {output}
+        python workflow/scripts/slippage_removal.py /resources/refs/
+
         """
 
 rule combine_indels:
