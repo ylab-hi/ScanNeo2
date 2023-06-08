@@ -2,7 +2,7 @@ name: Linting
 run-name: ${{ github.actor }} is linting the snakemake workflow
 on: [push]
 jobs:
-  Linting
+  Linting:
     runs-on: ubuntu-latest
     steps:
       - uses: snakemake/snakemake-github-action@v1
