@@ -26,10 +26,6 @@ def get_bams(wildcards):
     return f
 
 
-
-
-
-
 def change_ext(filename, ext):
     return os.path.splitext(filename)[0] + "." + ext
 

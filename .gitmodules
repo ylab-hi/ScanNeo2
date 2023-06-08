@@ -1,6 +1,3 @@
-[submodule "workflow/scripts/bisbee"]
-	path = workflow/scripts/bisbee
-	url = https://github.com/tgen/bisbee.git
 [submodule "workflow/scripts/transindel"]
 	path = workflow/scripts/transindel
 	url = https://github.com/cauyrd/transIndel.git
