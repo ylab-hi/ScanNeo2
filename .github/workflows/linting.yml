@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: snakemake/snakemake-github-action@v1
         with:
-          directory: './workflow/'
-          snakefile: 'Snakefile'
+          directory: '${{ github.workspace }}'
+          snakefile: 'workflow/Snakefile'
           args: '--lint'
 
