@@ -5,14 +5,9 @@ jobs:
   Linting:
     runs-on: ubuntu-latest
     steps:
-      - name: Debug
-        run: |
-        echo "Current branch: ${{ github.ref }}"
-        ls -R
-        pwd
-
-      - name: Linting something
-        uses: snakemake/snakemake-github-action@v1
+      - uses: actions/checkout@v3
+      - run: pwd
+      - uses: snakemake/snakemake-github-action@v1
         with:
           directory: '${{ github.workspace }}'
           snakefile: 'workflow/Snakefile'
