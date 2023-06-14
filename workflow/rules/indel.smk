@@ -4,11 +4,11 @@ from snakemake.remote import HTTP
 rule realign:
     input:
         idx = multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
-        bam = "results/preproc/post/{sample}_dedup.bam"
+        bam = "results/{sample}/rnaseq/preproc/post/aln.bam"
     output:
-        "results/indel/realign/{sample}.bam",
+        "results/{sample}/rnaseq/preproc/post/realn.bam"
     log:
-        "logs/bwa_realign_{sample}"
+        "logs/bwa_realign/{sample}.log"
     conda:
         "../envs/realign.yml",
     threads: config['threads']
@@ -23,9 +23,9 @@ rule realign:
 
 rule realign_index:
     input:
-        "results/indel/realign/{sample}.bam",
+        "results/{sample}/rnaseq/preproc/post/realn.bam"
     output:
-        "results/indel/realign/{sample}.bam.bai",
+        "results/{sample}/rnaseq/preproc/post/realn.bam.bai",
     log:
         "logs/samtools_index_{sample}.log"
     params:
@@ -37,12 +37,12 @@ rule realign_index:
 
 rule transindel_build:
     input:
-        bam = "results/indel/realign/{sample}.bam",
-        idx = "results/indel/realign/{sample}.bam.bai"
+        bam = "results/{sample}/rnaseq/preproc/post/realn.bam",
+        idx = "results/{sample}/rnaseq/preproc/post/realn.bam.bai"
     output:
-        "results/indel/transindel/{sample}_redef.bam"
+        "results/{sample}/rnaseq/indel/transindel/build.bam"
     log:
-        "logs/transindel_buildbam_{sample}"
+        "logs/transindel/build/{sample}.log"
     conda:
         "../envs/transindel.yml"
     shell:
@@ -51,17 +51,17 @@ rule transindel_build:
         -i {input.bam} \
         -o {output} \
         -r resources/refs/genome.fasta \
-        -g resources/refs/genome.gtf > {log}
+        -g resources/refs/genome.gtf > {log} 
         """
 
 # builds index file for 
 rule transindel_build_index:
     input:
-        "results/indel/transindel/{sample}_redef.bam"
+        "results/{sample}/rnaseq/indel/transindel/build.bam"
     output:
-        "results/indel/transindel/{sample}_redef.bam.bai"
+        "results/{sample}/rnaseq/indel/transindel/build.bam.bai"
     log:
-        "logs/transindel_indexbam_{sample}.log"
+        "logs/samtools/index/transindel_build/{sample}.log"
     conda:
         "../envs/transindel.yml"
     shell:
@@ -70,12 +70,12 @@ rule transindel_build_index:
 
 rule transindel_call:
     input:
-        bam = "results/indel/transindel/{sample}_redef.bam",
-        bai = "results/indel/transindel/{sample}_redef.bam.bai"
+        bam = "results/{sample}/rnaseq/indel/transindel/build.bam",
+        bai = "results/{sample}/rnaseq/indel/transindel/build.bam.bai"
     output:
-        "results/indel/transindel/{sample}.indel.vcf"
+        "results/{sample}/rnaseq/indel/transindel/call.indel.vcf"
     log:
-        "logs/transindel_call_{sample}.log"
+        "logs/transindel/call/{sample}.log"
     conda:
         "../envs/transindel.yml"
     params:
@@ -84,16 +84,17 @@ rule transindel_call:
         """
         python workflow/scripts/transIndel/transIndel_call.py \
         -i {input.bam} \
-        -o results/indel/transindel/{wildcards.sample} \
+        -l 10 \
+        -o results/{wildcards.sample}/rnaseq/indel/transindel/call.indel.vcf \
         -m {params}
         """
 
 # resove alleles and remove PCR slippage
 rule slippage_removal:
     input:
-        "results/indel/transindel/{sample}.indel.vcf"
+        "results/{sample}/rnaseq/indel/transindel/call.indel.vcf"
     output:
-        "results/indel/transindel/{sample}.sliprem.vcf"
+        "results/{sample}/rnaseq/indel/transindel.vcf"
     log:
         "logs/indel/sliprem{sample}.log"
     conda:
@@ -101,17 +102,7 @@ rule slippage_removal:
     shell:
         """
             python3 workflow/scripts/slippage_removal.py \
-            resources/refs/genome.fasta {input} {output} > {log}
-        """
-
-rule combine_indels:
-    input:
-        expand("results/indel/transindel/{sample}_slip.indel.vcf", sample=rawreads.keys())
-    output:
-        "results/indel/transindel/all.indel.vcf"
-    shell:
-        """
-        cat {input} > {output}
+            resources/refs/genome.fasta {input} {output} > {log} 
         """
 
 rule gatk_mutect2:
@@ -297,16 +288,16 @@ rule gatk_variant_recal_snp:
 rule gatk_apply_vqsr_snp:
     input:
         vcf="results/indel/haplotypecaller/{sample}/{sample}.1rd.vcf",
-        recal="results/indel/haplotypecaller/{sample}/{sample}.snp.recal.vcf",
-        tranches="results/indel/haplotypecaller/{sample}/{sample}.snp.all.tranches",
+        recal="results/indel/haplotypecaller/{sample}/{sample}.1rd.snp.recal.vcf",
+        tranches="results/indel/haplotypecaller/{sample}/{sample}.1rd.snp.all.tranches",
         ref="resources/refs/genome.fasta",
     output:
-        vcf="results/indel/haplotypecaller/{sample}/{sample}.1rd.filt.vcf",
+        vcf="results/indel/haplotypecaller/{sample}/{sample}.1rd.snp.filt.vcf",
     log:
         "logs/gatk/applyvqsr/{sample}_snp.log",
     params:
         mode="SNP",  # set mode, must be either SNP, INDEL or BOTH
-        extra="",  # optional
+        extra="--truth-sensitivity-filter-level 99.5",  # optional
     resources:
         mem_mb=1024,
     wrapper:
@@ -344,23 +335,42 @@ rule gatk_variant_recal_indel:
         "v1.31.1/bio/gatk/variantrecalibrator"
 
 
-#rule gatk_baserecalibrator:
-#    input:
-#        bam="results/indel/realign/{sample}.bam",
-#        ref="resources/refs/genome.fasta",
-#        dict="resources/refs/genome.dict",
-#        #known="dbsnp.vcf.gz",  # optional known sites - single or a list
-#    output:
-#        recal_table="results/indel/recal/{sample}.grp",
-#    log:
-#        "logs/gatk/baserecalibrator/{sample}.log",
-#    params:
-#        extra="",  # optional
-#        java_opts="",  # optional
-#    resources:
-#        mem_mb=1024,
-#    wrapper:
-#        "v1.31.1/bio/gatk/baserecalibrator"
+rule gatk_apply_vqsr_indel:
+    input:
+        vcf="results/indel/haplotypecaller/{sample}/{sample}.1rd.vcf",
+        recal="results/indel/haplotypecaller/{sample}/{sample}.1rd.indel.recal.vcf",
+        tranches="results/indel/haplotypecaller/{sample}/{sample}.1rd.indel.all.tranches",
+        ref="resources/refs/genome.fasta",
+    output:
+        vcf="results/indel/haplotypecaller/{sample}/{sample}.1rd.indel.filt.vcf",
+    log:
+        "logs/gatk/applyvqsr/{sample}_indel.log",
+    params:
+        mode="INDEL",  # set mode, must be either SNP, INDEL or BOTH
+        extra="--truth-sensitivity-filter-level 99.0",  # optional
+    resources:
+        mem_mb=1024,
+    wrapper:
+        "v1.31.1/bio/gatk/applyvqsr"
+
+
+rule gatk_baserecalibrator:
+    input:
+        bam="results/indel/realign/{sample}.bam",
+        ref="resources/refs/genome.fasta",
+        dict="resources/refs/genome.dict",
+        known=["results/indel/haplotypecaller/{sample}/{sample}.1rd.indel.filt.vcf", "results/indel/haplotypecaller/{sample}/{sample}.1rd.snp.filt.vcf"]
+    output:
+        recal_table="results/indel/recal/{sample}.grp",
+    log:
+        "logs/gatk/baserecalibrator/{sample}.log",
+    params:
+        extra="",  # optional
+        java_opts="",  # optional
+    resources:
+        mem_mb=1024,
+    wrapper:
+        "v1.31.1/bio/gatk/baserecalibrator"
 
 #rule gatk_applybqsr:
 #    input:

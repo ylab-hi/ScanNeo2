@@ -1,24 +1,19 @@
 refgen: testdata/GRCh38.p13.genome.fa
 annotation: testdata/GRCh38_chr1.gtf  
 
-  # 
-rnaseq: LNCAP_bam
-rnaseq-format: bam   # can be fastq or bam
+dnaseq:
+rnaseq: LNCAP_bam/G28033.LNCaP_clone_FGC.1.bam
+
 
 mapq: 30
 chimsegmin: 20
-threads: 30
+threads: 50
 
 ref:
   species: homo_sapiens
   release: 109
   build: GRCh38
   
-
-
-dnaseq:
-  rep1: testdata/dna/a_1.fished.fastq
-  rep2: testdata/dna/a_2.fished.fastq
 
 #### alternative splicing
 splicing:
