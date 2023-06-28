@@ -1,0 +1,62 @@
+refgen: testdata/GRCh38.p13.genome.fa
+annotation: testdata/GRCh38_chr1.gtf  
+
+dnaseq:
+rnaseq: LNCAP_bam/G28033.LNCaP_clone_FGC.1.bam
+
+
+preproc: true
+
+
+
+
+
+
+
+
+
+
+mapq: 30
+chimsegmin: 20
+threads: 50
+
+ref:
+  species: homo_sapiens
+  release: 109
+  build: GRCh38
+  
+
+#### alternative splicing
+splicing:
+  activate: false   # whether (=true) or not (=false) to include splicing
+
+#### exitron 
+exitron:
+  activate: false
+  vcf: 
+
+### gene fusion
+genefusion:
+  activate: false
+  vcf:
+
+### indel
+indel:
+  activate: true
+
+
+
+### snp
+snp:
+  activate: true
+  vcf:
+
+
+
+
+
+
+
+
+
+

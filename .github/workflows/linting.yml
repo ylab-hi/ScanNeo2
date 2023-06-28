@@ -9,7 +9,7 @@ jobs:
       - run: pwd
       - uses: snakemake/snakemake-github-action@v1
         with:
-          directory: '${{ github.workspace }}'
+          directory: '.tests'
           snakefile: 'workflow/Snakefile'
-          args: '--lint --configfile config/config.yml'
+          args: '--lint --configfile config_basic/config.yml'
 
