@@ -1,5 +1,5 @@
 name: Linting
-run-name: ${{ github.actor }} is linting the snakemake workflow
+run-name: ${{ github.actor }} is linting Scanneo2
 on: [push]
 jobs:
   Linting:
@@ -11,5 +11,5 @@ jobs:
         with:
           directory: '${{ github.workspace }}'
           snakefile: 'workflow/Snakefile'
-          args: '--lint'
+          args: '--lint --configfile config/config.yml'
 
