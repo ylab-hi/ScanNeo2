@@ -11,5 +11,5 @@ jobs:
         with:
           directory: '.tests'
           snakefile: 'workflow/Snakefile'
-          args: '--lint --configfile integration/config_basic/config.yaml'
+          args: '--lint --configfile .tests/integration/config_basic/config.yaml'
 
