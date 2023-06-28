@@ -5,6 +5,17 @@ dnaseq:
 rnaseq: LNCAP_bam/G28033.LNCaP_clone_FGC.1.bam
 
 
+preproc: true
+
+
+
+
+
+
+
+
+
+
 mapq: 30
 chimsegmin: 20
 threads: 50
@@ -17,27 +28,23 @@ ref:
 
 #### alternative splicing
 splicing:
-  activate: true   # whether (=true) or not (=false) to include splicing
+  activate: false   # whether (=true) or not (=false) to include splicing
 
 #### exitron 
 exitron:
-  activate: true
+  activate: false
   vcf: 
 
 ### gene fusion
 genefusion:
-  activate: true
+  activate: false
   vcf:
 
-### indel > 75bp
-longindel:
+### indel
+indel:
   activate: true
-  vcf:
 
-### indel 
-shortindel:
-  activate: true
-  vcf:
+
 
 ### snp
 snp:

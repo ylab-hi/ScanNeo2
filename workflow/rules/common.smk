@@ -1,5 +1,6 @@
 import os
 import re
+import glob
 from pathlib import Path
 
 # check if files are a valid paired-end pair
@@ -60,17 +61,86 @@ def star_output(wildcards):
     return bamfiles
 
 
+#def aggregate(wildcards):
+    #cp_split_bamfile = checkpoints.split_bamfile.get(**wildcards).output[0]
+    #cp_split_bamfiles_rg = checkpoints.split_bamfiles_RG.get(**wildcards).output[0]
+
+    #print(cp_split_bamfile)
+
+    #return expand("results/{sample}/rnaseq/align/bamfiles/{i}/{readgroup}.bam",
+        #sample=wildcards.sample,
+        #i=glob_wildcards(os.path.join(cp_split_bamfile, "inputreads_{i}.bam")).i,
+        #readgroup=glob_wildcards(os.path.join(cp_split_bamfiles_rg, "{readgroup}.bam")).readgroup)
+
+
+
+#    cp_split_bamfile = glob.glob(f"{checkpoints.split_bamfile.get(**wildcards).output[0]}/*.bam")
+
+
+#    cp_split_bamfile = checkpoints.split_bamfile.get(**wildcards).output[0]  
+#    print(cp_split_bamfile
+
+
 # aggregate results from STAR alignment
-def aggregate_star_align(wildcards):
-    split_fastq_output = checkpoints.split_fastq.get(**wildcards).output[0]
-    print(split_fastq_output)
-    return expand("results/{sample}/rnaseq/preproc/align/bams/aln_{i}.bam",
+def aggregate_alignments(wildcards):
+    # make sure that all samples are processed in checkpoint - split fastq file
+    checkpoint_output = checkpoints.split_bamfile_RG.get(**wildcards).output[0]
+    return expand("results/{sample}/rnaseq/align/bamfiles/{readgroup}.bam",
         sample=wildcards.sample,
-        i=glob_wildcards(os.path.join(split_fastq_output, "inputreads_{i}.fq.gz")).i)
+        readgroup=glob_wildcards(os.path.join(checkpoint_output, "{readgroup}.fq.gz")).readgroup)
+
+
+def aggregate_bwa_alignments(wildcards):
+    split_bamfiles_output = checkpoints.bamfile_split.get(**wildcards).output[0]
+    return expand("results/{sample}/rnaseq/align/bamfiles/{file}.bam",
+        sample=wildcards.sample,
+        file=glob_wildcards(os.path.join(split_bamfiles_output, "{file}.bam")).file)
     
 
-def get_bams(wildcards):
-    f = rnaseq_input[wildcards.sample]
+def get_rnaseq_data(wildcards):
+    if rnaseq_filetype == ".bam":
+        print(wildcards)
+        return rnaseq_input[wildcards.sample]
+
+
+#        return config['rnaseq']
+        
+        # extract read group info from bam file - for later use
+        #rg_info = []
+        #header = subprocess.run(["samtools", "view", "-H",
+        #    rnaseq_input[wildcards.sample]], stdout=subprocess.PIPE)
+
+
+
+
+
+
+#        readgroups = subprocess.Popen(["grep", "-P", "@RG"], 
+#            stdin=header.stdout, stdout=subprocess.PIPE)
+
+#        print(readgroups)
+
+
+
+
+
+
+
+
+
+
+#    print(rnaseq_input)
+#    print(wildcards)
+#    f = rnaseq_input[wildcards.sample]
+
+#    return f
+
+
+
+
+#    print(rnaseq_input)
+#    print(wildcards)
+#    print(f)
 
     #if config["rnaseq-format"] == "fastq":
         #f = "results/preproc/"
@@ -79,7 +149,18 @@ def get_bams(wildcards):
     #elif config["rnaseq-format"] == "bam":
         #f = rawreads[wildcards.sample]
 
-    return f
+#    return f
+
+
+
+# retrieve the variants
+def get_variants(wildcards):
+    variants = []
+    if config['indel']['activate']:
+        variants.append("results/wildcards.sample/rnaseq/indel/ti.indel.vcf")
+        variants.append("results/wildcards.sample/rnaseq/indel/m2.indel.vcf")
+    return variants
+
 
 
 def change_ext(filename, ext):

@@ -41,6 +41,20 @@ rule genome_index:
         "v1.28.0/bio/samtools/faidx"
 
 
+rule genome_annotation_index:
+    input:
+        "resources/refs/genome.gtf"
+    output:
+        "resources/refs/genome.gtf.csi"
+    log:
+        "logs/tabix/genome_annotation.log"
+    params:
+        "-C"
+    wrapper:
+        "v1.29.0/bio/tabix/index"
+
+
+
 rule annotation_sort_bgzip:
     input:
         "resources/refs/genome.gtf"

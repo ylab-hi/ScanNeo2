@@ -19,5 +19,6 @@ include: "rules/genefusion.smk"
 include: "rules/splicing.smk"
 include: "rules/exitron.smk"
 include: "rules/indel.smk"
+include: "rules/annotation.smk"
 include: "rules/neoantigen.smk"
 
