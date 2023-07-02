@@ -22,7 +22,7 @@ if rnaseq_filetype == ".bam":
         input:
             "results/{sample}/rnaseq/reads/bamfiles/{readgroup}.bam"
         output:
-            directory("results/{sample}/rnaseq/reads/fastqfiles/{readgroup}.fq.gz")
+            "results/{sample}/rnaseq/reads/fastqfiles/{readgroup}.fq.gz"
         conda:
             "../envs/samtools.yml"
         log:
@@ -52,25 +52,26 @@ if rnaseq_filetype == ".bam":
             "v1.26.0/bio/star/align"
 
 
-rule merge_alignment_results:
-    input:
-        aggregate_alignments
-    output:
-        "results/{sample}/rnaseq/align/aligned.bam",
-    log:
-        "logs/samtools/merge/{sample}.log",
-    params:
-        extra="",  # optional additional parameters as string
-    threads: config['threads']
-    wrapper:
-        "v1.32.1/bio/samtools/merge"
+if rnaseq_filetype == ".bam":
+    rule merge_alignment_results:
+        input:
+            aggregate_alignments
+        output:
+            "results/{sample}/rnaseq/align/aligned.bam",
+        log:
+            "logs/samtools/merge/{sample}.log",
+        params:
+            extra="",  # optional additional parameters as string
+        threads: config['threads']
+        wrapper:
+            "v1.32.1/bio/samtools/merge"
     
 
 rule samtools_postproc:
     input:
-        "results/{sample}/rnaseq/preproc/aligned.bam"
+        "results/{sample}/rnaseq/align/aligned.bam"
     output:
-        "results/{sample}/rnaseq/preproc/ready.bam"
+        "results/{sample}/rnaseq/align/ready.bam"
     conda:
         "../envs/samtools.yml"
     log:
@@ -88,9 +89,9 @@ rule samtools_postproc:
 
 rule samtools_postproc_index:
     input:
-        "results/{sample}/rnaseq/preproc/ready.bam"
+        "results/{sample}/rnaseq/align/ready.bam"
     output:
-        "results/{sample}/rnaseq/preproc/ready.bam.bai"
+        "results/{sample}/rnaseq/align/ready.bam.bai"
     log:
         "logs/samtools/index/{sample}.log"
     params:
@@ -98,6 +99,52 @@ rule samtools_postproc_index:
     threads: config['threads']
     wrapper:
         "v1.31.1/bio/samtools/index"
+
+
+# retrieve readgroups from bam file
+if rnaseq_filetype == ".bam":
+    rule determine_readgroups:
+        input:
+            get_rnaseq_data
+        output:
+            "results/{sample}/rnaseq/reads/readgroups.txt"
+        log:
+            "logs/readgroups/{sample}.log"
+        shell:
+            """
+                python workflow/scripts/get_readgroups.py {input} \
+                {output} > {log} 2>&1
+            """
+
+rule realign:
+    input:
+        bam="results/{sample}/rnaseq/align/ready.bam",
+        rg="results/{sample}/rnaseq/reads/readgroups.txt"
+    output:
+        "results/{sample}/rnaseq/align/realigned.bam"
+    threads: config['threads']
+    shell:
+        """
+            samtools collate -Oun128 {input.bam} \
+            | samtools fastq -OT RG,BC - \
+            | bwa mem -pt{threads} -CH <(cat {input.rg}) resources/refs/bwa/genome - \
+            | samtools sort -@6 -m1g - > {output}
+        """
+
+
+rule realign_index:
+    input:
+        "results/{sample}/rnaseq/align/realigned.bam"
+    output:
+        "results/{sample}/rnaseq/align/realigned.bam.bai"
+    log:
+        "logs/samtools/index/{sample}.log"
+    params:
+        extra="",  # optional additional parameters as string
+    threads: config['threads']
+    wrapper:
+        "v1.31.1/bio/samtools/index"
+
 
 
 # create 

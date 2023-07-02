@@ -15,6 +15,22 @@ In principle, Scanneo2 aims to
 
 ## Quickstart
 
+Install `snakemake` and `snakedeploy`
+```
+mamba env create --file https://
+mamba activate scanneo2
+```
+Deploy Scanneo2
+```
+mkdir -p /path/to/working/directory/
+cd /path/to/working/directory/
+snakedeploy deploy-workflow https://github.com/ylab-hi/scanneo2 . --tag v0.1.0
+```
+Run the workflow
+```
+snakemake --cores all --use-conda
+```
+
 Please consult the wiki for detailed instruction and explanations.
 
 

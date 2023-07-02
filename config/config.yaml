@@ -8,11 +8,14 @@ rnaseq: LNCAP_bam/G28033.LNCaP_clone_FGC.1.bam
 preproc: true
 
 
+# if no readgroups file are provided 
+readgroups: 
 
 
-
-
-
+mhc:
+  len_class_i: 8-11
+  len_class_ii: 13-25
+  
 
 
 
