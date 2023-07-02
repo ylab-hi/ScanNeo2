@@ -55,11 +55,6 @@ elif len(rnaseq_files) == 2:
     else:
         print("no valid paired-end files found")
 
-# determine input for star aligner
-def star_output(wildcards):
-    bamfiles = os.listdir("results/"+wildcards.sample+"/rnaseq/preproc/align/bams/")
-    return bamfiles
-
 
 # aggregate results from STAR alignment
 def aggregate_alignments(wildcards):
@@ -95,33 +90,6 @@ def get_variants(wildcards):
         variants.append("results/wildcards.sample/rnaseq/indel/m2.indel.vcf")
     return variants
 
-
-
-def change_ext(filename, ext):
-    return os.path.splitext(filename)[0] + "." + ext
-
-def file_exists(path):
-    return os.path.exists(path)
-
-rule combine_sources:
-    input:
-        "results/indel/transindel/all.indel.vcf",
-    output:
-        "results/variants/variants.vcf"
-    shell:
-        "cat {input} > {output}"
-
-rule variants_gzip:
-    input:
-        "results/variants/variants.vcf"
-    output:
-        "results/variants/variants.vcf.gz",
-    log:
-        "logs/variants/index.log"
-    conda:
-        "../envs/samtools.yml"
-    shell:
-        "bgzip -c {input} > {output}"
 
 
     
