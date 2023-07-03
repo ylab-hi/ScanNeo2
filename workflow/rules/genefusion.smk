@@ -22,11 +22,10 @@ rule arriba:
 rule fusions_to_vcf:
     input:
         "results/{sample}/genefusion/fusions.tsv",
-        "resources/refs/genome.fasta"
     output:
         "results/{sample}/variants/fusions.vcf"
     log:
         "logs/fusion_to_vcf_{sample}.log"
     shell:
-        "workflow/scripts/convert_fusions_to_vcf.sh {config[refgen]} {input} {output} 2> {log}"
+        "workflow/scripts/convert_fusions_to_vcf.sh resources/refs/genome.fasta {input} {output} > {log} 2>&1"
 

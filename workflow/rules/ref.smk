@@ -2,6 +2,8 @@ rule get_genome:
     output:
         genome="resources/refs/genome.fasta",
         annotation="resources/refs/genome.gtf"
+    conda:
+        "../envs/basic.yml"
     log:
         "logs/get-genome.log",
     params:
@@ -39,20 +41,6 @@ rule genome_index:
         extra="",  # optional params string
     wrapper:
         "v1.28.0/bio/samtools/faidx"
-
-
-rule genome_annotation_index:
-    input:
-        "resources/refs/genome.gtf"
-    output:
-        "resources/refs/genome.gtf.csi"
-    log:
-        "logs/tabix/genome_annotation.log"
-    params:
-        "-C"
-    wrapper:
-        "v1.29.0/bio/tabix/index"
-
 
 
 rule annotation_sort_bgzip:
