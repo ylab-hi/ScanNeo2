@@ -35,6 +35,8 @@ rule annotation_sort_bgzip:
         "resources/refs/genome.gtf"
     output:
         "resources/refs/genome.gtf.gz"
+    conda:
+        "../envs/basic.yml"
     shell:
         """
             (grep "^#" {input}; grep -v "^#" {input} | sort -t"`printf '\t'`" -k1,1 -k4,4n) | bgzip > {output}
