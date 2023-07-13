@@ -1,0 +1,15 @@
+name: Linting
+run-name: ${{ github.actor }} is testing Scanneo2
+on: [push]
+jobs:
+  Linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: pwd
+      - uses: snakemake/snakemake-github-action@v1
+        with:
+          directory: '.tests'
+          snakefile: 'workflow/Snakefile'
+          args: '--lint --configfile .tests/integration/config_basic/config.yaml'
+

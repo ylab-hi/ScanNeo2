@@ -2,6 +2,8 @@ rule get_genome:
     output:
         genome="resources/refs/genome.fasta",
         annotation="resources/refs/genome.gtf"
+    conda:
+        "../envs/basic.yml"
     log:
         "logs/get-genome.log",
     params:
@@ -14,19 +16,6 @@ rule get_genome:
         curl -L -o - https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.fna.gz | gzip -d - >{output.genome}
         curl -L -o - https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf.gz | gzip -d - > {output.annotation}       
         """
-
-rule mod_header:
-    input:
-        "resources/refs/genome.fasta"
-    output:
-        "resources/refs/genome_modheader.fasta"
-    conda:
-        "../envs/basic.yml"
-    log:
-        "logs/ref_modheader.log"
-    shell:
-        "python ./workflow/scripts/modify_fasta_header.py {input} {output} > {log}"
-
 
 rule genome_index: 
     input:
@@ -46,6 +35,8 @@ rule annotation_sort_bgzip:
         "resources/refs/genome.gtf"
     output:
         "resources/refs/genome.gtf.gz"
+    conda:
+        "../envs/basic.yml"
     shell:
         """
             (grep "^#" {input}; grep -v "^#" {input} | sort -t"`printf '\t'`" -k1,1 -k4,4n) | bgzip > {output}
@@ -90,3 +81,20 @@ rule bwa_index:
         algorithm="bwtsw",
     wrapper:
         "v1.26.0/bio/bwa/index"
+
+
+rule create_sequence_dictionary:
+    input:
+        "resources/refs/genome.fasta"
+    output:
+        "resources/refs/genome.dict"
+    message:
+      "Create sequence dictionary of reference genome"
+    log:
+        "logs/picard/create_dict.log"
+    params:
+        extra="",  # optional: extra arguments for picard.
+    resources:
+        mem_mb=1024,
+    wrapper:
+        "v1.31.1/bio/picard/createsequencedictionary"

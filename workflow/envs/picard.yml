@@ -1,4 +1,6 @@
 channels:
- - bioconda
+  - conda-forge
+  - bioconda
+  - nodefaults
 dependencies:
- - picard=3.0.0
+  - picard =2.27.4

@@ -1,65 +1,39 @@
 import os
+from snakemake.remote import HTTP
 
-rule realign:
+rule detect_long_indel_ti_build:
     input:
-        idx = multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
-        bam = "results/preproc/post/{sample}_dedup.bam"
+        bam = "results/{sample}/rnaseq/align/{replicate}_realigned.bam",
+        idx = "results/{sample}/rnaseq/align/{replicate}_realigned.bam.bai"
     output:
-        "results/indel/realign/{sample}.bam",
+        bam="results/{sample}/rnaseq/indel/transindel/{replicate}_build.bam",
+        idx="results/{sample}/rnaseq/indel/transindel/{replicate}_build.bam.bai"
+    message:
+      "Building new BAM file with redefined CIGAR string using transindel build on sample:{wildcards.sample} with replicate:{wildcards.replicate}"
     log:
-        "logs/bwa_realign_{sample}"
-    conda:
-        "../envs/realign.yml",
-    threads: config['threads']
-    shell:
-        """
-        samtools collate -Oun128 {input.bam} \
-        | samtools fastq -OT RG,BC - \
-        | bwa mem -pt8 -CH <(samtools view -H {input.bam}|grep ^@RG) resources/refs/bwa/genome - \
-        | samtools sort -@{threads} -m4g - \
-        | samtools addreplacerg -r '@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}' -o {output} -
-        """
-
-rule realign_index:
-    input:
-        "results/indel/realign/{sample}.bam",
-    output:
-        "results/indel/realign/{sample}.bam.bai",
-    log:
-        "logs/samtools_index_{sample}.log"
-    params:
-        extra="",  # optional params string
-    threads: config['threads']  # This value - 1 will be sent to -@
-    wrapper:
-        "v1.26.0/bio/samtools/index"
-        
-
-rule transindel_build:
-    input:
-        bam = "results/indel/realign/{sample}.bam",
-        idx = "results/indel/realign/{sample}.bam.bai"
-    output:
-        "results/indel/transindel/{sample}_redef.bam"
-    log:
-        "logs/transindel_buildbam_{sample}"
+        "logs/{sample}/transindel/{replicate}_build.log"
     conda:
         "../envs/transindel.yml"
     shell:
         """
         python3 workflow/scripts/transIndel/transIndel_build_RNA.py \
         -i {input.bam} \
-        -o {output} \
+        -o {output.bam} \
         -r resources/refs/genome.fasta \
-        -g resources/refs/genome.gtf > {log}
+        -g resources/refs/genome.gtf > {log} 2>&1
+        samtools index {output.bam} -o {output.idx} >> {log} 2>&1
         """
 
-rule transindel_call:
+rule detect_long_indel_ti_call:
     input:
-        "results/indel/transindel/{sample}_redef.bam"
+        bam = "results/{sample}/rnaseq/indel/transindel/{replicate}_build.bam",
+        bai = "results/{sample}/rnaseq/indel/transindel/{replicate}_build.bam.bai"
     output:
-        "results/indel/transindel/{sample}.indel.vcf"
+        "results/{sample}/rnaseq/indel/transindel/{replicate}_call.indel.vcf"
+    message:
+      "Calling short indels using transindel on sample:{wildcards.sample} with replicate:{wildcards.replicate}"
     log:
-        "logs/transindel_call_{sample}.log"
+        "logs/{sample}/transindel/{replicate}_call.log"
     conda:
         "../envs/transindel.yml"
     params:
@@ -67,198 +41,145 @@ rule transindel_call:
     shell:
         """
         python workflow/scripts/transIndel/transIndel_call.py \
-        -i {input} \
-        -o results/indel/transindel/{wildcards.sample} \
-        -m {params}
+        -i {input.bam} \
+        -l 10 \
+        -o results/{wildcards.sample}/rnaseq/indel/transindel/{wildcards.replicate}_call \
+        -m {params} > {log} 2>&1
         """
 
-
-rule resolve_alleles:
+# resove alleles and remove PCR slippage
+rule long_indel_slippage_removal:
     input:
-        "results/indel/transindel/{sample}.indel.vcf"
+        "results/{sample}/rnaseq/indel/transindel/{replicate}_call.indel.vcf"
     output:
-        "results/indel/transindel/{sample}.allele.vcf"
+        "results/{sample}/rnaseq/indel/transindel/{replicate}_sliprem.vcf"
+    message:
+      "Resolving alleles and removing PCR slippage using transindel on sample:{wildcards.sample} with replicate:{wildcards.replicate}"
     log:
-        "logs/indel/transindel/resolve_alleles_{sample}.log"
-    conda:
-        "../envs/transindel.yml"
-    params:
-        
-
-
-
-
-
-
-rule slippage_removal:
-    input:
-        "results/indel/transindel/{sample}.indel.vcf"
-    output:
-        "results/indel/transindel/{sample}_slip.indel.vcf"
+        "logs/{sample}/transindel/{replicate}_sliprem.log"
     conda:
         "../envs/transindel.yml"
     shell:
         """
-        python workflow/scripts/slippage_removal.py /resources/refs/
-
+            python3 workflow/scripts/slippage_removal.py \
+            resources/refs/genome.fasta {input} {output} > {log} 2>&1
         """
 
-rule combine_indels:
+# combines the replicates into one vcf
+rule combine_longindels:
+  input:
+    expand("results/{sample}/rnaseq/indel/transindel/{replicate}_sliprem.vcf", 
+           sample=config['data']['name'],
+           replicate=config['data']['rnaseq'].keys())
+  output:
+    "results/{sample}/rnaseq/indel/long.indel.vcf" 
+  message:
+    "Combining long indels from replicates on sample:{wildcards.sample}"
+  log: 
+    "logs/{sample}/transindel/combine_replicates.log"
+  conda:
+    "../envs/manipulate_vcf.yml"
+  shell:
+    """
+      python workflow/scripts/combine_vcf.py '{input}' {output} > {log} 2>&1
+    """
+
+# detects short somatic variants (SNVs and indels) using mutect2
+rule detect_short_indels_m2:
     input:
-        expand("results/indel/transindel/{sample}_slip.indel.vcf", sample=rawreads.keys())
+        fasta="resources/refs/genome.fasta",
+        map="results/{sample}/rnaseq/align/{replicate}_realigned.bam"
     output:
-        "results/indel/transindel/all.indel.vcf"
-    shell:
-        """
-        cat {input} > {output}
-        """
-
-rule picard_create_dict:
-    input:
-        refgen =  config["refgen"],
-    output:
-        "misc/refgen/genome.dict"
-    log:
-        "logs/picard/create_dict.log",
-    conda:
-        "../envs/picard.yml"
-    params:
-        prefix=lambda wildcards, input: os.path.splitext(input[0])[0]
-    shell:
-        """
-            if [ -f "{params}.dict" ]; then
-                rm {params}.dict
-            fi
-            picard CreateSequenceDictionary -R {input} > {log}
-            touch {output}
-        """
-
-# prepare file for haplotypecaller
-rule gatk_realigner_target_creator:
-    input:
-        bam="results/indel/realign/{sample}.bam",
-        bai="results/indel/realign/{sample}.bam.bai",
-        ref=config["refgen"],
-        fai="misc/refgen/genome.fa.fai",
-        dict="misc/refgen/genome.dict",
-#        known="dbsnp.vcf.gz",
-#        known_idx="dbsnp.vcf.gz.tbi",
-    output:
-        intervals="results/indel/haplotypecaller/{sample}.intervals",
-    log:
-        "logs/gatk/realignertargetcreator/{sample}.log",
-    params:
-        extra="--defaultBaseQualities 20 --filter_reads_with_N_cigar -L misc/refgen/genome.dict",  # optional
-    resources:
-        mem_mb=1024,
-    threads: 16
-    wrapper:
-        "v1.28.0/bio/gatk3/realignertargetcreator"
-
-
-rule gatk_indel_realigner:
-    input:
-        bam="results/indel/realign/{sample}.bam",
-        bai="results/indel/realign/{sample}.bam.bai",
-        ref=config["refgen"],
-        fai="misc/refgen/genome.fa.fai",
-        dict="misc/refgen/genome.dict",
-        target_intervals="results/indel/haplotypecaller/{sample}.intervals",
-    output:
-        bam="results/indel/haplotypecaller/{sample}.realigned.bam",
-        bai="results/indel/haplotypecaller/{sample}.realigned.bai",
-    log:
-        "logs/gatk3/indelrealigner/{sample}.log",
-    params:
-        extra="--defaultBaseQualities 20 --filter_reads_with_N_cigar",  # optional
-    threads: 16
-    resources:
-        mem_mb=1024,
-    wrapper:
-        "v1.28.0/bio/gatk3/indelrealigner"
-
-
-rule gatk_haplotype_caller_gvcf:
-    input:
-#        bam="results/indel/haplotypecaller/{sample}.realigned.bam",
-        bam="results/preproc/post/{sample}_dedup.bam",
-        ref=config["refgen"]
-    output:
-        gvcf="results/indel/haplotypecaller/{sample}.g.vcf",
-        bam="results/indel/haplotypecaller/{sample}.assemb_haplo.bam",
-    log:
-        "logs/gatk/haplotypecaller/{sample}.log",
-    params:
-        extra="--sequence-dictionary misc/refgen/genome.dict",  # optional
-        java_opts="",  # optional
+        vcf="results/{sample}/rnaseq/indel/mutect2/{replicate}_variants.vcf",
+        bam="results/{sample}/rnaseq/indel/mutect2/{replicate}_variants.bam",
+    message:
+      "Detection of somatic SNVs/Indels with Mutect2 on sample:{wildcards.sample} with replicate:{wildcards.replicate}"
     threads: config['threads']
     resources:
-        mem_mb=1024,
-    wrapper:
-        "v1.27.0/bio/gatk/haplotypecaller"
-
-rule combine_gvcfs:
-    input:
-        gvcfs=expand("results/indel/haplotypecaller/{sample}.g.vcf", sample=config['rnaseq']),
-        ref=config["refgen"],
-    output:
-        gvcf="results/indel/haplotypecaller/all.g.vcf",
-    log:
-        "logs/gatk/combinegvcfs.log",
+        mem_mb=10024,
     params:
-        extra="",  # optional
+        extra="",
+    log:
+        "logs/{sample}/gatk/mutect2/{replicate}.log",
+    wrapper:
+        "v1.31.1/bio/gatk/mutect"
+
+
+# filters short somatic variants (SNVs and indels) using FilterMutectCalls
+rule filter_short_indels:
+    input:
+        vcf="results/{sample}/rnaseq/indel/mutect2/{replicate}_variants.vcf",
+        bam="results/{sample}/rnaseq/indel/mutect2/{replicate}_variants.bam",
+        ref="resources/refs/genome.fasta",
+        # intervals="intervals.bed",
+        # contamination="", # from gatk CalculateContamination
+        # segmentation="", # from gatk CalculateContamination
+        # f1r2="", # from gatk LearnReadOrientationBias
+    output:
+        vcf="results/{sample}/rnaseq/indel/mutect2/{replicate}_variants.flt.vcf"
+    message:
+      "Filtering somatic SNVs/Indels with FilterMutectCalls on sample:{wildcards.sample} and replicate:{wildcards.replicate}"
+    log:
+        "logs/{sample}/gatk/filtermutect/{replicate}.log",
+    params:
+        extra="--max-alt-allele-count 3",
         java_opts="",  # optional
     resources:
         mem_mb=1024,
     wrapper:
-        "v1.28.0/bio/gatk/combinegvcfs"
+        "v1.31.1/bio/gatk/filtermutectcalls"
 
-rule genotype_gvcfs:
+rule combine_short_indels_m2:
+  input:
+    expand("results/{sample}/rnaseq/indel/mutect2/{replicate}_variants.flt.vcf", 
+           sample=config['data']['name'],
+           replicate=config['data']['rnaseq'].keys())
+  output:
+    "results/{sample}/rnaseq/indel/mutect2/variants.vcf" 
+  message:
+    "Combining somatic SNVs/Indels with Mutect2 on sample:{wildcards.sample}"
+  log: 
+    "logs/{sample}/transindel/combine_replicates.log"
+  conda:
+    "../envs/manipulate_vcf.yml"
+  shell:
+    """
+      python workflow/scripts/combine_vcf.py '{input}' {output} > {log} 2>&1
+    """
+
+rule select_SNVs_m2:
     input:
-        gvcf="results/indel/haplotypecaller/all.g.vcf",
-    # N.B. gvcf or genomicsdb must be specified
-    # in the latter case, this is a GenomicsDB data store
-        ref=config["refgen"]
+        vcf="results/{sample}/rnaseq/indel/mutect2/variants.vcf",
+        ref="resources/refs/genome.fasta",
     output:
-        vcf="results/indel/haplotypecaller/all.vcf",
+        vcf="results/{sample}/rnaseq/indel/snvs.vcf"
+    message:
+      "Selecting somatic SNVs with SelectVariants on sample:{wildcards.sample}"
     log:
-        "logs/gatk/genotypegvcfs.log"
+        "logs/{sample}/gatk/select/somatic_snvs.log",
     params:
-        extra="",  # optional
-        java_opts="", # optional
+        extra="--select-type-to-include SNP",  # optional filter arguments, see GATK docs
+        java_opts="",  # optional
     resources:
-        mem_mb=1024
+        mem_mb=1024,
     wrapper:
-        "v1.28.0/bio/gatk/genotypegvcfs"
+        "v1.31.1/bio/gatk/selectvariants"
 
-
-rule picard_split_vcfs:
+rule select_short_indels_m2:
     input:
-        "results/indel/haplotypecaller/all.vcf"
+        vcf="results/{sample}/rnaseq/indel/mutect2/variants.vcf",
+        ref="resources/refs/genome.fasta",
     output:
-        snp="results/indel/snp.vcf",
-        indel="results/haplotypecaller/indel.vcf"
+        vcf="results/{sample}/rnaseq/indel/short.indel.vcf"
+    message:
+      "Selecting short somatic indels with SelectVariants on sample:{wildcards.sample}"
     log:
-        "logs/spltvcfs.log"
-    conda:
-        "../envs/picard.yml"
-    shell:
-        """
-            picard SplitVcfs I={input} \
-            SNP_OUTPUT={output.snp} \
-            INDEL_OUTPUT={output.indel}
-            STRICT=false
-        """
-
-
-rule merge_indels:
-    input:
-        #indel="results/haplotypecaller/indel.vcf",
-        transindel="results/indel/transindel/all.indel.vcf"
-    output:
-        "results/indel/indel.vcf"
-    shell:
-        """
-        cp {input} {output}
-        """
+        "logs/gatk/select/{sample}.indel.log",
+    params:
+        extra="--select-type-to-include INDEL",  # optional filter arguments, see GATK docs
+        java_opts="",  # optional
+    resources:
+        mem_mb=1024,
+    wrapper:
+        "v1.31.1/bio/gatk/selectvariants"
 
