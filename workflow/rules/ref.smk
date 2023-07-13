@@ -81,3 +81,20 @@ rule bwa_index:
         algorithm="bwtsw",
     wrapper:
         "v1.26.0/bio/bwa/index"
+
+
+rule create_sequence_dictionary:
+    input:
+        "resources/refs/genome.fasta"
+    output:
+        "resources/refs/genome.dict"
+    message:
+      "Create sequence dictionary of reference genome"
+    log:
+        "logs/picard/create_dict.log"
+    params:
+        extra="",  # optional: extra arguments for picard.
+    resources:
+        mem_mb=1024,
+    wrapper:
+        "v1.31.1/bio/picard/createsequencedictionary"

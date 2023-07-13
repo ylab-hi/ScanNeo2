@@ -1,7 +1,11 @@
 rule get_hla_panel:
     output:
-        dna="misc/hla/hla_reference_dna.fasta",
-        rna="misc/hla/hla_reference_rna.fasta"
+        dna="resources/hla/hla_ref_dna.fasta",
+        rna="resources/hla/hla_ref_rna.fasta"
+    conda:
+        "../envs/basic.yml"
+    log:
+        "logs/hla_panel.log"
     shell:
         """
         curl -o {output.dna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_dna.fasta
@@ -10,19 +14,27 @@ rule get_hla_panel:
 
 rule index_hla_panel:
     input:
-        dna="misc/hla/hla_reference_dna.fasta",
-        rna="misc/hla/hla_reference_rna.fasta",
+        dna="resources/hla/hla_ref_dna.fasta",
+        rna="resources/hla/hla_ref_rna.fasta"
     output:
-        "misc/hla/hla_dna.index.lf.drp", 
-        "misc/hla/hla_rna.index.lf.drp", 
+        dna=multiext("resources/hla/yara/idx/dna", 
+            ".lf.drp", ".lf.drs", ".lf.drv", 
+            ".lf.pst", ".rid.concat", ".rid.limits",
+            ".sa.ind", ".sa.len", ".sa.val", 
+            ".txt.concat", ".txt.limits", ".txt.size"),
+        rna=multiext("resources/hla/yara/idx/rna", 
+            ".lf.drp", ".lf.drs", ".lf.drv", 
+            ".lf.pst", ".rid.concat", ".rid.limits",
+            ".sa.ind", ".sa.len", ".sa.val", 
+            ".txt.concat", ".txt.limits", ".txt.size")
     log:
         "logs/yara_indexer.log"
     conda:
         "../envs/yara.yml"
     shell:
         """
-        yara_indexer -o misc/hla/hla.index {input.dna} > {log}
-        yara_indexer -o misc/hla/hla.index {input.rna} >> {log}
+        yara_indexer -o resources/hla/yara/idx/dna {input.dna} > {log}
+        yara_indexer -o resources/hla/yara/idx/rna {input.dna} >> {log}
         """
 
 rule prepare_bams:
@@ -36,6 +48,7 @@ rule prepare_bams:
         "../envs/yara.yml"
     shell:
         "samtools merge -f - {input} | samtools fastq - > {output}"
+
 
 rule filter_hla:
     input:
