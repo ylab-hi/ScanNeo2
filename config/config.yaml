@@ -1,30 +1,37 @@
 data:
   name:  patient2
   dnaseq: 
-    rep1: TESLA_testdata/patient2/WES/TESLA_9_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_9_2.fastq.gz
-    rep2: TESLA_testdata/patient2/WES/TESLA_10_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_10_2.fastq.gz
+    #  dna_normal: ../../TESLA/melanoma/patient2/WES/TESLA_9_1.fastq.gz ../../TESLA/melanoma/patient2/WES/TESLA_9_2.fastq.gz
+    #dna_tumor: ../../TESLA/melanoma/patient2/WES/TESLA_10_1.fastq.gz ../../TESLA/melanoma/patient2/WES/TESLA_10_2.fastq.gz
+    dna_normal: TESLA_testdata/patient2/WES/TESLA_9_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_9_2.fastq.gz
+    dna_tumor: TESLA_testdata/patient2/WES/TESLA_10_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_10_2.fastq.gz
   rnaseq:
-    rep1: TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz
-
-
-
-
-sample: patient2  # naming of the sample (results/sample)
-dnaseq:
-rnaseq: LNCAP_bam/G28033.LNCaP_clone_FGC.1.bam
-
+    rna_tumor: ../../TESLA/melanoma/patient2/RNA/TESLA_11_1.fastq.gz ../../TESLA/melanoma/patient2/RNA/TESLA_11_2.fastq.gz
+      rna_tumor: TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz
+  normal: dna_normal
 
 ### pre-processing (only applied on fastq reads)
 preproc: 
   activate: true  # whether (=true) or not (=false) to include pre-processing
-  minlen: 10  # discard reads which are less than <minlen> bases 
-  leading: 3  # remove leading low quality or N bases
-  trailing: 3  # remove trailing low quality or N bases
-  slidingwindow:
-    activate: true  # whether (=true) or not (=false) to include pre-processing
-    windowsize: 3  # number of bases to average across
-    quality: 20  # the average quality (Phred) required
-  adapters: TruSeq2-PE.fa    # path to fasta file containg adapters to be trimmed
+  minlen: 10
+  quality: 20
+
+### variant calling
+# alternative splicing
+altsplicing:
+  activate: true # whether (=true) or not (=false) to include alternative splicing events
+
+# exitron splicing
+exitronsplicing:
+  activate: true # whether (=true) or not (=false) to include exitron-splicing events
+
+# gene fusion
+genefusion:
+  activate: true # whether (=true) or not (=false) to include gene fusion events
+
+
+
+
 
 
 # if no readgroups file are provided 
@@ -48,14 +55,7 @@ ref:
   build: GRCh38
   
 
-#### alternative splicing
-splicing:
-  activate: false   # whether (=true) or not (=false) to include splicing
 
-#### exitron 
-exitron:
-  activate: false
-  vcf: 
 
 ### gene fusion
 genefusion:

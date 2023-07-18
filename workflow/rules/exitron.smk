@@ -20,11 +20,11 @@ rule exitron_to_vcf:
     shell:
         "workflow/scripts/exitron2vcf.py {config[refgen]} {input} {output} 2> logs/error.err"
 
-rule combine_exitrons:
-    input:
-        expand("results/exitron/{sample}/res.vcf", sample=config["rnaseq"])
-    output:
-        "results/exitron/all.vcf"
-    shell:
-        """
-        """
+#rule combine_exitrons:
+    #input:
+        #expand("results/exitron/{sample}/res.vcf", sample=config["rnaseq"])
+    #output:
+        #"results/exitron/all.vcf"
+    #shell:
+        #"""
+        #"""

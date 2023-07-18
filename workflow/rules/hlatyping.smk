@@ -37,50 +37,50 @@ rule index_hla_panel:
         yara_indexer -o resources/hla/yara/idx/rna {input.dna} >> {log}
         """
 
-rule prepare_bams:
-    input:
-        expand("results/preproc/align/{sample}.bam", sample=config["rnaseq"])
-    output:
-        "results/hla/all.fastq"
-    log:
-        "logs/bam2fastq.log"
-    conda:
-        "../envs/yara.yml"
-    shell:
-        "samtools merge -f - {input} | samtools fastq - > {output}"
+#rule prepare_bams:
+    #input:
+        #expand("results/preproc/align/{sample}.bam", sample=config["rnaseq"])
+    #output:
+        #"results/hla/all.fastq"
+    #log:
+        #"logs/bam2fastq.log"
+    #conda:
+        #"../envs/yara.yml"
+    #shell:
+        #"samtools merge -f - {input} | samtools fastq - > {output}"
 
 
-rule filter_hla:
-    input:
-        reads="results/hla/all.fastq",
-        yidx="misc/hla/hla.index.lf.drp"
-    output:
-        "results/hla/all_hla.fastq"
-    conda:
-        "../envs/yara.yml"
-    shell:
-        """
-        yara_mapper -e 3 -f bam -u misc/hla/hla.index {input.reads} \
-        | samtools view -F 4 -h -b1 - | samtools bam2fq - > {output}
-        """
+#rule filter_hla:
+    #input:
+        #reads="results/hla/all.fastq",
+        #yidx="misc/hla/hla.index.lf.drp"
+    #output:
+        #"results/hla/all_hla.fastq"
+    #conda:
+        #"../envs/yara.yml"
+    #shell:
+        #"""
+        #yara_mapper -e 3 -f bam -u misc/hla/hla.index {input.reads} \
+        #| samtools view -F 4 -h -b1 - | samtools bam2fq - > {output}
+        #"""
 
-rule hla_genotyping:
-    input:
-        reads = "results/hla/all_hla.fastq"
-    output:
-        pdf="results/hla/all_coverage_plot.pdf",
-        tsv="results/hla/all_result.tsv",
-    conda: 
-        "../envs/optitype.yml"
-    log:
-        "logs/optitype/call.log"
-    params:
-        # Type of sequencing data. Can be 'dna' or 'rna'. Default is 'dna'.
-        sequencing_type="rna",
-        # optiype config file, optional
-        config="",
-        # additional parameters
-        extra=""
-    wrapper:
-        "v1.26.0/bio/optitype"
+#rule hla_genotyping:
+    #input:
+        #reads = "results/hla/all_hla.fastq"
+    #output:
+        #pdf="results/hla/all_coverage_plot.pdf",
+        #tsv="results/hla/all_result.tsv",
+    #conda: 
+        #"../envs/optitype.yml"
+    #log:
+        #"logs/optitype/call.log"
+    #params:
+        ## Type of sequencing data. Can be 'dna' or 'rna'. Default is 'dna'.
+        #sequencing_type="rna",
+        ## optiype config file, optional
+        #config="",
+        ## additional parameters
+        #extra=""
+    #wrapper:
+        #"v1.26.0/bio/optitype"
         

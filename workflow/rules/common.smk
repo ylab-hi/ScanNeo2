@@ -12,7 +12,6 @@ def data_structure(data):
   config['data']['rnaseq_readtype'] = readtype
   return config['data']
 
-  
 def handle_seqfiles(seqdata):
   readtype = []
   filetype = []
@@ -50,30 +49,6 @@ def handle_seqfiles(seqdata):
     print('filetypes are not the same')
     return seqdata, None, None
 
-# pre-processing for RNAseq data
-def get_raw_reads(wildcards):
-  if config['data']['rnaseq_readtype'] == 'SE':
-    return config['data']['rnaseq'][wildcards.sample]
-  else:  # PE
-    return dict(
-        zip(
-            ["r1", "r2"],
-            [config['data'][wildcards.seqtype][wildcards.replicate][0],
-             config['data'][wildcards.seqtype][wildcards.replicate][1]],
-        )
-    )
-
-# returns the reads (raw/preprocessed) for a given sample
-def get_reads(wildcards):
-  if config['preproc']['activate']:
-    if config['data'][wildcards.seqtype+'_readtype'] == 'SE':
-      return config['data'][wildcards.seqtype][wildcards.replicate]
-    elif config['data'][wildcards.seqtype+'_readtype'] == 'PE':
-      print("yes")
-      return {"r1": "results/{sample}/{seqtype}/reads/{replicate}_preproc_r1.fq.gz",
-              "r2": "results/{sample}/{seqtype}/reads/{replicate}_preproc_r2.fq.gz"}
-
-
 # determines the file extension for a given file - excludes .gz
 def get_file_extension(path):
   filename = path.name
@@ -86,6 +61,7 @@ def get_file_extension(path):
       else:
           file_ext = filename[res.start():]
   return file_ext
+
 
 # check if files are a valid paired-end pair
 def valid_paired_end(path1, path2):
@@ -118,6 +94,122 @@ def all_identical(l):
   else:
     return False
 
+# pre-processing for RNAseq data
+def get_raw_reads(wildcards):
+  if config['data']['rnaseq_readtype'] == 'SE':
+    return dict(
+        zip(
+          ["sample"],
+          config['data']['rnaseq'][wildcards.group]
+        )
+    )
+
+# returns raw reads for a given sample
+def get_qc_input(wildcards):
+  return config['data'][wildcards.seqtype][wildcards.group]
+
+def get_qc_input_fwd(wildcards):
+  return config['data'][wildcards.seqtype][wildcards.group][0]
+
+def get_qc_input_rev(wildcards):
+  return config['data'][wildcards.seqtype][wildcards.group][1]
+
+# returns the reads (raw/preprocessed) for a given sample
+def get_preproc_input(wildcards):
+  if config['preproc']['activate']:
+    if config['data'][wildcards.seqtype+'_readtype'] == 'SE':
+      return dict(
+          zip(
+            ["sample"],
+            config['data'][wildcards.seqtype][wildcards.replicate]
+          )
+      )
+    elif config['data'][wildcards.seqtype+'_readtype'] == 'PE':
+      return {
+          "sample": [config['data'][wildcards.seqtype][wildcards.group][0], 
+                     config['data'][wildcards.seqtype][wildcards.group][1]]  
+      }
+
+def get_splitfastq_input(wildcards):
+  if config['preproc']['activate']:
+    if config['data']['rnaseq_readtype'] == 'SE':
+      return expand("results/{sample}/rnaseq/preproc/reads.fq.gz", **wildcards)
+    elif config['data']['rnaseq_readtype'] == 'PE':  # PE
+      return expand("results/{sample}/rnaseq/reads/{group}_preproc_{readtype}.fq.gz",
+                    readtype=["r1", "r2"],
+                    group = wildcards.group,
+                    sample = wildcards.sample)
+
+  else:   # no pre-processing has been performed
+    return rnaseq_input[wildcards.sample]
+
+
+def aggregate_align(wildcards):
+    # make sure that all samples are processed in checkpoint - split fastq file
+    checkpoint_output = checkpoints.splitfastq.get(**wildcards).output[0]
+    return expand("results/{sample}/rnaseq/align/{group}/reads_{i}.bam",
+        sample=wildcards.sample,
+        group=wildcards.group,
+        i=glob_wildcards(os.path.join(checkpoint_output, "r1/reads_{i}.fq.gz")).i)
+
+
+def get_dna_align_input(wildcards):
+  if config['preproc']['activate']:
+    if config['data'][wildcards.seqtype+'_readtype'] == 'SE':
+      return expand("results/{sample}/dnaseq/preproc/reads.fq.gz", **wildcards)
+    elif config['data'][wildcards.seqtype+'_readtype'] == 'PE':  # PE
+      return expand("results/{sample}/dnaseq/reads/{group}_preproc_{readtype}.fq.gz",
+                    readtype=["r1", "r2"],
+                    group = wildcards.group,
+                    sample = wildcards.sample)
+
+  else:   # no pre-processing has been performed
+    return rnaseq_input[wildcards.sample]
+
+
+
+def get_readgroups_input(wildcards):
+  # return only bam from STAR align
+  if config['data'][wildcards.seqtype+'_filetype'] in ['.fq','.fastq']:
+    return ["results/{sample}/{seqtype}/align/{group}_ready.bam".format(**wildcards)]
+
+  elif config['data']['rnaseq_readtype'] in ['.bam']:
+    val = []
+    val.append(config['data']['rnaseq'][wildcards.replicate][wildcards.sample])
+    val.append(extend("results/{sample}/{seqtype}/align/{group}/ready.bam",
+        sample=wildcards.sample,
+        seqtype=wildcards.seqtype,
+        group=wildcards.group))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 config['data'] = data_structure(config['data'])
 ic(config['data'])
@@ -125,24 +217,10 @@ ic(config['data'])
 
 rnaseq_filetype = ".bam"
 
-def get_splitfastq_input(wildcards):
-  if config['preproc']['activate']:
-    if config['data'][wildcards.seqtype] == 'SE':
-      return expand("results/{sample}/{seqtype}/preproc/reads.fq.gz", **wildcards)
-    elif config['data'][wildcards.seqtype] == 'PE':  # PE
-      return expand("results/{sample}/reads/{seqtype}/{replicate}_preproc_{readtype}.fq.gz",
-                    readtype=["r1", "r2"],
-                    seqtype=wildcards.seqtype,
-                    replicate = wildcards.replicate,
-                    sample = wildcards.sample)
-
-  else:   # no pre-processing has been performed
-    return rnaseq_input[wildcards.sample]
-
 
 def get_splitfastq_input_PE(wildcards):
   if config['preproc']['activate']:
-    return expand("results/{sample}/rnaseq/reads/inputreads_{readtype}.fq.gz",
+    return expand("results/{sample}/rnas/reads/inputreads_{readtype}.fq.gz",
         readtype=["r1", "r2"],
         **wildcards
     )
@@ -154,11 +232,6 @@ def get_splitfastq_input_PE(wildcards):
 # input for alignment w/ DNAseq data
 def get_align_input_dnaseq(wildcards):
   if config['preproc']['activate']:
-
-
-
-
-
 
     if config['data']['dnaseq_readtype'] == 'SE':
       return expand("results/{sample}/dnaseq/reads/inputreads.fq.gz", **wildcards)
@@ -218,26 +291,12 @@ def get_align_input(wildcards):
 #    aln = "results/{sample}/rnaseq/align/{replicate}/reads_{i}.bam",
 
 
-def get_readgroups_input(wildcards):
-  # return only bam from STAR align
-  if config['data']['rnaseq_filetype'] in ['.fq','.fastq']:
-    return ["results/{sample}/rnaseq/align/{replicate}_ready.bam".format(**wildcards)]
-  elif config['data']['rnaseq_readtype'] in ['.bam']:
-    val = []
-    val.append(config['data']['rnaseq'][wildcards.replicate][wildcards.sample])
-    val.append(extend("results/{sample}/rnaseq/align/{replicate}/ready.bam",
-        sample=wildcards.sample,
-        replicate=wildcards.replicate))
 
 
 
-def aggregate_alignments_fastq(wildcards):
-    # make sure that all samples are processed in checkpoint - split fastq file
-    checkpoint_output = checkpoints.splitfastq.get(**wildcards).output[0]
-    return expand("results/{sample}/rnaseq/align/{replicate}/splt/reads_{i}.bam",
-        sample=wildcards.sample,
-        replicate=wildcards.replicate,
-        i=glob_wildcards(os.path.join(checkpoint_output, "r1/reads_{i}.fq.gz")).i)
+
+
+
 
 def aggregate_alignments_pe(wildcards):
     # make sure that all samples are processed in checkpoint - split fastq file
@@ -246,13 +305,17 @@ def aggregate_alignments_pe(wildcards):
         sample=wildcards.sample,
         i=glob_wildcards(os.path.join(checkpoint_output, "inputreads_{i}.fq.gz")).i)
 
-# aggregate results from STAR alignment
-def aggregate_alignments(wildcards):
-    # make sure that all samples are processed in checkpoint - split fastq file
-    checkpoint_output = checkpoints.split_bamfile_RG.get(**wildcards).output[0]
-    return expand("results/{sample}/rnaseq/align/bamfiles/{readgroup}.bam",
-        sample=wildcards.sample,
-        readgroup=glob_wildcards(os.path.join(checkpoint_output, "{readgroup}.bam")).readgroup)
+## aggregate results from STAR alignment
+#def aggregate_alignments(wildcards):
+    ## make sure that all samples are processed in checkpoint - split fastq file
+
+
+
+
+    #checkpoint_output = checkpoints.split_bamfile_RG.get(**wildcards).output[0]
+    #return expand("results/{sample}/rnaseq/align/bamfiles/{readgroup}.bam",
+        #sample=wildcards.sample,
+        #readgroup=glob_wildcards(os.path.join(checkpoint_output, "{readgroup}.bam")).readgroup)
 
 
 # getting input starting from align
