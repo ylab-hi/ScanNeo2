@@ -1,3 +1,6 @@
 [submodule "workflow/scripts/transindel"]
 	path = workflow/scripts/transindel
 	url = https://github.com/cauyrd/transIndel.git
+[submodule "workflow/scripts/scanexitron"]
+	path = workflow/scripts/scanexitron
+	url = https://github.com/ylab-hi/ScanExitron.git
