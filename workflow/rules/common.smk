@@ -1,6 +1,5 @@
 import os
 import glob
-from icecream import ic
 from pathlib import Path
 
 def data_structure(data):
@@ -19,7 +18,6 @@ def handle_seqfiles(seqdata):
   # iterate over replicates
   for rpl in seqdata.keys():
     files = [Path(file) for file in seqdata[rpl].split(' ')]
-    ic(files)
     if len(files) == 1:  # SE
       f1_ext = get_file_extension(files[0])
       if f1_ext in ['.fq', '.fastq', '.bam']:
@@ -114,16 +112,50 @@ def get_qc_input_fwd(wildcards):
 def get_qc_input_rev(wildcards):
   return config['data'][wildcards.seqtype][wildcards.group][1]
 
+def get_longindels(wildcards):
+  #indels = []
+  #if config['data']['dnaseq'] is not None:
+    #if config['indel']['mode'] == 1:
+      #indels += expand("results/{sample}/{seqtype}/indel/transindel/{group}_sliprem.vcf", 
+        #sample=config['data']['name'], 
+        #seqtype='dnaseq',
+        #group=list(config['data']['dnaseq'].keys()))
+
+  indels = []
+  if config['data']['rnaseq'] is not None:
+      indels += expand("results/{sample}/{seqtype}/indel/transindel/{group}_sliprem.vcf",
+        sample=config['data']['name'], 
+        seqtype='rnaseq', 
+        group=list(config['data']['rnaseq'].keys()))
+
+  return indels
+
+def get_shortindels(wildcards):
+  indels=[]
+  if config['indel']['mode'] in ['RNA','BOTH']:
+    indels += expand("results/{sample}/{seqtype}/indel/mutect2/{group}_variants.flt.vcf",
+      sample=config['data']['name'], 
+      seqtype='rnaseq',
+      group=list(config['data']['rnaseq'].keys()))
+  
+  if config['indel']['mode'] in ['DNA','BOTH']:
+    indels += expand("results/{sample}/{seqtype}/indel/mutect2/{group}_variants.flt.vcf",
+      sample=config['data']['name'], 
+      seqtype='dnaseq',
+      group=list(config['data']['dnaseq'].keys()))
+
+  return indels
+
+
 # returns the reads (raw/preprocessed) for a given sample
 def get_preproc_input(wildcards):
   if config['preproc']['activate']:
     if config['data'][wildcards.seqtype+'_readtype'] == 'SE':
-      return dict(
-          zip(
-            ["sample"],
-            config['data'][wildcards.seqtype][wildcards.replicate]
-          )
-      )
+      print(config['data'][wildcards.seqtype][wildcards.group])
+      return {
+        config['data'][wildcards.seqtype][wildcards.group]
+      }
+
     elif config['data'][wildcards.seqtype+'_readtype'] == 'PE':
       return {
           "sample": [config['data'][wildcards.seqtype][wildcards.group][0], 
@@ -135,13 +167,35 @@ def get_splitfastq_input(wildcards):
     if config['data']['rnaseq_readtype'] == 'SE':
       return expand("results/{sample}/rnaseq/preproc/reads.fq.gz", **wildcards)
     elif config['data']['rnaseq_readtype'] == 'PE':  # PE
-      return expand("results/{sample}/rnaseq/reads/{group}_preproc_{readtype}.fq.gz",
+      return expand("results/{sample}/rnaseq/reads/{group}_{readtype}_preproc.fq.gz",
                     readtype=["r1", "r2"],
                     group = wildcards.group,
                     sample = wildcards.sample)
 
   else:   # no pre-processing has been performed
     return rnaseq_input[wildcards.sample]
+
+def get_star_input(wildcards):
+  if config['preproc']['activate']:
+    if config['data']['rnaseq_readtype'] == 'SE':
+      return expand("results/{sample}/rnaseq/preproc/reads.fq.gz", **wildcards)
+    elif config['data']['rnaseq_readtype'] == 'PE':  # PE
+      return dict(
+          zip(
+            ["fq1", "fq2"],
+            expand("results/{sample}/rnaseq/reads/{group}_{readtype}_preproc.fq.gz",
+                    readtype=["r1", "r2"],
+                    group = wildcards.group,
+                    sample = wildcards.sample)
+            )
+      )
+
+
+  else:   # no pre-processing has been performed
+    return rnaseq_input[wildcards.sample]
+
+
+
 
 
 def aggregate_align(wildcards):
@@ -155,10 +209,10 @@ def aggregate_align(wildcards):
 
 def get_dna_align_input(wildcards):
   if config['preproc']['activate']:
-    if config['data'][wildcards.seqtype+'_readtype'] == 'SE':
-      return expand("results/{sample}/dnaseq/preproc/reads.fq.gz", **wildcards)
-    elif config['data'][wildcards.seqtype+'_readtype'] == 'PE':  # PE
-      return expand("results/{sample}/dnaseq/reads/{group}_preproc_{readtype}.fq.gz",
+    if config['data']['dnaseq_readtype'] == 'SE':
+      return expand("results/{sample}/dnaseq/reads/{group}_preproc.fq.gz", **wildcards)
+    elif config['data']['dnaseq_readtype'] == 'PE':  # PE
+      return expand("results/{sample}/dnaseq/reads/{group}_{readtype}_preproc.fq.gz",
                     readtype=["r1", "r2"],
                     group = wildcards.group,
                     sample = wildcards.sample)
@@ -167,11 +221,10 @@ def get_dna_align_input(wildcards):
     return rnaseq_input[wildcards.sample]
 
 
-
 def get_readgroups_input(wildcards):
   # return only bam from STAR align
   if config['data'][wildcards.seqtype+'_filetype'] in ['.fq','.fastq']:
-    return ["results/{sample}/{seqtype}/align/{group}_ready.bam".format(**wildcards)]
+    return ["results/{sample}/{seqtype}/align/{group}_final_STAR.bam".format(**wildcards)]
 
   elif config['data']['rnaseq_readtype'] in ['.bam']:
     val = []
@@ -212,7 +265,6 @@ def get_readgroups_input(wildcards):
 
 
 config['data'] = data_structure(config['data'])
-ic(config['data'])
 
 
 rnaseq_filetype = ".bam"
@@ -263,7 +315,6 @@ def get_align_input(wildcards):
     if rnaseq_readtype == "se":
       return expand("results/{sample}/rnaseq/reads/inputreads.fq.gz", **wildcards)
     else:  # pe
-      ic("in here")
       return dict(
           zip(
               ["fq1", "fq2"],
