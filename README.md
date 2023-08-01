@@ -14,25 +14,30 @@ In principle, Scanneo2 aims to resolve its dependencies automatically and requir
 
 ## Quickstart
 
-Install `snakemake` and `snakedeploy`
+Install the [Mamba](https://github.com/conda-forge/miniforge#mambaforge)
+
+`Snakemake` and `Snakedeploy` will be installed automatically by the following command
+
 ```
-mamba env create --file https://github.com/ylab-hi/ScanNeo2/blob/devel/environment.yml
+mamba env create --file https://raw.githubusercontent.com/ylab-hi/ScanNeo2/main/environment.yml
 mamba activate scanneo2
 ```
+
 Deploy Scanneo2
 ```
 mkdir -p /path/to/working/directory/
 cd /path/to/working/directory/
 snakedeploy deploy-workflow https://github.com/ylab-hi/scanneo2 . --tag v0.1.0
 ```
+
 Configure ScanNeo2 by modifying `config/config.yml`
 
 Run the workflow
 ```
-cd scanneo
+cd /path/to/working/directory/
 snakemake --cores all --use-conda
 ```
-Please consult the [wiki](https://github.com/ylab-hi/ScanNeo2/wiki) for detailed instruction and explanations.
+Please consult the [wiki](https://github.com/ylab-hi/ScanNeo2/wiki) for detailed instructions and explanations on the config file.
 
 ### Docker
 
