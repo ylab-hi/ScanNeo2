@@ -62,4 +62,4 @@ ScanNeo2 is licensed under MIT License.
 
 ## Contact
 
-If you have any issues or queries about ScanNeo2, please [raise an issue on GitHub](https://github.com/ylab-hi/ScanNeo2/issues/new) or contact us at [richard.schaefer@northwestern.edu](richard.schaefer@northwestern.edu).
+If you have any issues or queries about ScanNeo2, please [raise an issue on GitHub](https://github.com/ylab-hi/ScanNeo2/issues/new) or contact us at [richard.schaefer@northwestern.edu](mailto:richard.schaefer@northwestern.edu).
