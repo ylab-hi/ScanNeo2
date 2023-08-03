@@ -1,5 +1,3 @@
-# ScanNeo2
-
 -<div align="left">
     <h1>ScanNeo2</h1>
     <img src="https://img.shields.io/badge/snakemake-≥6.4.1-brightgreen.svg">
