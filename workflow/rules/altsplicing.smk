@@ -1,21 +1,23 @@
 rule spladder:
     input:
-        bam = "results/{sample}/rnaseq/align/ready.bam",
-        bamidx = "results/{sample}/rnaseq/align/ready.bam.bai"
+        bam = "results/{sample}/rnaseq/align/{group}_final_STAR.bam",
+        bamidx = "results/{sample}/rnaseq/align/{group}_final_STAR.bam.bai"
     output:
-        directory("results/{sample}/rnaseq/altsplicing/spladder/")
+        directory("results/{sample}/rnaseq/altsplicing/spladder/{group}")
     conda: 
         "../envs/spladder.yml"
     log:
-        "logs/{sample}/spladder/build.log"
+        "logs/{sample}/spladder/{group}_build.log"
     params:
     shell:
         """
-        spladder build -b {input.bam} \
-        -a {config[annotation]} -o {output} \
-        --filter-overlap-exons --no-primary-only \
-        --confidence 2 --quantify-graph \
-        --qmode all > {log} 2>&1
+          spladder build -b {input.bam} \
+              -a resources/refs/genome.gtf \
+              -o {output} --filter-overlap-exons \
+              --no-primary-only --confidence {config[altsplicing][confidence]} \
+              --iterations {config[altsplicing][iterations]} \
+              --ase-edge-limit {config[altsplicing][edgelimit]} \
+              --quantify-graph --qmode all > {log} 2>&1
         """
 
 rule splicing_to_vcf:
@@ -29,11 +31,11 @@ rule splicing_to_vcf:
         """
         """
 
-rule combine_splicing:
-    input:
-        expand("results/as/{sample}.vcf", sample=config["rnaseq"])
-    output:
-        "results/as/all.vcf"
-    shell:
-        """
-        """
+#rule combine_splicing:
+    #input:
+        #expand("results/as/{sample}.vcf", sample=config["rnaseq"])
+    #output:
+        #"results/as/all.vcf"
+    #shell:
+        #"""
+        #"""

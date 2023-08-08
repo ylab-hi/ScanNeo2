@@ -7,10 +7,6 @@ rule get_genome:
     log:
         "logs/get-genome.log",
     params:
-        species=config["ref"]["species"],
-        datatype="dna",
-        build=config["ref"]["build"],
-        release=config["ref"]["release"],
     shell:
         """
         curl -L -o - https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.fna.gz | gzip -d - >{output.genome}
@@ -61,7 +57,7 @@ rule star_index:
     output:
         directory("resources/refs/star/"),
     message:
-        "Creating STAR index",
+        "Creating STAR index"
     threads: config['threads']
     params:
         extra="--genomeSAindexNbases 5 ",

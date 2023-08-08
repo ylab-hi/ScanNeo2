@@ -1,8 +1,23 @@
 name: Linting
-run-name: ${{ github.actor }} is testing Scanneo2
+run-name: ${{ github.actor }} is testing ScanNeo2
 on: [push]
 jobs:
-  Linting:
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout with submodules
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - name: Formatting
+      uses: github/super-linter@v5
+      env:
+        VALIDATE_ALL_CODEBASE: false
+        DEFAULT_BRANCH: master
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VALIDATE_SNAKEMAKE_SNAKEFMT: true
+  linting:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -12,4 +27,40 @@ jobs:
           directory: '.tests'
           snakefile: 'workflow/Snakefile'
           args: '--lint --configfile .tests/integration/config_basic/config.yaml'
+
+
+  #run-workflow:
+    #runs-on: ubuntu-latest
+    #needs:
+      #- linting
+      #- formatting
+    #steps:
+    #- name: Checkout repository with submodules
+      #uses: actions/checkout@v3
+      #with:
+        #submodules: recursive
+    #- name: Test workflow (basic model, no batch_effects)
+      #uses: snakemake/snakemake-github-action@v1.22.0
+      #with:
+        #directory: .test
+        #snakefile: workflow/Snakefile
+        #args: "--configfile .test/config_basic/config.yaml --use-conda --show-failed-logs --cores 2 --conda-cleanup-pkgs cache"
+    #- name: Test report (basic model, no batch_effects)
+      #uses: snakemake/snakemake-github-action@v1.22.0
+      #with:
+        #directory: .test
+        #snakefile: workflow/Snakefile
+        #args: "--configfile .test/config_basic/config.yaml --report report.zip"
+    #- name: Test workflow (multiple variables_of_interest, include batch_effects)
+      #uses: snakemake/snakemake-github-action@v1.22.0
+      #with:
+        #directory: .test
+        #snakefile: workflow/Snakefile
+        #args: "--configfile .test/config_complex/config.yaml --use-conda --show-failed-logs --cores 2 --conda-cleanup-pkgs cache"
+    #- name: Test report (multiple variables_of_interest, include batch_effects)
+      #uses: snakemake/snakemake-github-action@v1.22.0
+      #with:
+        #directory: .test
+        #snakefile: workflow/Snakefile
+        #args: "--configfile .test/config_complex/config.yaml --report report.zip"b
 

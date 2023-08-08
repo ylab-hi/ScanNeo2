@@ -2,22 +2,10 @@ name: scanneo2
 channels:
  - bioconda
  - conda-forge
+ - anaconda
 dependencies:
- - python=3.10
- - snakemake=7.25.0
- - samtools=1.16.1
- - star=2.7.10b
- - picard=3.0.0
- - arriba=2.4.0
- - pysam=0.21.0
- - pybedtools=0.9.0
- - pyensembl=2.1.0
- - biopython=1.81
- - graphviz=2.50.0
- - git 
- - pip
- - pip:
-   - spladder==3.0.4
-   - snakemake-wrapper-utils==0.5.3
-
+ - snakemake
+ - singularity
+ - snakemake-wrapper-utils
+ - snakedeploy
 
