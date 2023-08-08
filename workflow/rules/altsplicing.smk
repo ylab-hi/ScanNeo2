@@ -1,7 +1,7 @@
 rule spladder:
     input:
-        bam = "results/{sample}/rnaseq/align/{group}_ready.bam",
-        bamidx = "results/{sample}/rnaseq/align/{group}_ready.bam.bai"
+        bam = "results/{sample}/rnaseq/align/{group}_final_STAR.bam",
+        bamidx = "results/{sample}/rnaseq/align/{group}_final_STAR.bam.bai"
     output:
         directory("results/{sample}/rnaseq/altsplicing/spladder/{group}")
     conda: 
@@ -11,11 +11,13 @@ rule spladder:
     params:
     shell:
         """
-        spladder build -b {input.bam} \
-        -a resources/refs/genome.gtf -o {output} \
-        --filter-overlap-exons --no-primary-only \
-        --confidence 2 --quantify-graph \
-        --qmode all > {log} 2>&1
+          spladder build -b {input.bam} \
+              -a resources/refs/genome.gtf \
+              -o {output} --filter-overlap-exons \
+              --no-primary-only --confidence {config[altsplicing][confidence]} \
+              --iterations {config[altsplicing][iterations]} \
+              --ase-edge-limit {config[altsplicing][edgelimit]} \
+              --quantify-graph --qmode all > {log} 2>&1
         """
 
 rule splicing_to_vcf:

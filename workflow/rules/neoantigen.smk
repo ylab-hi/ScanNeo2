@@ -35,4 +35,12 @@ rule final_filtering:
     shell:
         """
         """
+
+
+rule all:
+  output:
+    "results/{sample}/neoantigens/result.tsv"
+
+
+
         

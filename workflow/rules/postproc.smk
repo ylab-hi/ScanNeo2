@@ -1,12 +1,12 @@
-rule samtools_postproc:
+rule postproc:
   input:
-    "results/{sample}/{seqtype}/align/{group}_aligned.bam"
+    "results/{sample}/rnaseq/align/{group}_aligned.bam"
   output:
-    "results/{sample}/{seqtype}/align/{group}_ready.bam"
+    "results/{sample}/rnaseq/align/{group}_ready.bam"
   conda:
     "../envs/samtools.yml"
   log:
-    "logs/{sample}/postproc/{seqtype}_{group}.log"
+    "logs/{sample}/postproc/rnaseq_{group}.log"
   threads: 6
   shell:
     """
@@ -18,6 +18,21 @@ rule samtools_postproc:
       | samtools markdup -r -@ {threads} - {output} > {log} 2>&1 
       samtools index {output}
     """
+
+rule postproc_bam_index:
+  input:
+    "results/{sample}/rnaseq/align/{group}_ready.bam"
+  output:
+    "results/{sample}/rnaseq/align/{group}_ready.bam.bai"
+  conda:
+    "../envs/samtools.yml"
+  log:
+    "logs/{sample}/postproc/index/rnaseq_{group}.log"
+  shell:
+    """
+      samtools index {input} > {log} 2>&1
+    """
+
 
 ## retrieve readgroups from bam file
 rule get_readgroups:
