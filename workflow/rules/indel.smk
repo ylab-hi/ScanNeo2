@@ -1,6 +1,5 @@
 import os
 from snakemake.remote import HTTP
-
 rule detect_long_indel_ti_build_RNA:
     input:
         bam = "results/{sample}/rnaseq/align/{group}_final_BWA.bam",
@@ -154,7 +153,6 @@ rule select_short_indels_m2:
     wrapper:
         "v1.31.1/bio/gatk/selectvariants"
 
-
 rule combine_short_indels_m2:
   input:
     get_shortindels,
@@ -204,16 +202,4 @@ rule combine_snvs_m2:
     """
       python workflow/scripts/combine_vcf.py '{input}' snv {output} > {log} 2>&1
     """
-
-
-
-
-
-
-
-
-
-
-
-
 

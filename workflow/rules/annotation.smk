@@ -141,7 +141,6 @@ rule variants_to_peptides:
 #rule vep_somatic_short_indel:
   #input:
     #calls="results/{sample}/variants/somatic.short.indels.vcf",
-    #plugins="resources/vep/plugins",
     #fasta="resources/refs/genome.fasta",
     #fai="resources/refs/genome.fasta.fai", # fasta index
     #gff="resources/refs/genome.gtf.gz",
