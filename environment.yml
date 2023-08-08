@@ -8,3 +8,4 @@ dependencies:
  - singularity
  - snakemake-wrapper-utils
  - snakedeploy
+

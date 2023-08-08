@@ -1,6 +1,7 @@
 import os
 from snakemake.remote import HTTP
 
+
 rule detect_long_indel_ti_build_RNA:
     input:
         bam = "results/{sample}/rnaseq/align/{group}_final_BWA.bam",
@@ -82,7 +83,6 @@ rule combine_longindels:
       python workflow/scripts/combine_vcf.py '{input}' long_indel {output} > {log} 2>&1
     """
 
-
 # detects short somatic variants (SNVs and indels) using mutect2
 rule detect_short_indels_m2:
     input:
@@ -136,6 +136,7 @@ rule filter_short_indels:
         "v1.31.1/bio/gatk/filtermutectcalls"
 
 
+
 rule select_short_indels_m2:
     input:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.flt.vcf",
@@ -153,7 +154,6 @@ rule select_short_indels_m2:
         mem_mb=1024,
     wrapper:
         "v1.31.1/bio/gatk/selectvariants"
-
 
 rule combine_short_indels_m2:
   input:
@@ -204,16 +204,6 @@ rule combine_snvs_m2:
     """
       python workflow/scripts/combine_vcf.py '{input}' snv {output} > {log} 2>&1
     """
-
-
-
-
-
-
-
-
-
-
 
 
 

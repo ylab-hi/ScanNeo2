@@ -195,6 +195,3 @@ rule hla_genotyping_RNA:
 
 
 
-
-
-

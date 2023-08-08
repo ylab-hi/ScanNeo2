@@ -79,10 +79,6 @@ indel:
 
 hlatyping:
   mode: DNA  # DNA, RNA or BOTH
-
-
-
-
   
 # if no readgroups file are provided 
 readgroups: 
@@ -91,16 +87,11 @@ mhc:
   len_class_i: 8-11
   len_class_ii: 13-25
   
-
-
-
-
 ref:
   species: homo_sapiens
   release: 109
   build: GRCh38
   
-
 ### snp
 snp:
   activate: true

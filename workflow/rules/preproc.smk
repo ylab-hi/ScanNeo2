@@ -1,3 +1,4 @@
+
 rule fastqc_single_end:
     input:
       get_qc_input
