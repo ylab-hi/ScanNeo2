@@ -17,7 +17,7 @@ def main():
         if '_sliprem.vcf' in str(Path(v).name):
             rpl = Path(v).name.split('_sliprem.vcf')[0]
         elif '_somatic.short.indels.vcf' in str(Path(v).name):
-            rpl = Path(v).name.split('_somatic.short.indel.vcf')[0]
+            rpl = Path(v).name.split('_somatic.short.indels.vcf')[0]
         elif '_somatic.snvs.vcf' in str(Path(v).name):
             rpl = Path(v).name.split('_somatic.snvs.vcf')[0]
         elif '_fusions.vcf' in str(Path(v).name):
