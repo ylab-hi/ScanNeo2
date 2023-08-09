@@ -25,14 +25,16 @@ rule variants_to_peptides:
     "logs/vep/{sample}_variants_to_peptides.log"
   conda:
     "../envs/variants_to_peptides.yml"
+  params:
+    length="-l {config["priorization"]["mhc_i"]["len"]}"
   shell:
     """
       python3 workflow/scripts/variants_to_peptide.py \
           -p {input.pep} \
           -v {input.var} \
           -o {output} \
-          -a {input.alleles}
-          -l {config['priorization']['mhc_i']['len']}
+          -a {input.alleles} \
+          {params.length} > {log}
     """
 
 rule all:

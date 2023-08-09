@@ -88,7 +88,7 @@ if config['data']['dnaseq'] is not None:
         threads: config['threads']
         shell:
           """
-            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna {inputr.r1} \
+            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna {input.r1} \
                 | samtools view -h -F 4 -b1 - | samtools sort - -o {output.fwd} > {log}
             samtools index {output.fwd}
             yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna {input.r2} \
