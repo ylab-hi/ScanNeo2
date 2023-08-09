@@ -1,0 +1,13 @@
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+  - r
+dependencies:
+  - samtools
+  - pysam
+  - htseq
+  - pyfaidx
+  - pip
+  - pip:
+    - vcfpy==0.13.6

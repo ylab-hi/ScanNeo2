@@ -102,7 +102,7 @@ if config['data']['rnaseq'] is not None:
       rule get_hla_filtering_input_single_RNA:
         input:
           get_hla_flt_rna_se,
-          dna=multiext("resources/hla/yara/idx/dna", 
+          dna=multiext("resources/hla/yara/idx/rna", 
             ".lf.drp", ".lf.drs", ".lf.drv", 
             ".lf.pst", ".rid.concat", ".rid.limits",
             ".sa.ind", ".sa.len", ".sa.val", 
@@ -131,7 +131,7 @@ if config['data']['rnaseq'] is not None:
       rule get_hla_filtering_input_paired_RNA:
         input:
           get_hla_flt_rna_pe,
-          dna=multiext("resources/hla/yara/idx/dna", 
+          dna=multiext("resources/hla/yara/idx/rna", 
             ".lf.drp", ".lf.drs", ".lf.drv", 
             ".lf.pst", ".rid.concat", ".rid.limits",
             ".sa.ind", ".sa.len", ".sa.val", 
@@ -187,8 +187,27 @@ rule hla_genotyping_RNA:
     """
       OptiTypePipeline.py --input {input} \
           --outdir results/{wildcards.sample}/hla/ \
-          --prefix {wildcards.group}_dna --dna > {log}
+          --prefix {wildcards.group}_rna --rna > {log}
     """
+
+
+rule merge_alleles:
+  input:
+    get_alleles,
+  output:
+    "results/{sample}/hla/alleles.tsv"
+  message:
+    "Merging the detected alleles in {wildcards.sample}"
+  log:
+    "logs/{sample}/hla/merge_alleles"
+  conda:
+    "../envs/basic.yml"
+  shell:
+    """
+      python3 workflow/scripts/merge_alleles.py '{input}' \
+          {output} 2> {log}
+    """
+
 
 
 
