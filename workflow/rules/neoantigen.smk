@@ -26,7 +26,7 @@ rule variants_to_peptides:
   conda:
     "../envs/variants_to_peptides.yml"
   params:
-    length="-l {config["priorization"]["mhc_i"]["len"]}"
+    length="-l {config['priorization']['mhc_i']['len']}"
   shell:
     """
       python3 workflow/scripts/variants_to_peptide.py \
