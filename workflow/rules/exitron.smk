@@ -28,6 +28,22 @@ rule prepare_cds:
           | tr -d '";' > {output}
     """
 
+rule prepare_scanexitron_config:
+  output:
+    "scripts/scanexitron/config.ini"
+  log:
+    "logs/prepare_scanexitron_config.log"
+  conda:
+    "../envs/basic.yml"
+  shell:
+    """
+      python3 workflow/scripts/prep_scanexitron_config.py \
+          "resources/refs/hg38.fa" \
+          "resources/refs/gencode.v37.annotation.gtf" \
+          "resources/refs/CDS.bed" \
+          {output} > {log}
+    """
+
 rule scanexitron:
     input: 
         bam = "results/{sample}/rnaseq/align/{group}_final_STAR.bam",
@@ -45,18 +61,18 @@ rule scanexitron:
     shell:
       "python3 workflow/scripts/scanexitron/ScanExitron.py \
           -i {input.bam} \
-          -c /projects/b1171/sej9799/scanneo2/workflow/scripts/scanexitron/config.ini \
+          -c resources/scanexitron_config.ini \
           -r hg38"
 
 rule exitron_to_vcf:
     input:
-        "results/exitron/{sample}/res.exitron"
+        "results/exitron/{sample}/{group}.exitron"
     output:
-        "results/exitron/{sample}/res.vcf"
+        "results/exitron/{sample}/{group}.vcf"
     log:
-        "logs/exitron2vcf_{sample}.log"
+        "logs/exitron2vcf_{sample}_{group}.log"
     shell:
-        "workflow/scripts/exitron2vcf.py {config[refgen]} {input} {output} 2> logs/error.err"
+        "workflow/scripts/exitron2vcf.py resources/refs/genome.fasta {input} {output} 2> logs/error.err"
 
 #rule combine_exitrons:
     #input:

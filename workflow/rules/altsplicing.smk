@@ -22,7 +22,7 @@ rule spladder:
 
 rule splicing_to_vcf:
     input:
-        "results/as/{sample}/merge_graphs.txt"
+      "results/{sample}/rnaseq/altsplicing/spladder/{group}/merge_graphs_{type}_{confidence}.confirmed.txt.gz"
     output:
         "results/as/{sample}.vcf"
     conda:

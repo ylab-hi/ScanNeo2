@@ -258,3 +258,4 @@ rule apply_VSQR_INDELS_final:
     mem_mb=1024,
   wrapper:
     "v1.31.1/bio/gatk/applyvqsr"
+

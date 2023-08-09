@@ -103,7 +103,7 @@ def all_identical(l):
 
 # load up the config
 config['data'] = data_structure(config['data'])
-print(config['data'])
+#print(config['data'])
 
 # pre-processing for RNAseq data
 def get_raw_reads(wildcards):
@@ -173,6 +173,25 @@ def hlatyping_input_RNA(wildcards):
                             sample = wildcards.sample,
                             group = wildcards.group,
                             readtype = ["r1","r2"])}
+
+# returns list of hla typing results for the given sample and group
+def get_alleles(wildcards):
+  values = []
+  if config['hlatyping']['mode'] in ['DNA', 'BOTH']:
+    for key in config['data']['dnaseq'].keys():
+      if key not in config['data']['normal']:
+        values += expand("results/{sample}/hla/{group}_dna_result.tsv",
+                           sample = wildcards.sample,
+                           group = key)
+
+  if config['hlatyping']['mode'] in ['RNA', 'BOTH']:
+    for key in config['data']['rnaseq'].keys():
+      if key not in config['data']['normal']:
+        values += expand("results/{sample}/hla/{group}_rna_result.tsv",
+                           sample = wildcards.sample,
+                           group = key)
+
+  return values
 
 
 #### Pre-processign
@@ -551,45 +570,3 @@ def get_variants(wildcards):
     return variants
 
 
-
-
-
-# determine the bamfiles that contains readgroups
-#def get_bams_readsgroups(wildcards):
-    
-#    fq1 = "results/{sample}/rnaseq/reads/{replicate}/r1/reads_{i}.fq.gz",
-#    aln = "results/{sample}/rnaseq/align/{replicate}/reads_{i}.bam",
-
-#def aggregate_alignments_pe(wildcards):
-    ## make sure that all samples are processed in checkpoint - split fastq file
-    #checkpoint_output = checkpoints.splitfastq_pe.get(**wildcards).output[0]
-    #return expand("results/{sample}/rnaseq/align/bamfiles/inputreads_{i}.bam",
-        #sample=wildcards.sample,
-        #i=glob_wildcards(os.path.join(checkpoint_output, "inputreads_{i}.fq.gz")).i)
-#>>>>>>> f6e9b1d216b991a803df6f1f6dedc9211dccfd3b
-
-## aggregate results from STAR alignment
-#def aggregate_alignments(wildcards):
-    ## make sure that all samples are processed in checkpoint - split fastq file
-
-
-
-
-
-    #checkpoint_output = checkpoints.split_bamfile_RG.get(**wildcards).output[0]
-    #return expand("results/{sample}/rnaseq/align/bamfiles/{readgroup}.bam",
-        #sample=wildcards.sample,
-        #readgroup=glob_wildcards(os.path.join(checkpoint_output, "{readgroup}.bam")).readgroup)
-
-
-## aggregate results from STAR alignment
-#def aggregate_alignments(wildcards):
-    ## make sure that all samples are processed in checkpoint - split fastq file
-
-
-
-
-    #checkpoint_output = checkpoints.split_bamfile_RG.get(**wildcards).output[0]
-    #return expand("results/{sample}/rnaseq/align/bamfiles/{readgroup}.bam",
-        #sample=wildcards.sample,
-        #readgroup=glob_wildcards(os.path.join(checkpoint_output, "{readgroup}.bam")).readgroup)
