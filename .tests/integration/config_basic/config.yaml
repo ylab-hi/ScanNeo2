@@ -1,55 +1,99 @@
-refgen: testdata/GRCh38.p13.genome.fa
-annotation: testdata/GRCh38_chr1.gtf  
+### General
+threads: 30
+mapq: 30  # overall required mapping quality
+basequal: 20  # overall required base quality 
 
-dnaseq:
-rnaseq: LNCAP_bam/G28033.LNCaP_clone_FGC.1.bam
+### data
+data:
+  name:  patient2_test
+  dnaseq: 
+    dna_normal: TESLA_testdata/patient2/WES/TESLA_9_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_9_2.fastq.gz
+    dna_tumor: TESLA_testdata/patient2/WES/TESLA_10_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_10_2.fastq.gz
+  rnaseq:
+    rna_tumor: TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz
+  normal: dna_normal
 
+custom:
+  variants:
+  hlatyping:
+  readgroups: 
 
-preproc: true
+### pre-processing (only applied on fastq reads)
+preproc: 
+  activate: true  # whether (=true) or not (=false) to include pre-processing
+  minlen: 10
+  qual: 20
+  slidingwindow:
+    activate: true
+    wsize: 3
+    wqual: 20
 
+### alingment
+align:
+  minovlps: 10
+  chimsegmin: 20
+  chimoverhang: 10
+  chimmax: 50
+  chimmaxdrop: 30
 
+### variant calling
+# alternative splicing
+altsplicing:
+  activate: true # whether (=true) or not (=false) to include alternative splicing events
+  confidence: 3  # confidence level (1,2 or 3) - filtering of input alignments
+  iterations: 5 # number of iteratios (when adding intro edges) - increases sensitivity
+  edgelimit: 250  # limit max number of edges in graph - affects the runtime
 
-
-
-
-
-
-
-
-mapq: 30
-chimsegmin: 20
-threads: 50
-
-ref:
-  species: homo_sapiens
-  release: 109
-  build: GRCh38
+# exitron splicing
+exitronsplicing:
+  version: 1
+  activate: true # whether (=true) or not (=false) to include exitron-splicing events
+  ao: 3  # allele observation
+  pso: 0.05  # percent spliced out
   
-
-#### alternative splicing
-splicing:
-  activate: false   # whether (=true) or not (=false) to include splicing
-
-#### exitron 
-exitron:
-  activate: false
-  vcf: 
-
-### gene fusion
+# gene fusion
 genefusion:
-  activate: false
-  vcf:
+  activate: true # whether (=true) or not (=false) to include gene fusion events
+  maxevalue: 0.3
+  suppreads: 2  # all fusions with less than suppreads are discarded
+  maxsuppreads: 1000
+  maxidentity: 0.3  # genes with fraction of identity are discarded (homologs)
+  hpolymerlen: 6  # removes breakpoints adjacent to homopolymers of length
+  readthroughdist: 10000  # distance between breakpoints with less than distance
+  minanchorlen: 20  # removes fusions whose segments are less than minchimlen
+  splicedevents: 4  # fusions between genes need at least this many spliced breakpoints
+  maxkmer: 0.6  # remove reads with repetitive 3-mer that make up more than maxkmer
+  fraglen: 200 # mean fragment length
+  maxmismatch: 0.01
 
 ### indel
 indel:
-  activate: true
+  activate: true # whether (=true) or not (=false) to include indels
+  type: long # long, short, all
+  mode: BOTH  # DNA, RNA or BOTH - 
+  # strategy for optimizing posterior probability threshold
+  strategy: OPTIMAL_F_SCORE # OPTIMAL_F_SCORE, FALSE_DISCOVERY_RATE, CONSTANT 
+  fscorebeta: 1.0  # rel. weight of recall to precision (when OPTIMAL_F_SCORE is selected)
+  fdr: 0.05  # false discovery rate (when FALSE_DISCOVERY_RATE is selected)
+  sliplen: 8  # min number of reference bases to suspect slippage event
+  sliprate: 0.1  # frequency of slippage when it is supsected
+
+hlatyping:
+  mode: DNA  # DNA, RNA, BOTH, None
+
+priorization:
+  mhc_i: 
+    len: 8-11
+  mhc_ii:
+    len: 13-25
 
 
 
-### snp
-snp:
-  activate: true
-  vcf:
+
+
+
+
+
 
 
 
