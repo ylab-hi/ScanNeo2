@@ -21,16 +21,20 @@ rule spladder:
               --qmode all > {log} 2>&1
         """
 
-rule splicing_to_vcf:
-    input:
-      "results/{sample}/rnaseq/altsplicing/spladder/{group}/merge_graphs_{type}_{confidence}.confirmed.txt.gz"
-    output:
-        "results/as/{sample}.vcf"
-    conda:
-        "../envs/spladder.yml"
-    shell:
-        """
-        """
+#rule splicing_to_vcf:
+    #input:
+      #"results/{sample}/rnaseq/altsplicing/spladder/{group}/merge_graphs_{type}_{confidence}.confirmed.txt.gz"
+    #output:
+        #"results/as/{sample}.vcf"
+    #message:
+      #"Converting splicing events to VCF format"
+    #log:
+      #"logs/{sample}/spladder/{group}_vcf.log"
+    #conda:
+        #"../envs/spladder.yml"
+    #shell:
+        #"""
+        #"""
 
 #rule combine_splicing:
     #input:

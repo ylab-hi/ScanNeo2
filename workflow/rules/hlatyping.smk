@@ -1,18 +1,18 @@
 rule get_hla_panel:
-    output:
-        dna="resources/hla/hla_ref_dna.fasta",
-        rna="resources/hla/hla_ref_rna.fasta"
-    message:
-      "Downloading HLA reference panels"
-    conda:
-      "../envs/basic.yml"
-    log:
-      "logs/hla_panel.log"
-    shell:
-      """
-        curl -o {output.dna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_dna.fasta
-        curl -o {output.rna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_rna.fasta
-      """
+  output:
+    dna="resources/hla/hla_ref_dna.fasta",
+    rna="resources/hla/hla_ref_rna.fasta"
+  message:
+    "Downloading HLA reference panels"
+  conda:
+    "../envs/basic.yml"
+  log:
+    "logs/hla_panel.log"
+  shell:
+    """
+      curl -o {output.dna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_dna.fasta
+      curl -o {output.rna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_rna.fasta
+    """
 
 rule index_hla_panel:
     input:
@@ -77,8 +77,8 @@ if config['data']['dnaseq'] is not None:
             ".sa.ind", ".sa.len", ".sa.val", 
             ".txt.concat", ".txt.limits", ".txt.size"),
         output:
-          "results/{sample}/hla/{group}_flt_r1_dna.bam",
-          "results/{sample}/hla/{group}_flt_r2_dna.bam",
+          fwd="results/{sample}/hla/{group}_flt_r1_dna.bam",
+          rev="results/{sample}/hla/{group}_flt_r2_dna.bam",
         message:
           "Mapping HLA reads against reference"
         log:
@@ -88,12 +88,12 @@ if config['data']['dnaseq'] is not None:
         threads: config['threads']
         shell:
           """
-            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna {input[0]} \
-                | samtools view -h -F 4 -b1 - | samtools sort - -o {output[0]} > {log}
-            samtools index {output[0]}
-            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna {input[1]} \
-                | samtools view -h -F 4 -b1 - | samtools sort - -o {output[1]} >> {log}
-            samtools index {output[1]}
+            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna {inputr.r1} \
+                | samtools view -h -F 4 -b1 - | samtools sort - -o {output.fwd} > {log}
+            samtools index {output.fwd}
+            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna {input.r2} \
+                | samtools view -h -F 4 -b1 - | samtools sort - -o {output.rev} >> {log}
+            samtools index {output.rev}
           """
 
 

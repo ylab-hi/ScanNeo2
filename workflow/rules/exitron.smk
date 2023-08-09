@@ -65,14 +65,21 @@ rule scanexitron:
           -r hg38"
 
 rule exitron_to_vcf:
-    input:
-        "results/exitron/{sample}/{group}.exitron"
-    output:
-        "results/exitron/{sample}/{group}.vcf"
-    log:
-        "logs/exitron2vcf_{sample}_{group}.log"
-    shell:
-        "workflow/scripts/exitron2vcf.py resources/refs/genome.fasta {input} {output} 2> logs/error.err"
+  input:
+    "results/exitron/{sample}/{group}.exitron"
+  output:
+    "results/exitron/{sample}/{group}.vcf"
+  log:
+    "logs/exitron2vcf_{sample}_{group}.log"
+  conda:
+    "../envs/basic.yml"
+  shell:
+    """
+      workflow/scripts/exitron2vcf.py \
+        resources/refs/genome.fasta \
+        '{input}' \
+        {output} 2> {log}
+    """
 
 #rule combine_exitrons:
     #input:

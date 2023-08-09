@@ -152,10 +152,16 @@ def get_hla_flt_dna_se(wildcards):
 
 def get_hla_flt_dna_pe(wildcards):
   if config['preproc']['activate']:
-    return expand("results/{sample}/dnaseq/reads/{group}_{readtype}_preproc.fq.gz",
-                  group = wildcards.group, 
-                  sample = wildcards.sample, 
-                  readtype = ["r1","r2"])
+    return dict(
+      zip(
+        ["r1", "r2"],
+        expand("results/{sample}/dnaseq/reads/{group}_{readtype}_preproc.fq.gz",
+                group = wildcards.group, 
+                sample = wildcards.sample, 
+                readtype = ["r1","r2"])
+      )
+    )
+
   else:
     return config['data']['dnaseq'][wildcards.group]
 

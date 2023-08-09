@@ -37,8 +37,15 @@ rule fusions_to_vcf:
         "results/{sample}/rnaseq/genefusion/{group}_fusions.vcf"
     log:
         "logs/{sample}/genefusion/fusion_to_vcf_{group}.log"
+    conda:
+      "../envs/basic.yml"
     shell:
-        "workflow/scripts/convert_fusions_to_vcf.sh resources/refs/genome.fasta {input} {output} > {log} 2>&1"
+      """
+        workflow/scripts/convert_fusions_to_vcf.sh \
+            resources/refs/genome.fasta \
+            {input} \
+            {output} > {log} 2>&1
+      """
 
 rule combine_fusions:
   input:
