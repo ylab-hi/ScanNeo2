@@ -9,15 +9,16 @@ rule spladder:
     log:
         "logs/{sample}/spladder/{group}_build.log"
     params:
+      confidence = "--confidence {config[altsplicing][confidence]}",
+      iteration = "--iterations {config[altsplicing][iterations]}",
+      edgelimit = "--ase-edge-limit {config[altsplicing][edgelimit]}",
     shell:
         """
           spladder build -b {input.bam} \
               -a resources/refs/genome.gtf \
               -o {output} --filter-overlap-exons \
-              --no-primary-only --confidence {config[altsplicing][confidence]} \
-              --iterations {config[altsplicing][iterations]} \
-              --ase-edge-limit {config[altsplicing][edgelimit]} \
-              --quantify-graph --qmode all > {log} 2>&1
+              --no-primary-only --quantify-graph \
+              --qmode all > {log} 2>&1
         """
 
 rule splicing_to_vcf:

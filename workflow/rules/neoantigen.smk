@@ -15,7 +15,7 @@ rule download_prediction_tools:
 
 rule variants_to_peptides:
   input:
-    get_variants,
+    var=get_variants,
     pep="resources/refs/peptides.fasta",
     alleles="results/{sample}/hla/alleles.tsv"
 
@@ -29,7 +29,7 @@ rule variants_to_peptides:
     """
       python3 workflow/scripts/variants_to_peptide.py \
           -p {input.pep} \
-          -v {input[0]} \
+          -v {input.var} \
           -o {output} \
           -a {input.alleles}
           -l {config['priorization']['mhc_i']['len']}

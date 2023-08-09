@@ -1,10 +1,14 @@
 rule download_vep_plugins:
-    output:
-        directory("resources/vep/plugins")
-    params:
-        release=110
-    wrapper:
-        "v1.31.1/bio/vep/plugins"
+  output:
+    directory("resources/vep/plugins")
+  message:
+    "Downloading VEP plugins"
+  log:
+    "logs/vep/plugins.log"
+  params:
+    release=110
+  wrapper:
+    "v1.31.1/bio/vep/plugins"
 
 rule download_vep_cache:
   output:

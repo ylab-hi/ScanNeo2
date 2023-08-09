@@ -127,12 +127,12 @@ def get_qc_input_rev(wildcards):
 # returns the reads (raw/preprocessed) for a given sample
 def get_preproc_input(wildcards):
   if config['preproc']['activate']:
-    if config['data'][wildcards.seqtype+'_readtype'] == 'SE':
+    if config['data'][f"{wildcards.seqtype}_readtype"] == 'SE':
       return {
         config['data'][wildcards.seqtype][wildcards.group]
       }
 
-    elif config['data'][wildcards.seqtype+'_readtype'] == 'PE':
+    elif config['data'][f"{wildcards.seqtype_readtype"] == 'PE':
       return {
           "sample": [config['data'][wildcards.seqtype][wildcards.group][0], 
                      config['data'][wildcards.seqtype][wildcards.group][1]]  
@@ -257,10 +257,10 @@ def aggregate_aligned_rg(wildcards):
 
 def get_readgroups_input(wildcards):
   # return only bam from STAR align
-  if config['data'][wildcards.seqtype+'_filetype'] in ['.fq','.fastq']:
+  if config['data'][f'{wildcards.seqtype}_filetype'] in ['.fq','.fastq']:
     return ["results/{sample}/{seqtype}/align/{group}_final_STAR.bam".format(**wildcards)]
 
-  elif config['data'][wildcards.seqtype+'_filetype'] in ['.bam']:
+  elif config['data'][f'{wildcards.seqtype}_filetype'] in ['.bam']:
     val = []
     val.append(str(config['data']['rnaseq'][wildcards.group]))
     val += expand("results/{sample}/{seqtype}/align/{group}_final_STAR.bam",

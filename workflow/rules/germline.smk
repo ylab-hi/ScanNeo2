@@ -14,6 +14,10 @@ rule get_gatk_vqsr_training_sets:
     indel_mills_idx="resources/vqsr/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi"
   message:
     "Downloading training sets for calling high confidence variants"
+  log:
+    "logs/gatk_get_training)_sets.log"
+  conda:
+    "../envs/basic.yml"
   shell:
     """
     curl -L https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/hapmap_3.3.hg38.vcf.gz -o resources/vqsr/hapmap_3.3.hg38.vcf.gz
