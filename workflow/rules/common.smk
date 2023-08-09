@@ -132,7 +132,7 @@ def get_preproc_input(wildcards):
         config['data'][wildcards.seqtype][wildcards.group]
       }
 
-    elif config['data'][f"{wildcards.seqtype_readtype"] == 'PE':
+    elif config['data'][f"{wildcards.seqtype_readtype}"] == 'PE':
       return {
           "sample": [config['data'][wildcards.seqtype][wildcards.group][0], 
                      config['data'][wildcards.seqtype][wildcards.group][1]]  
