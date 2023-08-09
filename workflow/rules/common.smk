@@ -66,7 +66,6 @@ def get_reads(wildcards):
     if config['data'][wildcards.seqtype+'_readtype'] == 'SE':
       return config['data'][wildcards.seqtype][wildcards.replicate]
     elif config['data'][wildcards.seqtype+'_readtype'] == 'PE':
-      print("yes")
       return {"r1": "results/{sample}/{seqtype}/reads/{replicate}_preproc_r1.fq.gz",
               "r2": "results/{sample}/{seqtype}/reads/{replicate}_preproc_r2.fq.gz"}
 

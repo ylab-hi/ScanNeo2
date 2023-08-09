@@ -2,15 +2,17 @@ rule get_hla_panel:
     output:
         dna="resources/hla/hla_ref_dna.fasta",
         rna="resources/hla/hla_ref_rna.fasta"
+    message:
+      "Downloading HLA reference panels"
     conda:
-        "../envs/basic.yml"
+      "../envs/basic.yml"
     log:
-        "logs/hla_panel.log"
+      "logs/hla_panel.log"
     shell:
-        """
+      """
         curl -o {output.dna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_dna.fasta
         curl -o {output.rna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_rna.fasta
-        """
+      """
 
 rule index_hla_panel:
     input:

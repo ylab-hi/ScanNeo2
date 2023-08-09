@@ -12,11 +12,11 @@ data:
   rnaseq:
     rna_tumor: TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz
   normal: dna_normal
+
+custom:
   variants:
-
-# if no readgroups file are provided 
-readgroups: 
-
+  hlatyping:
+  readgroups: 
 
 ### pre-processing (only applied on fastq reads)
 preproc: 
@@ -79,14 +79,13 @@ indel:
   sliprate: 0.1  # frequency of slippage when it is supsected
 
 hlatyping:
-  mode: DNA  # DNA, RNA or BOTH
+  mode: DNA  # DNA, RNA, BOTH, None
 
 priorization:
-  len_class_i: 8-11
-  len_class_ii: 13-25
-  
-
-
+  mhc_i: 
+    len: 8-11
+  mhc_ii:
+    len: 13-25
 
 
 
