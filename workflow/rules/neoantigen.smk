@@ -10,7 +10,8 @@
 rule variants_to_peptides:
   input:
     get_variants,
-    pep = "resources/refs/peptides.fasta"
+    pep="resources/refs/peptides.fasta",
+    alleles="results/{sample}/hla/alleles.tsv"
   output:
     "results/{sample}/neoantigens/results.tsv"
   log:
@@ -20,10 +21,13 @@ rule variants_to_peptides:
   shell:
     """
       python3 workflow/scripts/variants_to_peptide.py \
-          resources/refs/Homo_sapiens/GRCh38.pep.all.fa \
-          {input} {output}
+          -p {input.pep} \
+          -v {input[0]} \
+          -o {output} \
+          -a {input.alleles}
+          -l {config['priorization']['len_class_i']}
     """
 
 rule all:
-  output:
+  input:
     "results/{sample}/neoantigens/results.tsv"

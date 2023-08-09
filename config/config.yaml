@@ -14,6 +14,10 @@ data:
   normal: dna_normal
   variants:
 
+# if no readgroups file are provided 
+readgroups: 
+
+
 ### pre-processing (only applied on fastq reads)
 preproc: 
   activate: true  # whether (=true) or not (=false) to include pre-processing
@@ -77,10 +81,7 @@ indel:
 hlatyping:
   mode: DNA  # DNA, RNA or BOTH
 
-# if no readgroups file are provided 
-readgroups: 
-
-mhc:
+priorization:
   len_class_i: 8-11
   len_class_ii: 13-25
   

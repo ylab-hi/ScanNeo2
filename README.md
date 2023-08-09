@@ -1,4 +1,4 @@
--<div align="left">
+<div align="left">
     <h1>ScanNeo2</h1>
     <img src="https://img.shields.io/badge/snakemake-≥6.4.1-brightgreen.svg">
     <img src="https://github.com/ylab-hi/ScanNeo2/actions/workflows/linting.yml/badge.svg" alt="Workflow status badge">

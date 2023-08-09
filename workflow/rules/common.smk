@@ -562,10 +562,13 @@ def get_variants(wildcards):
     variants = []
     if config['indel']['activate']:
       if config['indel']['type'] in ['long', 'all']:
-        variants.append("results/wildcards.sample/annotation/long.indels.vcf")
+        variants += expand("results/{sample}/annotation/long.indels.vcf",
+                           sample=config['data']['name'])
       if config['indel']['type'] in ['short', 'all']:
-        variants.append("results/wildcards.sample/annotation/somatic.short.indels.vcf")
-        variants.append("results/wildcards.sample/annotation/somatic.snvs.vcf")
+        variants += expand("results/{sample}/annotation/somatic.short.indels.vcf",
+                           sample=config['data']['name'])
+        variants += expand("results/{sample}/annotation/somatic.snvs.vcf",
+                           sample=config['data']['name'])
 
     return variants
 
