@@ -10,12 +10,13 @@ rule download_vep_cache:
   output:
     directory("resources/vep/cache")
   conda:
-    "../envs/basic.yaml"
+    "../envs/basic.yml"
   log:
     "logs/vep/cache.log"
   shell:
     """
-      curl -L -o https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_vep_110_GRCh38.tar.gz | tar xvf - -C resources/vep/cache
+      curl -L -o https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_vep_110_GRCh38.tar.gz 
+      | tar xvf - -C resources/vep/cache
     """
 
 rule index_variants:
