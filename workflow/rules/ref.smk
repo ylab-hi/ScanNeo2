@@ -9,7 +9,7 @@ rule get_genome:
     params:
     shell:
         """
-        curl -L -o - https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.fna.gz | gzip -d - >{output.genome}
+        curl -L -o - https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.fna.gz | gzip -d - > {output.genome}
         curl -L -o - https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf.gz | gzip -d - > {output.annotation}       
         """
 
@@ -22,7 +22,7 @@ rule get_peptides:
     "logs/get-peptides.log",
   shell:
     """
-      curl -L -o - https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz | gzip -d - > resources/refs/peptides.fasta"
+      curl -L -o - https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz | gzip -d - > resources/refs/peptides.fasta
     """
 
 rule genome_index: 
@@ -36,7 +36,6 @@ rule genome_index:
         extra="",  # optional params string
     wrapper:
         "v1.28.0/bio/samtools/faidx"
-
 
 rule annotation_sort_bgzip:
     input:
