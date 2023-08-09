@@ -1,0 +1,8 @@
+channels:
+- conda-forge
+- bioconda
+dependencies:
+- pyfaidx
+- pip
+- pip:
+  - vcfpy==0.13.6
