@@ -42,7 +42,7 @@ rule detect_variants_htc_first_round:
   output:
     vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf"
   message:
-    "First round of variant calling on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}" 
+    "First round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}" 
   log:
     "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd.log",
   params:
@@ -176,6 +176,8 @@ rule detect_variants_htc_final_round:
       known="resources/vqsr/dbSNP_b150.vcf.gz"  # optional
     output:
       vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final.vcf"
+    message:
+      "Call germline variants (htcaller) on sample:{wildcards.sample} with group:{wildcards.group}"
     log:
       "logs/{sample}/haplotypecaller/{seqtype}_{group}.1rd.log",
     params:

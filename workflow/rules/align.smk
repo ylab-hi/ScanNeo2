@@ -122,10 +122,10 @@ rule postproc:
     "logs/{sample}/postproc/rnaseq_{group}.log"
   threads: 6
   params:
-    mapq="--min-MQ {config[mapq]}"
+    mapq="--min-MQ config['mapq']"
   shell:
     """
-      samtools view -bh -F 4 --min-MQ {params.mapq} {input} -o - \
+      samtools view -bh -F 4 {params.mapq} {input} -o - \
       | samtools sort -n -@ {threads} -m1g -O bam - -o - \
       | samtools fixmate -pcmu -O bam -@ {threads} - - \
       | samtools sort -@ {threads} -m1g -O bam - -o - \

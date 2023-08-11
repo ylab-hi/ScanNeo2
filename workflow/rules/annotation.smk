@@ -43,6 +43,7 @@ rule annotate_variants:
   input:
     calls="results/{sample}/variants/{vartype}.vcf.gz",
     idx="results/{sample}/variants/{vartype}.vcf.gz.tbi",
+    fasta="resources/refs/genome_ensembl.fasta",
     cache="resources/vep/cache",
     plugins="resources/vep/plugins",
   output:
@@ -50,7 +51,7 @@ rule annotate_variants:
     stats="results/{sample}/annotation/{vartype}.html"
   params:
     plugins=["NMD","Wildtype","Downstream"],
-    extra="--everything --plugin Downstream --plugin Wildtype --plugin NMD",  # optional: extra arguments
+    extra="--everything",  # optional: extra arguments
   log:
     "logs/vep/{sample}_{vartype}_annotate.log",
   threads: 4
