@@ -3,6 +3,7 @@ if config['data']['rnaseq_filetype'] == '.fastq' or config['data']['rnaseq_filet
   rule star_fq_paired_end:
     input:
       unpack(get_star_input),
+      faidx = "resources/refs/genome.fasta.fai",
       idx = "resources/refs/star/",
     output:
       aln="results/{sample}/rnaseq/align/{group}_aligned_STAR.bam",
@@ -74,6 +75,7 @@ if config['data']['rnaseq_filetype'] == '.bam':
   rule star_align_bamfile:
     input:
       fq1 ="results/{sample}/rnaseq/reads/{group}/fastq/{rg}.fastq",
+      faidx = "resources/refs/genome.fasta.fai",
       idx ="resources/refs/star/",
     output:
       aln="results/{sample}/rnaseq/align/{group}/{rg}.bam",
@@ -108,7 +110,6 @@ if config['data']['rnaseq_filetype'] == '.bam':
     threads: config['threads']
     wrapper:
       "v1.32.1/bio/samtools/merge"
-
 
 # post-processingn and realignment
 rule postproc:
@@ -147,7 +148,6 @@ rule postproc_bam_index:
       samtools index {input} > {log} 2>&1
     """
 
-
 ## retrieve readgroups from bam file
 rule get_readgroups:
   input:
@@ -167,7 +167,8 @@ rule get_readgroups:
 rule realign:
   input:
     bam="results/{sample}/rnaseq/align/{group}_final_STAR.bam",
-    rg="results/{sample}/rnaseq/reads/{group}_readgroups.txt"
+    rg="results/{sample}/rnaseq/reads/{group}_readgroups.txt",
+    idx = multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
   output:
     "results/{sample}/rnaseq/align/{group}_final_BWA.bam"
   conda:

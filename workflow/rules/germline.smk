@@ -38,7 +38,7 @@ rule detect_variants_htc_first_round:
     # single or list of bam files
     bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
     ref="resources/refs/genome.fasta",
-    known="resources/vqsr/dbSNP_b150.vcf.gz"  # optional
+    #known="resources/vqsr/dbSNP_b150.vcf.gz"  # optional
   output:
     vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf"
   message:
@@ -78,7 +78,7 @@ rule recalibrate_variants_first_round:
         "hapmap": {"known": False, "training": True, "truth": True, "prior": 15.0},
         "omni": {"known": False, "training": True, "truth": True, "prior": 12.0},
         "g1k": {"known": False, "training": True, "truth": True, "prior": 10.0},
-        "dbsnp": {"known": False, "training": False, "truth": False, "prior": 2.0},
+#        "dbsnp": {"known": False, "training": False, "truth": False, "prior": 2.0},
     },
     annotation=["MQ", "QD", "MQRankSum", "ReadPosRankSum", "FS", "SOR", "DP"],
     extra=""

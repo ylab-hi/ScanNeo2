@@ -43,7 +43,7 @@ rule annotate_variants:
   input:
     calls="results/{sample}/variants/{vartype}.vcf.gz",
     idx="results/{sample}/variants/{vartype}.vcf.gz.tbi",
-    fasta="resources/refs/genome_ensembl.fasta",
+    fasta="resources/refs/genome.fasta",
     cache="resources/vep/cache",
     plugins="resources/vep/plugins",
   output:

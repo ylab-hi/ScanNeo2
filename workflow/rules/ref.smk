@@ -11,26 +11,16 @@ rule get_genome:
   params:
   shell:
     """
-      curl -L -o - https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.fna.gz \
-          | gzip -d - > {output.genome}
-      curl -L -o - https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf.gz \
-          | gzip -d - > {output.annotation}       
+      curl -L -o - https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.primary_assembly.genome.fa.gz \
+        | gzip -d - > {output.genome}
+      curl -L -o - https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.annotation.gtf.gz \
+        | gzip -d - > {output.annotation}
     """
 
-rule get_peptides:
-  output:
-    "resources/refs/peptides.fasta"
-  message:
-    "Download reference peptides"
-  conda:
-    "../envs/basic.yml"
-  log:
-    "logs/get-peptides.log",
-  shell:
-    """
-      curl -L -o - https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz \
-          | gzip -d - > resources/refs/peptides.fasta
-    """
+      #curl -L -o - https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz \
+        #| gzip -d - > {output.genome}
+      #curl -L -o - https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz \
+          #| gzip -d - > {output.annotation}
 
 rule genome_index: 
   input:
@@ -115,6 +105,6 @@ rule create_sequence_dictionary:
   params:
     extra="",  # optional: extra arguments for picard.
   resources:
-    mem_mb=1024,
+    mem_mb=10024,
   wrapper:
     "v1.31.1/bio/picard/createsequencedictionary"

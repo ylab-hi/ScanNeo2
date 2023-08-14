@@ -11,14 +11,14 @@ rule download_prediction_tools:
     """
       curl -L -o - https://downloads.iedb.org/tools/mhci/3.1.4/IEDB_MHC_I-3.1.4.tar.gz \
           | tar xz -C workflow/scripts/
+      curl -L -o - https://downloads.iedb.org/tools/immunogenicity/3.0/IEDB_Immunogenicity-3.0.tar.gz \
+          | tar xz -C workflow/scripts/
     """
 
 rule variants_to_peptides:
   input:
     var=get_variants,
-    pep="resources/refs/peptides.fasta",
     alleles="results/{sample}/hla/alleles.tsv"
-
   output:
     "results/{sample}/neoantigens/results.tsv"
   log:
@@ -30,10 +30,9 @@ rule variants_to_peptides:
   shell:
     """
       python3 workflow/scripts/variants_to_peptide.py \
-          -p {input.pep} \
-          -v {input.var} \
-          -o {output} \
+          -v {input.var} -o {output} \
           -a {input.alleles} \
+          -o {output} \
           {params.length} > {log}
     """
 

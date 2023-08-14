@@ -70,7 +70,7 @@ if config['data']['dnaseq'] is not None:
     if config['data']['dnaseq_readtype'] == 'PE':
       rule get_hla_filtering_input_paired_DNA:
         input:
-          get_hla_flt_dna_pe,
+          unpack(get_hla_flt_dna_pe),
           dna=multiext("resources/hla/yara/idx/dna", 
             ".lf.drp", ".lf.drs", ".lf.drv", 
             ".lf.pst", ".rid.concat", ".rid.limits",
@@ -95,6 +95,7 @@ if config['data']['dnaseq'] is not None:
                 | samtools view -h -F 4 -b1 - | samtools sort - -o {output.rev} >> {log}
             samtools index {output.rev}
           """
+
 
 
 # map reads against reference RNA
@@ -132,7 +133,7 @@ if config['data']['rnaseq'] is not None:
     if config['data']['dnaseq_readtype'] == 'PE':
       rule get_hla_filtering_input_paired_RNA:
         input:
-          get_hla_flt_rna_pe,
+          unpack(get_hla_flt_rna_pe),
           dna=multiext("resources/hla/yara/idx/rna", 
             ".lf.drp", ".lf.drs", ".lf.drv", 
             ".lf.pst", ".rid.concat", ".rid.limits",
@@ -192,7 +193,6 @@ rule hla_genotyping_RNA:
           --prefix {wildcards.group}_rna --rna > {log}
     """
 
-
 rule merge_alleles:
   input:
     get_alleles,
@@ -209,8 +209,4 @@ rule merge_alleles:
       python3 workflow/scripts/merge_alleles.py '{input}' \
           {output} 2> {log}
     """
-
-
-
-
 
