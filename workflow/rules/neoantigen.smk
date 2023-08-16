@@ -26,16 +26,12 @@ rule variants_to_peptides:
   conda:
     "../envs/variants_to_peptides.yml"
   params:
-    length="-l {config['priorization']['mhc_i']['len']}"
+    length="{config['priorization']['mhc_i']['len']}"
   shell:
     """
-      python3 workflow/scripts/variants_to_peptide.py \
-          -v {input.var} -o {output} \
+      python3 workflow/scripts/variants_to_peptides.py \
+          -v '{input.var}' -o {output} \
           -a {input.alleles} \
           -o {output} \
-          {params.length} > {log}
+          -p 8-11 > {log}
     """
-
-rule all:
-  input:
-    "results/{sample}/neoantigens/results.tsv"

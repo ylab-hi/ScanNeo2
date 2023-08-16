@@ -6,7 +6,12 @@ min_version("6.4.1")
 #### setup #######
 configfile: "config/config.yaml"
 
+rule all:
+  input:
+    expand("results/{sample}/neoantigens/results.tsv", sample=config['data']['name'])
+
 #### load rules ####
+include: "rules/all.smk"
 include: "rules/ref.smk"
 include: "rules/common.smk"
 include: "rules/hlatyping.smk"

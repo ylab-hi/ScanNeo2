@@ -70,7 +70,7 @@ genefusion:
 indel:
   activate: true # whether (=true) or not (=false) to include indels
   type: long # long, short, all
-  mode: BOTH  # DNA, RNA or BOTH - 
+  mode: RNA  # DNA, RNA or BOTH - 
   # strategy for optimizing posterior probability threshold
   strategy: OPTIMAL_F_SCORE # OPTIMAL_F_SCORE, FALSE_DISCOVERY_RATE, CONSTANT 
   fscorebeta: 1.0  # rel. weight of recall to precision (when OPTIMAL_F_SCORE is selected)
