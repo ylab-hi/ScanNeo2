@@ -170,7 +170,7 @@ rule realign:
     rg="results/{sample}/rnaseq/reads/{group}_readgroups.txt",
     idx = multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
   output:
-    bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam"
+    bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
     idx="results/{sample}/dnaseq/align/{group}_final_BWA.bam.bai"
   conda:
     "../envs/basic.yml"
