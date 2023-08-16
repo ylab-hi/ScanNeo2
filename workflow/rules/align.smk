@@ -170,7 +170,8 @@ rule realign:
     rg="results/{sample}/rnaseq/reads/{group}_readgroups.txt",
     idx = multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
   output:
-    "results/{sample}/rnaseq/align/{group}_final_BWA.bam"
+    bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam"
+    idx="results/{sample}/dnaseq/align/{group}_final_BWA.bam.bai"
   conda:
     "../envs/basic.yml"
   log:
@@ -182,7 +183,7 @@ rule realign:
         | samtools fastq -OT RG -@ {threads} - \
         | bwa mem -pt{threads} -CH <(cat {input.rg}) resources/refs/bwa/genome - \
         | samtools sort -@6 -m1g - -o {output} > {log} 2>&1
-        samtools index {output}
+        samtools index {output.bam}
     """
 
 ### workflow when aligning paired-end fastq files for DNAseq
