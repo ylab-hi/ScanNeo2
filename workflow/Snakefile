@@ -11,7 +11,6 @@ rule all:
     expand("results/{sample}/neoantigens/results.tsv", sample=config['data']['name'])
 
 #### load rules ####
-include: "rules/all.smk"
 include: "rules/ref.smk"
 include: "rules/common.smk"
 include: "rules/hlatyping.smk"
