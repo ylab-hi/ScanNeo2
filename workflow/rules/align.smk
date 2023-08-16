@@ -210,7 +210,8 @@ rule dnaseq_postproc:
   input:
     "results/{sample}/dnaseq/align/{group}_aligned_BWA.bam"
   output:
-    "results/{sample}/dnaseq/align/{group}_final_BWA.bam"
+    bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
+    idx="results/{sample}/dnaseq/align/{group}_final_BWA.bam.bai"
   log:
     "logs/{sample}/postproc/dnaseq_{group}.log"
   conda:
@@ -222,8 +223,8 @@ rule dnaseq_postproc:
     """
       samtools fixmate -pcmu -O bam -@ 6 {input} - \
           | samtools sort -m1g -O bam - -o - \
-          | samtools markdup -r -@ 6 - {output} > {log} 2>&1
-      samtools index {output}
+          | samtools markdup -r -@ 6 - {output.bam} > {log} 2>&1
+      samtools index {output.bam}
     """
 
 
