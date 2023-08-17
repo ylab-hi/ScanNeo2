@@ -171,7 +171,6 @@ rule realign:
     idx = multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
   output:
     bam="results/{sample}/rnaseq/align/{group}_final_BWA.bam",
-    idx="results/{sample}/rnaseq/align/{group}_final_BWA.bam.bai"
   conda:
     "../envs/basic.yml"
   log:
@@ -185,6 +184,19 @@ rule realign:
         | samtools sort -@6 -m1g - -o {output} > {log} 2>&1
         samtools index {output.bam}
     """
+
+rule samtools_index:
+    input:
+        "results/{sample}/rnaseq/align/{group}_final_BWA.bam",
+    output:
+        "results/{sample}/rnaseq/align/{group}_final_BWA.bam.bai",
+    log:
+        "logs/samtools_index/{group}_{sample}.log",
+    params:
+        extra="",  # optional params string
+    threads: 4  # This value - 1 will be sent to -@
+    wrapper:
+        "v2.3.0/bio/samtools/index"
 
 ### workflow when aligning paired-end fastq files for DNAseq
 rule bwa_align_dnaseq:
@@ -227,5 +239,3 @@ rule dnaseq_postproc:
           | samtools markdup -r -@ 6 - {output.bam} > {log} 2>&1
       samtools index {output.bam}
     """
-
-
