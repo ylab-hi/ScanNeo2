@@ -15,23 +15,48 @@ rule download_prediction_tools:
           | tar xz -C workflow/scripts/
     """
 
-rule variants_to_peptides:
+rule compile_peptides_from_variants:
   input:
     var=get_variants,
     alleles="results/{sample}/hla/alleles.tsv"
   output:
-    "results/{sample}/neoantigens/results.tsv"
+    "results/{sample}/neoantigens/peptides.tsv"
+  message:
+    "Compile peptides from variants on sample:{wildcards.sample}"
   log:
     "logs/vep/{sample}_variants_to_peptides.log"
   conda:
-    "../envs/variants_to_peptides.yml"
+    "../envs/priorization.yml"
   params:
-    length="{config['priorization']['mhc_i']['len']}"
   shell:
     """
-      python3 workflow/scripts/variants_to_peptides.py \
-          -v '{input.var}' -o {output} \
-          -a {input.alleles} \
-          -o {output} \
-          -p 8-11 > {log}
+      python3 workflow/scripts/compile_peptides_from_variants.py \
+          -v '{input.var}' -o {output} > {log}
     """
+
+rule priorization:
+  input:
+    peptides="results/{sample}/neoantigens/peptides.tsv",
+    alleles="results/{sample}/hla/alleles.tsv"
+  output:
+    "results/{sample}/neoantigens/final.tsv"
+  message:
+    "Predicting affinities on sample:{wildcards.sample}"
+  log:
+    "logs/mhci/{sample}_affinities.log"
+  conda:
+    "../envs/priorization.yml""
+  shell:
+    """
+      python workflow/scripts/predict_affinities.py \
+          {input.peptides} {input.alleles} {output} > {log}
+      python workflow/scripts/predict_immunogenicity.py \
+          {output} >> {log}
+    """
+
+
+
+
+
+
+

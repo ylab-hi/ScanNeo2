@@ -1,41 +1,40 @@
 import sys
 
 def main():
-    alleles = {
-            'A1': [], 'A2': [],'B1': [],
-            'B2': [], 'C1': [],'C2': []
-    }
+    alleles = []
+
+    # load alleles
+    allele_list = load_alleles('workflow/scripts/valid_alleles/netmhcpan.txt')
+
+    #print(allele_list)
 
     for alfile in sys.argv[1].split(' '):
         with open(alfile, 'r') as f:
             next(f)
             for line in f:
-                line = line.rstrip().split('\t')
+                line_list = line.rstrip().split('\t')
+                for i in range(1,7):
+                    # modify header
+                    modname = 'HLA-' + line_list[i]
+                    if modname in allele_list:
+                        if modname not in alleles:
+                            alleles.append(modname)
+    # remove duplicates
+    alleles = list(set(alleles))
 
-                if line[1] not in alleles['A1']:
-                    alleles['A1'].append(line[1])
-
-                if line[2] not in alleles['A2']:
-                    alleles['A2'].append(line[2])
-
-                if line[3] not in alleles['B1']:
-                    alleles['B1'].append(line[3])
-
-                if line[4] not in alleles['B2']:
-                    alleles['B2'].append(line[4])
-
-                if line[5] not in alleles['C1']:
-                    alleles['C1'].append(line[5])
-
-                if line[6] not in alleles['C2']:
-                    alleles['C2'].append(line[6])
-
-
+    
     output = open(sys.argv[2], 'w')
-    for key in alleles.keys():
-        output.write(key + '\t' + '\t'.join(alleles[key]) + '\n')
+    for i in alleles:
+        output.write(i + '\n')
     output.close()
 
+
+def load_alleles(alleles_file):
+    alleles = []
+    with open(alleles_file, 'r') as f:
+        for line in f:
+            alleles.append(line.rstrip())
+    return alleles
 
 
 main()

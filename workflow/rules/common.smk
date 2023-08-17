@@ -209,6 +209,7 @@ def get_alleles(wildcards):
   values = []
   if config['hlatyping']['mode'] in ['DNA', 'BOTH']:
     for key in config['data']['dnaseq'].keys():
+      ### check if its blank
       if key not in config['data']['normal']:
         values += expand("results/{sample}/hla/{group}_dna_result.tsv",
                            sample = wildcards.sample,

@@ -151,10 +151,10 @@ if config['data']['rnaseq'] is not None:
         threads: config['threads']
         shell:
           """
-            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna {input[0]} \
+            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna {input.r1} \
                 | samtools view -h -F 4 -b1 - > {output[0]}
             samtools index {output[0]}
-            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna {input[1]} \
+            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna {input.r2} \
                 | samtools view -h -F 4 -b1 - > {output[1]}
             samtools index {output[1]}
           """
