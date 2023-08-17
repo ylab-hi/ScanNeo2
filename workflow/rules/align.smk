@@ -185,7 +185,7 @@ rule realign:
         samtools index {output.bam}
     """
 
-rule samtools_index:
+rule samtools_index_BWA_final:
     input:
         "results/{sample}/rnaseq/align/{group}_final_BWA.bam",
     output:
