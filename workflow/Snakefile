@@ -8,7 +8,7 @@ configfile: "config/config.yaml"
 
 rule all:
   input:
-    expand("results/{sample}/neoantigens/results.tsv", sample=config['data']['name'])
+    expand("results/{sample}/priorization/neoantigens.tsv", sample=config['data']['name'])
 
 #### load rules ####
 include: "rules/ref.smk"

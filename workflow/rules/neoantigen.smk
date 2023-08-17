@@ -20,7 +20,7 @@ rule compile_peptides_from_variants:
     var=get_variants,
     alleles="results/{sample}/hla/alleles.tsv"
   output:
-    "results/{sample}/neoantigens/peptides.tsv"
+    "results/{sample}/priorization/peptides.tsv"
   message:
     "Compile peptides from variants on sample:{wildcards.sample}"
   log:
@@ -36,16 +36,16 @@ rule compile_peptides_from_variants:
 
 rule priorization:
   input:
-    peptides="results/{sample}/neoantigens/peptides.tsv",
+    peptides="results/{sample}/priorization/peptides.tsv",
     alleles="results/{sample}/hla/alleles.tsv"
   output:
-    "results/{sample}/neoantigens/final.tsv"
+    "results/{sample}/priorization/neoantigens.tsv"
   message:
     "Predicting affinities on sample:{wildcards.sample}"
   log:
     "logs/mhci/{sample}_affinities.log"
   conda:
-    "../envs/priorization.yml""
+    "../envs/priorization.yml"
   shell:
     """
       python workflow/scripts/predict_affinities.py \
