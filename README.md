@@ -34,7 +34,7 @@ To get started with ScanNeo2, follow the steps below:
     ```bash
     mkdir -p /path/to/your/working/directory/
     cd /path/to/your/working/directory/
-    snakedeploy deploy-workflow https://github.com/ylab-hi/scanneo2 . --tag v0.1.0
+    snakedeploy deploy-workflow https://github.com/ylab-hi/ScanNeo2 . --tag v0.1.0
     ```
 
 3. Configure ScanNeo2 by editing the `config/config.yml` file. Make sure to adjust parameters to suit your needs and data.
