@@ -31,11 +31,21 @@ To get started with ScanNeo2, follow the steps below:
 
 2. Deploy ScanNeo2:
 
+```
+mkdir -p /path/to/your/working/directory/
+cd /path/to/your/working/directory/
+git clone recursive-submodules https://github.com/ylab-hi/ScanNeo2.git
+cd ScanNeo2
+```
+
+<!--
+
     ```bash
     mkdir -p /path/to/your/working/directory/
     cd /path/to/your/working/directory/
     snakedeploy deploy-workflow https://github.com/ylab-hi/ScanNeo2 . --tag v0.1.0
     ```
+-->
 
 3. Configure ScanNeo2 by editing the `config/config.yml` file. Make sure to adjust parameters to suit your needs and data.
 
