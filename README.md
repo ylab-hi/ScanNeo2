@@ -50,27 +50,6 @@ snakemake --cores all --use-conda
 
 For more detailed instructions and explanations on how to use ScanNeo2, please consult the [wiki](https://github.com/ylab-hi/ScanNeo2/wiki).
 
-
-Install `snakemake` and `snakedeploy`
-```
-mamba env create --file https://github.com/ylab-hi/ScanNeo2/blob/devel/environment.yml
-mamba activate scanneo2
-```
-Deploy Scanneo2
-```
-mkdir -p /path/to/working/directory/
-cd /path/to/working/directory/
-snakedeploy deploy-workflow https://github.com/ylab-hi/scanneo2 . --tag v0.1.0
-```
-Configure ScanNeo2 by modifying `config/config.yml`
-
-Run the workflow
-```
-cd scanneo
-snakemake --cores all --use-conda
-```
-Please consult the [wiki](https://github.com/ylab-hi/ScanNeo2/wiki) for detailed instruction and explanations.
-
 ## Docker Support
 
 For added convenience, we also provide a ready-to-use [Docker](https://hub.docker.com/r/yanglabinfo/scanneo2)
