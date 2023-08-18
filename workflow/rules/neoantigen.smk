@@ -49,14 +49,8 @@ rule priorization:
   shell:
     """
       python workflow/scripts/predict_affinities.py \
-          {input.peptides} {input.alleles} {output} > {log}
+          {input.peptides} {input.alleles} 8,9,10,11 {output} > {log}
       python workflow/scripts/predict_immunogenicity.py \
           {output} >> {log}
     """
-
-
-
-
-
-
 
