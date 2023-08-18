@@ -15,7 +15,7 @@ rule detect_long_indel_ti_build_RNA:
         "../envs/transindel.yml"
     shell:
         """
-          python3 workflow/scripts/transIndel/transIndel_build_RNA.py \
+          python3 workflow/scripts/transindel/transIndel_build_RNA.py \
           -i {input.bam} \
           -o {output.bam} \
           -r resources/refs/genome.fasta \
@@ -38,11 +38,8 @@ rule detect_long_indel_ti_build_DNA:
         "../envs/transindel.yml"
     shell:
         """
-          python3 workflow/scripts/transindel/transIndel_build_DNA.py \
-          -i {input.bam} \
-          -o {output.bam} \
-          -r resources/refs/genome.fasta \
-          -g resources/refs/genome.gtf > {log} 2>&1
+          python workflow/scripts/transindel/transIndel_build_DNA.py \
+          -i {input.bam} -o {output.bam}  > {log} 2>&1
           samtools index {output.bam} -o {output.idx} >> {log} 2>&1
         """
 
@@ -62,11 +59,11 @@ rule detect_long_indel_ti_call:
         mapq=config['mapq']
     shell:
         """
-        python workflow/scripts/transIndel/transIndel_call.py \
-        -i {input.bam} \
-        -l 10 \
-        -o results/{wildcards.sample}/{seqtype}/indel/transindel/{wildcards.group}_call \
-        -m {params} > {log} 2>&1
+          python workflow/scripts/transIndel/transIndel_call.py \
+          -i {input.bam} \
+          -l 10 \
+          -o results/{wildcards.sample}/{wildcards.seqtype}/indel/transindel/{wildcards.group}_call \
+          -m {params} > {log} 2>&1
         """
 
 # resove alleles and remove PCR slippage

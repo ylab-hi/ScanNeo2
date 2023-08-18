@@ -181,7 +181,7 @@ rule realign:
       samtools collate -Oun128 {input.bam} \
         | samtools fastq -OT RG -@ {threads} - \
         | bwa mem -pt{threads} -CH <(cat {input.rg}) resources/refs/bwa/genome - - \
-        | samtools sort -@6 -m1g - -o {output} > {log} 2>&1
+        | samtools sort -@6 -m1g -o {output} > {log} 2>&1
         samtools index {output.bam}
     """
 
