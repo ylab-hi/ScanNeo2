@@ -10,7 +10,7 @@ rule detect_long_indel_ti_build_RNA:
     message:
       "Building new BAM file with redefined CIGAR string using transindel build on sample:{wildcards.sample} with group:{wildcards.group}"
     log:
-        "logs/{sample}/transindel/{group}_build.log"
+        "logs/{sample}/transindel/{group}_build_RNA.log"
     conda:
         "../envs/transindel.yml"
     shell:
@@ -23,16 +23,39 @@ rule detect_long_indel_ti_build_RNA:
           samtools index {output.bam} -o {output.idx} >> {log} 2>&1
         """
 
+rule detect_long_indel_ti_build_DNA:
+    input:
+        bam = "results/{sample}/dnaseq/align/{group}_final_BWA.bam",
+        idx = "results/{sample}/dnaseq/align/{group}_final_BWA.bam.bai"
+    output:
+        bam="results/{sample}/dnaseq/indel/transindel/{group}_build.bam",
+        idx="results/{sample}/dnaseq/indel/transindel/{group}_build.bam.bai"
+    message:
+      "Building new BAM file with redefined CIGAR string using transindel build on sample:{wildcards.sample} with group:{wildcards.group}"
+    log:
+        "logs/{sample}/transindel/{group}_build_DNA.log"
+    conda:
+        "../envs/transindel.yml"
+    shell:
+        """
+          python3 workflow/scripts/transindel/transIndel_build_DNA.py \
+          -i {input.bam} \
+          -o {output.bam} \
+          -r resources/refs/genome.fasta \
+          -g resources/refs/genome.gtf > {log} 2>&1
+          samtools index {output.bam} -o {output.idx} >> {log} 2>&1
+        """
+
 rule detect_long_indel_ti_call:
     input:
-        bam = "results/{sample}/rnaseq/indel/transindel/{group}_build.bam",
-        bai = "results/{sample}/rnaseq/indel/transindel/{group}_build.bam.bai"
+        bam = "results/{sample}/{seqtype}/indel/transindel/{group}_build.bam",
+        bai = "results/{sample}/{seqtype}/indel/transindel/{group}_build.bam.bai"
     output:
-        "results/{sample}/rnaseq/indel/transindel/{group}_call.indel.vcf"
+        "results/{sample}/{seqtype}/indel/transindel/{group}_call.indel.vcf"
     message:
       "Calling short indels using transindel on sample:{wildcards.sample} with group:{wildcards.group}"
     log:
-        "logs/{sample}/transindel/rnaseq_{group}_call.log"
+        "logs/{sample}/transindel/{seqtype}_{group}_call.log"
     conda:
         "../envs/transindel.yml"
     params:
@@ -42,20 +65,20 @@ rule detect_long_indel_ti_call:
         python workflow/scripts/transIndel/transIndel_call.py \
         -i {input.bam} \
         -l 10 \
-        -o results/{wildcards.sample}/rnaseq/indel/transindel/{wildcards.group}_call \
+        -o results/{wildcards.sample}/{seqtype}/indel/transindel/{wildcards.group}_call \
         -m {params} > {log} 2>&1
         """
 
 # resove alleles and remove PCR slippage
 rule long_indel_slippage_removal:
     input:
-        "results/{sample}/rnaseq/indel/transindel/{group}_call.indel.vcf"
+        "results/{sample}/{seqtype}/indel/transindel/{group}_call.indel.vcf"
     output:
-        "results/{sample}/rnaseq/indel/transindel/{group}_sliprem.vcf"
+        "results/{sample}/{seqtype}/indel/transindel/{group}_sliprem.vcf"
     message:
       "Resolving alleles and removing PCR slippage using transindel on sample:{wildcards.group} with replicate:{wildcards.group}"
     log:
-        "logs/{sample}/transindel/rnaseq_{group}_sliprem.log"
+        "logs/{sample}/transindel/{seqtype}_{group}_sliprem.log"
     conda:
         "../envs/transindel.yml"
     shell:
