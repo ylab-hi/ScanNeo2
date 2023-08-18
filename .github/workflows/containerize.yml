@@ -1,0 +1,14 @@
+name: Containerize
+run-name: ${{ github.actor }} is creating a Docker container for ScanNeo2
+on: 
+push:
+  branches:
+    - master
+jobs:
+  containerize:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        snakefile: 'workflow/Snakefile'
+        task: 'containerize'
