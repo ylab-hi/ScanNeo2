@@ -51,8 +51,7 @@ rule annotate_variants:
     idx="results/{sample}/variants/{vartype}.vcf.gz.tbi",
     fasta="resources/refs/genome.fasta",
     cache="resources/vep/cache",
-    plugins="resources/vep/plugins",
-    wt_plugin="resources/vep/plugins/Wildtype.pm"
+    plugins="resources/vep/plugins"
   output:
     calls="results/{sample}/annotation/{vartype}.vcf",
     stats="results/{sample}/annotation/{vartype}.html"
