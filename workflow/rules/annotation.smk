@@ -10,6 +10,20 @@ rule download_vep_plugins:
   wrapper:
     "v1.31.1/bio/vep/plugins"
 
+rule download_wildtype_plugin:
+  output:
+    "resources/vep/plugins/Wildtype.pm"
+  message:
+    Downloading VEP Wildtype plugin"
+  log:
+    "logs/vep/plugins_wildtype.log"
+  conda:
+    "../envs/basic.yml"
+  shell:
+    """
+      curl -L -o {output} https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm
+    """
+
 rule download_vep_cache:
   output:
     directory("resources/vep/cache")
@@ -19,8 +33,9 @@ rule download_vep_cache:
     "logs/vep/cache.log"
   shell:
     """
+      mkdir -p {output}
       curl -L -o - https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_vep_110_GRCh38.tar.gz 
-      | tar xvf - -C resources/vep/cache
+      | tar -xz -C resources/vep/cache
     """
 
 rule index_variants:
@@ -46,6 +61,7 @@ rule annotate_variants:
     fasta="resources/refs/genome.fasta",
     cache="resources/vep/cache",
     plugins="resources/vep/plugins",
+    wt_plugin="resources/vep/plugins/Wildtype.pm"
   output:
     calls="results/{sample}/annotation/{vartype}.vcf",
     stats="results/{sample}/annotation/{vartype}.html"
