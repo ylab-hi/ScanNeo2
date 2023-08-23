@@ -30,8 +30,8 @@ rule compile_peptides_from_variants:
   params:
   shell:
     """
-      python3 workflow/scripts/compile_peptides_from_variants.py \
-          -v '{input.var}' -o {output} > {log}
+      python workflow/scripts/compile_peptides_from_variants.py \
+          -i '{input.var}' -o {output} > {log}
     """
 
 rule priorization:
@@ -49,8 +49,8 @@ rule priorization:
   shell:
     """
       python workflow/scripts/predict_affinities.py \
-          {input.peptides} {input.alleles} 8,9,10,11 {output} > {log}
+          -i {input.peptides} -a {input.alleles} \
+          -e 8,9,10,11 -o {output} > {log}
       python workflow/scripts/predict_immunogenicity.py \
           {output} >> {log}
     """
-

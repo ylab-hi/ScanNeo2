@@ -10,12 +10,10 @@ from pyfaidx import Fasta
 """
 Usage:
     python variant_to_peptide.py \
-            -v <input.vcf> \
+            -i <input.vcf> \
             -o <outputtable> \
-            -l <peptide_length> \
-            -a <alleles>
+            -l <log> \
 """
-
 
 def main():
     options = parse_arguments()
@@ -32,8 +30,19 @@ def main():
 
         transcript_count = {}
         for entry in vcf_reader:
+            # print(entry.ALT)
+            # print(entry.FORMAT)
+#            print(entry.calls)
+            # print(entry.calls[0].data['GT'])
+            # print(entry.calls[0].data['AD'])
+
+
+#           determine_allele_frequency(entry) 
+
+
             # FILTER (when applicable)
-            if (entry.INFO['SRC'] == 'snv' or entry.INFO['SRC'] == 'short_indel'):
+            if (entry.INFO['SRC'] == 'snv' or
+                entry.INFO['SRC'] == 'short_indel'):
                 if 'PASS' not in entry.FILTER:
                     continue
             
@@ -46,14 +55,16 @@ def main():
             ref = entry.REF
             alts = entry.ALT
 
-            for alt in alts:
-                csq_allele = alleles_vep[str(alt.value)]
+
+            for alt_i, alt_v in enumerate(alts):
+            # for alt in alts:
+                csq_allele = alleles_vep[str(alt_v.value)]
                 csq_fields = parse_csq_entries(
                         entry.INFO["CSQ"], 
                         csq_format,
                         csq_allele
                 )
-                
+
                 for field in csq_fields:
                     gene_name = field["SYMBOL"]
                     gene_id = field["Gene"]
@@ -72,6 +83,16 @@ def main():
                         elif field["DownstreamProtein"] == "":
                             continue
 
+
+                    # print(entry.calls[0])
+                    # print(entry.calls[0].data['AF'])
+
+                    vaf = determine_variant_allele_frequency(entry, alt_i)
+                    # determine allele depth (number of reads)
+                    wt_ad, mt_ad = determine_allele_depth(entry, alt_i)
+                    dp = determine_read_depth(entry)
+
+
                     output_row = {
                         "chrom": entry.CHROM,
                         "start": entry.affected_start,
@@ -79,7 +100,7 @@ def main():
                         "source": entry.INFO["SRC"],
                         "group": entry.INFO["GRP"],
                         "reference": entry.REF,
-                        "variant": alt.value,
+                        "variant": alt_v.value,
                         "gene_name": gene_name,
                         "transcript_id": transcript_id,
                         # "aa_change": csq_fields["Amino_acids"],
@@ -88,7 +109,10 @@ def main():
                         "downstream_aa_seq": field["DownstreamProtein"],
                         "variant_type": csq,
                         "protein_position": field["Protein_position"],
-                        # "seqnum": seqnum_count
+                        "vaf": vaf,
+                        "wt_allele_depth": wt_ad,
+                        "mt_allele_depth": mt_ad,
+                        "read_depth": dp
                     }
                 
                     if field["Amino_acids"]:
@@ -171,6 +195,45 @@ def main():
 
 
 
+# determine the genotype of the variant
+# def get_genotype(entry):
+    # vaf = -1
+    # # check if transindel
+    # if entry.INFO['SRC'] == 'long_indel':
+
+
+def determine_read_depth(entry):
+    dp = -1
+    if (entry.INFO['SRC'] == 'short_indel' or 
+        entry.INFO['SRC'] == 'snv'):
+        dp = entry.calls[0].data['DP']
+
+    return dp
+
+
+
+def determine_allele_depth(entry, i):
+    wt_ad = -1
+    mt_ad = -1
+
+    if (entry.INFO['SRC'] == 'short_indel' or 
+        entry.INFO['SRC'] == 'snv'):
+        wt_ad = entry.calls[0].data['AD'][0]
+        mt_ad = entry.calls[0].data['AD'][i+1]
+
+    return wt_ad, mt_ad
+
+
+
+def determine_variant_allele_frequency(entry, i):
+    vaf = -1
+    if (entry.INFO['SRC'] == 'short_indel' or 
+        entry.INFO['SRC'] == 'snv'):
+        vaf = entry.calls[0].data['AF'][i]
+
+    return vaf
+
+
 def determine_subseq(wt_seq, mt_seq, start_pos_var, variant_len):
     # left and right are start/end of the subsequence
     if start_pos_var < 10:
@@ -198,6 +261,7 @@ def determine_subseq(wt_seq, mt_seq, start_pos_var, variant_len):
 
 
     return wt_subseq, mt_subseq, new_start_pos_var
+
 
 
 
@@ -317,7 +381,9 @@ def print_header(outputfile):
     keys = ["chrom","start", "stop","gene_name",
             "gene_id","transcript_id","source",
             "group","variant_type", "wt_subseq",
-            "mt_subseq", "mutation_pos"
+            "mt_subseq", "mutation_pos", "vaf", 
+            "wt_allele_depth", "mt_allele_depth",
+            "read_depth"
     ]
     
     # print header
@@ -333,14 +399,15 @@ def print_row(outputfile, row):
     outputfile.write(f"\t{row['transcript_id']}\t{row['source']}")
     outputfile.write(f"\t{row['group']}\t{row['variant_type']}")
     outputfile.write(f"\t{row['wt_subseq']}\t{row['mt_subseq']}")
-    outputfile.write(f"\t{row['mutation_start']}\n")
-
+    outputfile.write(f"\t{row['mutation_start']}\t{row['vaf']}")
+    outputfile.write(f"\t{row['wt_allele_depth']}\t{row['mt_allele_depth']}")
+    outputfile.write(f"\t{row['read_depth']}\n")
 
 
 def parse_arguments():
     p = configargparse.ArgParser()
     
-    p.add('-v', '--vcf', required=True, help='Input vcf files')
+    p.add('-i', '--vcf', required=True, help='Input vcf files')
     p.add('-o', '--output', required=True, help='Output table')
     p.add('-l', '--log', required=False, help='Log file')
 

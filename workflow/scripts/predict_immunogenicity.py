@@ -10,10 +10,9 @@ def main():
     im_fh = open('workflow/scripts/im.txt', 'w')
     for entry in fh:
         entry_splitted = entry.rstrip().split('\t')
-        im_fh.write(f'{entry_splitted[10]}\n')
+        im_fh.write(f'{entry_splitted[15]}\n')
     im_fh.close()
     fh.close()
-
 
     immunogenecity_values = ['immunogenicity'] + calc_immunogenecity('workflow/scripts/im.txt')
     # add immunogenicity scores to result table
@@ -23,8 +22,6 @@ def main():
         for i,v in enumerate(lines):
             row = v.rstrip().split('\t') + [str(immunogenecity_values[i])]
             file.write('\t'.join(row)+'\n')
-
-
 
 def calc_immunogenecity(seq):
     print(seq)

@@ -369,6 +369,16 @@ def get_snvs(wildcards):
   return indels
    
 
+########### GENE FUSIONS ##########
+def get_fusions(wildcards):
+  fusions = []
+  if config['data']['rnaseq'] is not None:
+    fusions += expand("results/{sample}/rnaseq/genefusion/{group}_fusions.vcf",
+      sample=config['data']['name'], 
+      group=list(config['data']['rnaseq'].keys()))
+
+  return fusions
+
 
 ########### NEOANTIGEN PRIORIZATION ##########
 def get_variants(wildcards):
