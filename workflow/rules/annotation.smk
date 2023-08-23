@@ -14,7 +14,7 @@ rule download_vep_plugins:
       mkdir -p resources/vep/plugins/
       curl -L -o {output.nmd} https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/110/NMD.pm
       curl -L -o {output.downstream} https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/110/Downstream.pm
-      curl -L -o {output} https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm
+      curl -L -o {output.wildtype} https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm
     """
 
 rule download_vep_cache:
