@@ -208,21 +208,28 @@ def determine_read_depth(entry):
         entry.INFO['SRC'] == 'snv'):
         dp = entry.calls[0].data['DP']
 
-    return dp
+    if entry.INFO['SRC'] == 'long_indel':
+        dp = entry.INFO['DP']
 
+    return dp
 
 
 def determine_allele_depth(entry, i):
     wt_ad = -1
     mt_ad = -1
 
+    # GATK
     if (entry.INFO['SRC'] == 'short_indel' or 
         entry.INFO['SRC'] == 'snv'):
         wt_ad = entry.calls[0].data['AD'][0]
         mt_ad = entry.calls[0].data['AD'][i+1]
 
-    return wt_ad, mt_ad
+    # transIndel
+    if entry.INFO['SRC'] == 'long_indel':
+        mt_ad = entry.INFO['AO']
+        wt_ad = str(int(float(entry.INFO['DP']) - float(mt_ad)))
 
+    return wt_ad, mt_ad
 
 
 def determine_variant_allele_frequency(entry, i):
@@ -230,6 +237,9 @@ def determine_variant_allele_frequency(entry, i):
     if (entry.INFO['SRC'] == 'short_indel' or 
         entry.INFO['SRC'] == 'snv'):
         vaf = entry.calls[0].data['AF'][i]
+
+    if entry.INFO['SRC'] == 'long_indel':
+        vaf = entry.INFO['AB']
 
     return vaf
 

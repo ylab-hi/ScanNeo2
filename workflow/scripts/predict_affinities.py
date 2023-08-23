@@ -162,6 +162,11 @@ def main():
                             final_result['wt_epitope_ic50'] = 'NA'
                             final_result['wt_epitope_rank'] = 'NA'
 
+
+                    # calculate ranking calc_ranking_score 
+                    score = calc_ranking_score(final_result['vaf'], final_result['wt_epitope_ic50'], final_result['mt_epitope_ic50'])
+                    final_result['ranking_score'] = score
+
                     print_row(final_result, outputfile)
 
 
@@ -209,13 +214,27 @@ def calc_peptide_binding(alleles, fnames, group):
 
     return binding_affinities
 
+
+
+def calc_ranking_score(vaf, wt_ic50, mt_ic50):
+    # fold change
+    if wt_ic50 != 'NA':
+        fold_change = float(wt_ic50) / float(mt_ic50)
+    else:
+        fold_change = float(100000.0) / float(mt_ic50)
+
+    score = (1/float(mt_ic50)) + fold_change + vaf * 100.0
+
+    return score
+
             
 def print_header(outputfile):
     outputfile.write(f"chrom\tstart\tend\tref\talt\tgene_name\tgene_id")
     outputfile.write(f"\ttranscript_id\tsource\tgroup\tvariant_type")
     outputfile.write(f"\tallele\twt_epitope_seq\twt_epitope_ic50\twt_epitope_rank")
     outputfile.write(f"\tmt_epitope_seq\tmt_epitope_ic50\tmt_epitope_rank\tmutation_position")
-    outputfile.write(f"\tvaf\twt_allele_depth\tmt_allele_depth\tread_depth\n")
+    outputfile.write(f"\tvaf\twt_allele_depth\tmt_allele_depth\tread_depth\t")
+    outputfile.write(f"\tranking_score\n")
 
 
 def print_row(row, outputfile):
@@ -223,7 +242,8 @@ def print_row(row, outputfile):
     outputfile.write(f"\t{row['transcript_id']}\t{row['source']}\t{row['group']}\t{row['variant_type']}")
     outputfile.write(f"\t{row['allele']}\t{row['wt_epitope_seq']}\t{row['wt_epitope_ic50']}\t{row['wt_epitope_rank']}")
     outputfile.write(f"\t{row['mt_epitope_seq']}\t{row['mt_epitope_ic50']}\t{row['mt_epitope_rank']}\t{row['mutation_position']}")
-    outputfile.write(f"\t{row['vaf']}\t{row['wt_allele_depth']}\t{row['mt_allele_depth']}\t{row['read_depth']}\n")
+    outputfile.write(f"\t{row['vaf']}\t{row['wt_allele_depth']}\t{row['mt_allele_depth']}\t{row['read_depth']}")
+    outputfile.write(f"\t{row['ranking_score']}\n")
 
 def parse_arguments():
     p = configargparse.ArgParser()
