@@ -34,7 +34,7 @@ To get started with ScanNeo2, follow the steps below:
 ```
 mkdir -p /path/to/your/working/directory/
 cd /path/to/your/working/directory/
-git clone recursive-submodules https://github.com/ylab-hi/ScanNeo2.git
+git clone recurse-submodules https://github.com/ylab-hi/ScanNeo2.git
 cd ScanNeo2
 ```
 
