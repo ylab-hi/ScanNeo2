@@ -1,8 +1,6 @@
 rule download_vep_plugins:
   output:
-    nmd="resources/vep/plugins/NMD.pm",
-    downstream="resources/vep/plugins/Downstream.pm",
-    wildtype="resources/vep/plugins/Wildtype.pm"
+    directory("resources/vep/plugins")
   message:
     "Downloading VEP plugins"
   log: 
@@ -12,9 +10,9 @@ rule download_vep_plugins:
   shell:
     """
       mkdir -p resources/vep/plugins/
-      curl -L -o {output.nmd} https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/110/NMD.pm
-      curl -L -o {output.downstream} https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/110/Downstream.pm
-      curl -L -o {output.wildtype} https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm
+      curl -L -o {output}/NMD.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/110/NMD.pm
+      curl -L -o {output}/Downstream.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/110/Downstream.pm
+      curl -L -o {output}/Wildtype.pm https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm
     """
 
 rule download_vep_cache:
