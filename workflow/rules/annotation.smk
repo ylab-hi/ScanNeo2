@@ -1,26 +1,19 @@
 rule download_vep_plugins:
   output:
-    directory("resources/vep/plugins")
+    nmd="resources/vep/plugins/NMD.pm",
+    downstream="resources/vep/plugins/Downstream.pm",
+    wildtype="resources/vep/plugins/Wildtype.pm"
   message:
     "Downloading VEP plugins"
-  log:
-    "logs/vep/plugins.log"
-  params:
-    release=110
-  wrapper:
-    "v1.31.1/bio/vep/plugins"
-
-rule download_wildtype_plugin:
-  output:
-    "resources/vep/plugins/Wildtype.pm"
-  message:
-    Downloading VEP Wildtype plugin"
-  log:
-    "logs/vep/plugins_wildtype.log"
+  log: 
+    "logs/vep/download_plugins.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
+      mkdir -p resources/vep/plugins/
+      curl -L -o {output.nmd} https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/110/NMD.pm
+      curl -L -o {output.downstream} https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/110/Downstream.pm
       curl -L -o {output} https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm
     """
 
