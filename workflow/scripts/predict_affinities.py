@@ -3,12 +3,14 @@ import os
 import subprocess
 import configargparse
 import tempfile
+import concurrent.futures
 
 """
 Usage: python predict_affinities.py -i <peptides> \
         -a <alleles> \
         -e <epitope_lengths> \
         -o <output> \
+        -t <threads> \
         -l <log>
 """
 
@@ -81,9 +83,12 @@ def main():
         for epilen in epilens:
             fh_wt[epilen].close()
             fh_mt[epilen].close()
+
+        wt_affinities = collect_binding_affinities(alleles, wt_fname, epilens, 'wt', options.threads)
+        mt_affinities = collect_binding_affinities(alleles, mt_fname, epilens, 'mt', options.threads)
         
-        wt_affinities = calc_peptide_binding(alleles, wt_fname, 'wt')
-        mt_affinities = calc_peptide_binding(alleles, mt_fname, 'mt')
+#        wt_affinities = calc_peptide_binding(alleles, wt_fname, 'wt')
+#        mt_affinities = calc_peptide_binding(alleles, mt_fname, 'mt')
 
 #        print(mt_affinities)
 
@@ -171,6 +176,80 @@ def main():
 
 
 
+def collect_binding_affinities(alleles, fnames, epilens, group, threads):
+    affinities_results = {}
+    number_of_threads = int(threads)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=number_of_threads) as executor:
+        futures = {}
+        for allele in alleles:
+            for epilen in epilens:
+                future = executor.submit(calc_binding_affinities, fnames[epilen], allele, epilen, group)
+                futures[future] = epilen
+
+        for future in concurrent.futures.as_completed(futures):
+            epilen = futures[future]
+            binding_affinities = future.result()
+
+            # check epilen already present
+            if epilen not in affinities_results.keys():
+                affinities_results[epilen] = {}
+
+            for seqnum in binding_affinities.keys():
+                if seqnum not in affinities_results[epilen].keys():
+                    affinities_results[epilen][seqnum] = binding_affinities[seqnum]
+                else:
+                    for seq in binding_affinities[seqnum].keys():
+                        if seq not in affinities_results[epilen][seqnum].keys():
+                            affinities_results[epilen][seqnum][seq] = binding_affinities[seqnum][seq]
+
+    return affinities_results
+
+
+def calc_binding_affinities(fa_file, allele, epilen, group):
+    binding_affinities = {}
+#    binding_affinities[epilen] = {}
+    print(f'calculate binding affinities - allele:{allele} epilen:{epilen} group: {group}')
+    call = ['python', 
+        'workflow/scripts/mhc_i/src/predict_binding.py', 
+        'netmhcpan', 
+        allele, 
+        str(epilen),
+        fa_file]
+
+    result = subprocess.run(call,
+        stdout = subprocess.PIPE,
+        universal_newlines=True)
+    predictions = result.stdout.rstrip().split('\n')[1:]
+
+    for line in predictions:
+        entries = line.split('\t')
+        if group == 'mt':
+            if float(entries[8]) >= 500:
+                continue
+
+        # sequence number in results used as key
+        seqnum = int(entries[1])
+        epitope_seq = entries[5]
+        allele = entries[0]
+
+        # start and end in sequence (0-based)
+        start = int(entries[2])-1 
+        end = int(entries[3])-1
+
+        ic50 = float(entries[8])
+        rank = float(entries[9])
+
+        if seqnum not in binding_affinities:
+            binding_affinities[seqnum] = {}
+
+        if epitope_seq not in binding_affinities[seqnum]:
+            binding_affinities[seqnum][epitope_seq] = (allele, start, end, ic50, rank)
+
+    return binding_affinities
+
+
+
 def calc_peptide_binding(alleles, fnames, group):
     binding_affinities = {}
     for allele in alleles:
@@ -206,11 +285,11 @@ def calc_peptide_binding(alleles, fnames, group):
                 ic50 = float(entries[8])
                 rank = float(entries[9])
 
-                if seqnum not in binding_affinities[epilen]:
-                    binding_affinities[epilen][seqnum] = {}
+                if seqnum not in binding_affinities:
+                    binding_affinities[seqnum] = {}
 
-                if entries[5] not in binding_affinities[epilen][seqnum]:
-                    binding_affinities[epilen][seqnum][epitope_seq] = (allele, start, end, ic50, rank)
+                if epitope_seq not in binding_affinities[seqnum]:
+                    binding_affinities[seqnum][epitope_seq] = (allele, start, end, ic50, rank)
 
     return binding_affinities
 
@@ -251,6 +330,7 @@ def parse_arguments():
     p.add('-a', '--alleles', required=True, help='Alleles to be predicted')
     p.add('-e', '--lengths', required=True, help='Lengths of epitopes to be predicted')
     p.add('-o', '--output', required=True, help='Output table')
+    p.add('-t', '--threads', required=True, help='Number of threads')
     p.add('-l', '--log', required=False, help='Log file')
 
     options = p.parse_args()
