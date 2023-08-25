@@ -46,7 +46,7 @@ rule priorization:
     "logs/mhci/{sample}_affinities.log"
   threads: config["threads"]
   params:
-    mhc_i=config["priorization"]["lengths"]["length"]["MHC-I"]
+    mhc_i=config["priorization"]["lengths"]["MHC-I"]
   conda:
     "../envs/priorization.yml"
   shell:
