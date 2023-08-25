@@ -46,14 +46,14 @@ rule priorization:
     "logs/mhci/{sample}_affinities.log"
   threads: config["threads"]
   params:
-    epitope_length=config["priorization"]["mhc_i"]["length"]
+    mhc_i=config["priorization"]["lengths"]["length"]["MHC-I"]
   conda:
     "../envs/priorization.yml"
   shell:
     """
       python workflow/scripts/predict_affinities.py \
           -i {input.peptides} -a {input.alleles} \
-          -e {params.epitope_length} -t {threads} -o {output} 
+          -e {params.mhc_i} -t {threads} -o {output} 
       python workflow/scripts/predict_immunogenicity.py \
           {output}
     """

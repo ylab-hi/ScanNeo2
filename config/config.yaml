@@ -82,9 +82,8 @@ hlatyping:
   mode: DNA  # DNA, RNA, BOTH, None
 
 priorization:
-  mhc_i: 
-    length: 8,9,10,11
-  mhc_ii:
-    len: 13-25
-
-
+  class: I # I, II or BOTH
+  lengths:
+    MHC-I: 8,9,10,11
+    MHC-II: 13,14,20
+    
