@@ -59,7 +59,7 @@ rule detect_long_indel_ti_call:
         mapq=config['mapq']
     shell:
         """
-          python workflow/scripts/transIndel/transIndel_call.py \
+          python workflow/scripts/transindel/transIndel_call.py \
           -i {input.bam} \
           -l 10 \
           -o results/{wildcards.sample}/{wildcards.seqtype}/indel/transindel/{wildcards.group}_call \
