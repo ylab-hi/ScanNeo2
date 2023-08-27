@@ -1,16 +1,29 @@
-rule download_prediction_tools:
+rule download_prediction_affinity_tools:
   output:
     directory("workflow/scripts/mhc_i/")
   message:
     "Downloading MHC I prediction tools"
   log:
-    "logs/download_mhc_i_tools.log"
+    "logs/download_prediction_affinity_tools.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
       curl -L -o - https://downloads.iedb.org/tools/mhci/3.1.4/IEDB_MHC_I-3.1.4.tar.gz \
           | tar xz -C workflow/scripts/
+    """
+
+rule download_prediction_binding_affinity_tools:
+  output:
+    directory("workflow/scripts/immunogenicity/")
+  message:
+    "Downloading immunogenicity prediction tools"
+  log:
+    "logs/download_immunogenicity_tools.log"
+  conda:
+    "../envs/basic.yml"
+  shell:
+    """
       curl -L -o - https://downloads.iedb.org/tools/immunogenicity/3.0/IEDB_Immunogenicity-3.0.tar.gz \
           | tar xz -C workflow/scripts/
     """
@@ -36,6 +49,8 @@ rule compile_peptides_from_variants:
 
 rule priorization:
   input:
+    pred_aff="workflow/scripts/mhc_i/",
+    pred_imm="workflow/scripts/immunogenicity/",
     peptides="results/{sample}/priorization/peptides.tsv",
     alleles="results/{sample}/hla/alleles.tsv"
   output:
