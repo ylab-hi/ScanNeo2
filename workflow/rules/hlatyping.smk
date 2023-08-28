@@ -61,8 +61,11 @@ if config['data']['dnaseq'] is not None:
           "../envs/yara.yml"
         shell:
           """
-            yara_mapper -e 3 -f bam -u resources/hla/yara/idx/dna {input[0]} \
-                | samtools view -h -F 4 -b1 - > {output}
+            samtools fastq {input[0]} > results/{wildcards.sample}/hla/{wildcards.group}_dna.fastq 
+            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna \
+              results/{wildcards.sample}/hla/{wildcards.group}_dna.fastq \
+              | samtools view -h -F 4 -b1 - | samtools sort - -o {output}
+            samtools index {output}
           """
 
 if config['data']['dnaseq'] is not None:

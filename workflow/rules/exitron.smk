@@ -8,11 +8,14 @@ rule download_genome:
     "../envs/basic.yml"
   shell:
     """
-      curl -L -o - https://hgdownload.cse.ucsc.edu/goldenpath/hg38/bigZips/hg38.fa.gz \
+      curl -L https://hgdownload.cse.ucsc.edu/goldenpath/hg38/bigZips/hg38.fa.gz \
           | gzip -d > resources/refs/hg38.fa 
-      curl -L -o - wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/gencode.v37.annotation.gtf.gz \
+      curl -L  https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/gencode.v37.annotation.gtf.gz \
           | gzip -d > resources/refs/gencode.v37.annotation.gtf
     """
+      #\
+          #| gzip -d > resources/refs/gencode.v37.annotation.gtf
+      
 
 rule prepare_cds:
   output:
@@ -30,7 +33,7 @@ rule prepare_cds:
 
 rule prepare_scanexitron_config:
   output:
-    "scripts/scanexitron/config.ini"
+    "resources/scanexitron_config.ini"
   log:
     "logs/prepare_scanexitron_config.log"
   conda:
@@ -38,9 +41,9 @@ rule prepare_scanexitron_config:
   shell:
     """
       python3 workflow/scripts/prep_scanexitron_config.py \
-          "resources/refs/hg38.fa" \
-          "resources/refs/gencode.v37.annotation.gtf" \
-          "resources/refs/CDS.bed" \
+          resources/refs/hg38.fa \
+          resources/refs/gencode.v37.annotation.gtf \
+          resources/refs/CDS.bed \
           {output} > {log}
     """
 
@@ -49,20 +52,33 @@ rule scanexitron:
         bam = "results/{sample}/rnaseq/align/{group}_final_STAR.bam",
         fasta = "resources/refs/hg38.fa",
         gtf = "resources/refs/gencode.v37.annotation.gtf",
-        cds = "resources/refs/CDS.bed"
+        cds = "resources/refs/CDS.bed",
+        config="resources/scanexitron_config.ini"
     output:
         "results/{sample}/rnaseq/exitron/{group}.exitron",
-    log:
-        "logs/scanexitron_{sample}_{group}.log"
     message:
       "Detect exitrons on sample:{wildcards.sample} of group:{wildcards.group}"
+    log:
+        "logs/scanexitron_{sample}_{group}.log"
+    threads:
+      config["threads"]
     container:
       "docker://yanglabinfo/scanneo2-scanexitron"
+    params:
+      mapq = config['mapq'],
+      ao = config['exitronsplicing']['ao'],
+      pso = config['exitronsplicing']['pso']
     shell:
-      "python3 workflow/scripts/scanexitron/ScanExitron.py \
+      """
+        python3 workflow/scripts/scanexitron/ScanExitron.py \
+          -t {threads} \
+          --mapq {params.mapq} \
+          --ao {params.ao} \
+          --pso {params.pso} \
+          -c ../../../{input.config} \
           -i {input.bam} \
-          -c resources/scanexitron_config.ini \
-          -r hg38"
+          -r hg38
+      """
 
 rule exitron_to_vcf:
   input:

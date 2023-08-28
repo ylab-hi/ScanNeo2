@@ -1,4 +1,5 @@
 import os
+import sys
 import glob
 from pathlib import Path
 
@@ -16,37 +17,44 @@ def handle_seqfiles(seqdata):
   readtype = []
   filetype = []
 
-  # iterate over replicates
-  for rpl in seqdata.keys():
-    files = [Path(file) for file in seqdata[rpl].split(' ')]
-    if len(files) == 1:  # SE
-      f1_ext = get_file_extension(files[0])
-      if f1_ext in ['.fq', '.fastq', '.bam']:
-        seqdata[rpl] = files[0]
-        filetype.append(f1_ext)
-        readtype.append('SE')
-      else:
-        print('{} is not a valid file'.format(files[0]))
-    elif len(files) == 2:  # PE
-      f1_ext = get_file_extension(files[0])
-      f2_ext = get_file_extension(files[1])
-      # check if file extensions are the same
-      if f1_ext == f2_ext:
-        if(valid_paired_end(files[0], files[1])):
-          seqdata[rpl] = files
-          filetype.append(f1_ext)
-          readtype.append('PE')
-        else:
-          print('files not in valid PE format')
-      else:
-        print('files do not have the same extension')
 
-  # check if filetype and readtype are the same
-  if all_identical(filetype) and all_identical(readtype):
-    return seqdata, filetype[0], readtype[0]
+  if seqdata is not None:
+    # iterate over replicates
+    for rpl in seqdata.keys():
+      files = [Path(file) for file in seqdata[rpl].split(' ')]
+      if len(files) == 1:  # SE
+        f1_ext = get_file_extension(files[0])
+        if f1_ext in ['.fq', '.fastq', '.bam']:
+          seqdata[rpl] = files[0]
+          filetype.append(f1_ext)
+          readtype.append('SE')
+        else:
+          print('{} is not a valid file'.format(files[0]))
+      elif len(files) == 2:  # PE
+        f1_ext = get_file_extension(files[0])
+        f2_ext = get_file_extension(files[1])
+        # check if file extensions are the same
+        if f1_ext == f2_ext:
+          if(valid_paired_end(files[0], files[1])):
+            seqdata[rpl] = files
+            filetype.append(f1_ext)
+            readtype.append('PE')
+          else:
+            print('files not in valid PE format')
+        else:
+          print('files do not have the same extension')
+
+    # check if filetype and readtype are the same
+    if all_identical(filetype) and all_identical(readtype):
+      return seqdata, filetype[0], readtype[0]
+    else:
+      print('filetypes are not the same')
+      return seqdata, None, None
+
   else:
-    print('filetypes are not the same')
     return seqdata, None, None
+
+
 
 # determines the file extension for a given file - excludes .gz
 def get_file_extension(path):
@@ -103,6 +111,9 @@ def all_identical(l):
 
 # load up the config
 config['data'] = data_structure(config['data'])
+print(config['data'])
+print(config)
+
 
 ########### PREPROCESSING ##########
 def get_raw_reads(wildcards):
@@ -207,20 +218,31 @@ def hlatyping_input_RNA(wildcards):
 # returns list of hla typing results for the given sample and group
 def get_alleles(wildcards):
   values = []
+
   if config['hlatyping']['mode'] in ['DNA', 'BOTH']:
-    for key in config['data']['dnaseq'].keys():
-      ### check if its blank
-      if key not in config['data']['normal']:
+    if config['data']['dnaseq'] is not None:
+      for key in config['data']['dnaseq'].keys():
         values += expand("results/{sample}/hla/{group}_dna_result.tsv",
                            sample = wildcards.sample,
                            group = key)
+    else:
+      print('dnaseq data has not been specified in the config file, but specified mode for hla genotyping in config file is DNA or BOTH')
+
 
   if config['hlatyping']['mode'] in ['RNA', 'BOTH']:
-    for key in config['data']['rnaseq'].keys():
-      if key not in config['data']['normal']:
+    if config['data']['rnaseq'] is not None:
+      for key in config['data']['rnaseq'].keys():
+#        if key not in config['data']['normal']:
         values += expand("results/{sample}/hla/{group}_rna_result.tsv",
                            sample = wildcards.sample,
                            group = key)
+    else:
+      print('rnaseq data has not been specified in the config file, but specified mode for hla genotyping in config file is RNA or BOTH')
+
+  if len(values) == 0:
+    print('No data found. Check config file for correct specification of data and hla genotyping mode')
+    sys.exit(1)
+
   return values
 
 
@@ -269,16 +291,36 @@ def get_readgroups_input(wildcards):
 
   elif config['data'][f'{wildcards.seqtype}_filetype'] in ['.bam']:
     val = []
-    val.append(str(config['data']['rnaseq'][wildcards.group]))
-    val += expand("results/{sample}/{seqtype}/align/{group}_final_STAR.bam",
-        sample=wildcards.sample,
-        seqtype=wildcards.seqtype,
-        group=wildcards.group)
-
+    
+    # For DNAseq 
+    if wildcards.seqtype == 'dnaseq':
+      val.append(str(config['data']['dnaseq'][wildcards.group]))
+    elif wildcards.seqtype == 'rnaseq':
+      # needs both the raw data and star aligned bam 
+      val.append(str(config['data']['rnaseq'][wildcards.group]))
+      val += expand("results/{sample}/{seqtype}/align/{group}_final_STAR.bam",
+          sample=wildcards.sample,
+          seqtype='rnaseq',
+          group=wildcards.group)
+    
     return val
 
 
+
+
+
 # input for alignment w/ DNAseq data
+def get_realign_input(wildcards):
+  # For DNAseq use the (raw) reads defined in config 
+  if wildcards.seqtype == 'dnaseq':
+    return config['data']['dnaseq'][wildcards.group]
+  elif wildcards.seqtype == 'rnaseq':
+    return expand("results/{sample}/{seqtype}/align/{group}_final_STAR.bam",
+      sample=wildcards.sample,
+      seqtype='rnaseq',
+      group=wildcards.group)
+
+
 def get_align_input_dnaseq(wildcards):
   if config['preproc']['activate']:
     if config['data']['dnaseq_readtype'] == 'SE':
@@ -305,17 +347,19 @@ def get_align_input_dnaseq(wildcards):
       )
 
 def get_dna_align_input(wildcards):
-  if config['preproc']['activate']:
-    if config['data']['dnaseq_readtype'] == 'SE':
-      return expand("results/{sample}/dnaseq/reads/{group}_preproc.fq.gz", **wildcards)
-    elif config['data']['dnaseq_readtype'] == 'PE':  # PE
-      return expand("results/{sample}/dnaseq/reads/{group}_{readtype}_preproc.fq.gz",
-                    readtype=["r1", "r2"],
-                    group = wildcards.group,
-                    sample = wildcards.sample)
+  if config['data']['dnaseq_filetype'] in ['.fq', '.fatq']:
+    if config['preproc']['activate']:
+      if config['data']['dnaseq_readtype'] == 'SE':
+        return expand("results/{sample}/dnaseq/reads/{group}_preproc.fq.gz", **wildcards)
+      elif config['data']['dnaseq_readtype'] == 'PE':  # PE
+        return expand("results/{sample}/dnaseq/reads/{group}_{readtype}_preproc.fq.gz",
+                      readtype=["r1", "r2"],
+                      group = wildcards.group,
+                      sample = wildcards.sample)
 
+  # is bamfile
   else:   # no pre-processing has been performed
-    return rnaseq_input[wildcards.sample]
+    return config['data']['dnaseq'][wildcards.group]
 
 ########### INDEL CALLING ##########
 def get_longindels(wildcards):
@@ -338,17 +382,28 @@ def get_longindels(wildcards):
 
 def get_shortindels(wildcards):
   indels=[]
-  if config['indel']['mode'] in ['RNA','BOTH']:
-    indels += expand("results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf",
-      sample=config['data']['name'], 
-      seqtype='rnaseq',
-      group=list(config['data']['rnaseq'].keys()))
-  
+ 
   if config['indel']['mode'] in ['DNA','BOTH']:
-    indels += expand("results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf",
-      sample=config['data']['name'], 
-      seqtype='dnaseq',
-      group=list(config['data']['dnaseq'].keys()))
+    if config['data']['dnaseq'] is not None:
+      indels += expand("results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf",
+        sample=config['data']['name'], 
+        seqtype='dnaseq',
+        group=list(config['data']['dnaseq'].keys()))
+    else:
+      print('dnaseq data has not been specified in the config file, but specified mode for indel calling in config file is DNA or BOTH - skipping...')
+  
+  if config['indel']['mode'] in ['RNA','BOTH']:
+    if config['data']['rnaseq'] is not None:
+      indels += expand("results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf",
+        sample=config['data']['name'], 
+        seqtype='rnaseq',
+        group=list(config['data']['rnaseq'].keys()))
+    else:
+      print('rnaseq data has not been specified in the config file, but specified mode for indel calling in config file is RNA or BOTH')
+
+  if len(indels) == 0:
+    print('No data found. Check config file for correct specification of data and indel calling mode')
+    sys.exit(1)
 
   return indels
 

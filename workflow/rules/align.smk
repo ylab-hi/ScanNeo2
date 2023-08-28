@@ -164,17 +164,18 @@ rule get_readgroups:
           {output} > {log} 2>&1
       """
 
+# realign RNAseq and align DNAseq 
 rule realign:
   input:
-    bam="results/{sample}/rnaseq/align/{group}_final_STAR.bam",
-    rg="results/{sample}/rnaseq/reads/{group}_readgroups.txt",
+    bam=get_readgroups_input,
+    rg="results/{sample}/{seqtype}/reads/{group}_readgroups.txt",
     idx = multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
   output:
-    bam="results/{sample}/rnaseq/align/{group}_final_BWA.bam",
+    bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
   conda:
     "../envs/basic.yml"
   log:
-    "logs/{sample}/realign/rnaseq_{group}.log"
+    "logs/{sample}/realign/{seqtype}_{group}.log"
   threads: config['threads']
   shell:
     """
@@ -198,44 +199,46 @@ rule samtools_index_BWA_final:
     wrapper:
         "v2.3.0/bio/samtools/index"
 
-### workflow when aligning paired-end fastq files for DNAseq
-rule bwa_align_dnaseq:
-  input:
-    get_dna_align_input
-  output:
-    "results/{sample}/dnaseq/align/{group}_aligned_BWA.bam"
-  log:
-    "logs/{sample}/bwa_align/dnaseq_{group}.log"
-  conda:
-    "../envs/basic.yml"
-  params:
-    extra=""
-  threads: config['threads']
-  shell:
-    """
-      bwa mem -pt{threads} -C resources/refs/bwa/genome {input} \
-      | samtools addreplacerg -r ID:{wildcards.group} -r SM:{wildcards.sample} \
-      -r LB:{wildcards.sample} -r PL:ILLUMINA -r PU:{wildcards.group} - - \
-      | samtools sort -@ 6 -n -m1g - -o {output} > {log} 2>&1
-    """
 
-rule dnaseq_postproc:
-  input:
-    "results/{sample}/dnaseq/align/{group}_aligned_BWA.bam"
-  output:
-    bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
-    idx="results/{sample}/dnaseq/align/{group}_final_BWA.bam.bai"
-  log:
-    "logs/{sample}/postproc/dnaseq_{group}.log"
-  conda:
-    "../envs/samtools.yml"
-  params:
-    extra=""
-  threads: config['threads']
-  shell:
-    """
-      samtools fixmate -pcmu -O bam -@ 6 {input} - \
-          | samtools sort -m1g -O bam - -o - \
-          | samtools markdup -r -@ 6 - {output.bam} > {log} 2>&1
-      samtools index {output.bam}
-    """
+### workflow when aligning paired-end fastq files for DNAseq
+if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
+  rule bwa_align_dnaseq:
+    input:
+      get_dna_align_input
+    output:
+      "results/{sample}/dnaseq/align/{group}_aligned_BWA.bam"
+    log:
+      "logs/{sample}/bwa_align/dnaseq_{group}.log"
+    conda:
+      "../envs/basic.yml"
+    params:
+      extra=""
+    threads: config['threads']
+    shell:
+      """
+        bwa mem -pt{threads} -C resources/refs/bwa/genome {input} \
+        | samtools addreplacerg -r ID:{wildcards.group} -r SM:{wildcards.sample} \
+        -r LB:{wildcards.sample} -r PL:ILLUMINA -r PU:{wildcards.group} - - \
+        | samtools sort -@ 6 -n -m1g - -o {output} > {log} 2>&1
+      """
+
+  rule dnaseq_postproc:
+    input:
+      "results/{sample}/dnaseq/align/{group}_aligned_BWA.bam"
+    output:
+      bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
+      idx="results/{sample}/dnaseq/align/{group}_final_BWA.bam.bai"
+    log:
+      "logs/{sample}/postproc/dnaseq_{group}.log"
+    conda:
+      "../envs/samtools.yml"
+    params:
+      extra=""
+    threads: config['threads']
+    shell:
+      """
+        samtools fixmate -pcmu -O bam -@ 6 {input} - \
+            | samtools sort -m1g -O bam - -o - \
+            | samtools markdup -r -@ 6 - {output.bam} > {log} 2>&1
+        samtools index {output.bam}
+      """

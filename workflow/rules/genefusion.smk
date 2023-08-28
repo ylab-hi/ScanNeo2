@@ -49,9 +49,7 @@ rule fusions_to_vcf:
 
 rule combine_fusions:
   input:
-    expand("results/{sample}/rnaseq/genefusion/{group}_fusions.vcf", 
-           sample=config['data']['name'],
-           group=list(config['data']['rnaseq'].keys()))
+    get_fusions,
   output:
     "results/{sample}/variants/fusions.vcf"
   message:
