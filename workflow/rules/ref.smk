@@ -11,10 +11,11 @@ rule get_genome:
   params:
   shell:
     """
-      curl -L -o - https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.primary_assembly.genome.fa.gz \
-        | gzip -d - > {output.genome}
-      curl -L -o - https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.annotation.gtf.gz \
-        | gzip -d - > {output.annotation}
+      mkdir -p resources/refs
+      curl -L -o {output.genome}.gz https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.primary_assembly.genome.fa.gz 
+      gzip -d {output.genome}.gz
+      curl -L -o {output.annotation}.gz https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.annotation.gtf.gz 
+      gzip -d {output.annotation}
     """
 
       #curl -L -o - https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz \

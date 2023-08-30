@@ -111,8 +111,6 @@ def all_identical(l):
 
 # load up the config
 config['data'] = data_structure(config['data'])
-print(config['data'])
-print(config)
 
 
 ########### PREPROCESSING ##########
