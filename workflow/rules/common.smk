@@ -11,48 +11,58 @@ def data_structure(data):
   config['data']['rnaseq'], filetype, readtype  = handle_seqfiles(config['data']['rnaseq'])
   config['data']['rnaseq_filetype'] = filetype
   config['data']['rnaseq_readtype'] = readtype
+
+  # abort if no data could be found
+  if len(config['data']['dnaseq']) == 0 and len(config['data']['rnaseq']) == 0:
+    print('No valid sequence files found')
+    sys.exit(1)
+
   return config['data']
 
 def handle_seqfiles(seqdata):
   readtype = []
   filetype = []
 
+  # create new dictionary for modified information
+  mod_seqdata = {}
 
   if seqdata is not None:
     # iterate over replicates
     for rpl in seqdata.keys():
-      files = [Path(file) for file in seqdata[rpl].split(' ')]
-      if len(files) == 1:  # SE
-        f1_ext = get_file_extension(files[0])
-        if f1_ext in ['.fq', '.fastq', '.bam']:
-          seqdata[rpl] = files[0]
-          filetype.append(f1_ext)
-          readtype.append('SE')
-        else:
-          print('{} is not a valid file'.format(files[0]))
-      elif len(files) == 2:  # PE
-        f1_ext = get_file_extension(files[0])
-        f2_ext = get_file_extension(files[1])
-        # check if file extensions are the same
-        if f1_ext == f2_ext:
-          if(valid_paired_end(files[0], files[1])):
-            seqdata[rpl] = files
+      # make sure to ignore keys with empty values
+      if seqdata[rpl] is not None:
+        files = [Path(file) for file in seqdata[rpl].split(' ')]
+        if len(files) == 1:  # SE
+          f1_ext = get_file_extension(files[0])
+          if f1_ext in ['.fq', '.fastq', '.bam']:
+            mod_seqdata[rpl] = files[0]
             filetype.append(f1_ext)
-            readtype.append('PE')
+            readtype.append('SE')
           else:
-            print('files not in valid PE format')
-        else:
-          print('files do not have the same extension')
+            print('{} is not a valid file'.format(files[0]))
+        elif len(files) == 2:  # PE
+          f1_ext = get_file_extension(files[0])
+          f2_ext = get_file_extension(files[1])
+          # check if file extensions are the same
+          if f1_ext == f2_ext:
+            if(valid_paired_end(files[0], files[1])):
+              mod_seqdata[rpl] = files
+              filetype.append(f1_ext)
+              readtype.append('PE')
+            else:
+              print('files not in valid PE format')
+          else:
+            print('files do not have the same extension')
 
-    # check if filetype and readtype are the same
-    if all_identical(filetype) and all_identical(readtype):
-      return seqdata, filetype[0], readtype[0]
-    else:
-      print('filetypes are not the same')
-      return seqdata, None, None
+        # check if filetype and readtype are the same
+        if all_identical(filetype) and all_identical(readtype):
+          return mod_seqdata, filetype[0], readtype[0]
+        else:
+          print('filetypes are not the same')
+          return mod_seqdata, None, None
 
   else:
-    return seqdata, None, None
+    return mod_seqdata, None, None
 
 
 
@@ -111,7 +121,6 @@ def all_identical(l):
 
 # load up the config
 config['data'] = data_structure(config['data'])
-
 
 ########### PREPROCESSING ##########
 def get_raw_reads(wildcards):
