@@ -313,9 +313,6 @@ def get_readgroups_input(wildcards):
     return val
 
 
-
-
-
 # input for alignment w/ DNAseq data
 def get_realign_input(wildcards):
   # For DNAseq use the (raw) reads defined in config 
@@ -429,7 +426,14 @@ def get_snvs(wildcards):
       group=list(config['data']['dnaseq'].keys()))
 
   return indels
-   
+
+
+########### EXITRON CALLING ##########
+def get_exitrons(wildcards):
+  return expand("results/{sample}/rnaseq/exitron/{group}_exitron.vcf",
+                sample=wildcards.sample,
+                group=list(config['data']['rnaseq'].keys()))
+
 
 ########### GENE FUSIONS ##########
 def get_fusions(wildcards):
@@ -445,6 +449,7 @@ def get_fusions(wildcards):
 ########### NEOANTIGEN PRIORIZATION ##########
 def get_variants(wildcards):
     variants = []
+    # indels
     if config['indel']['activate']:
       if config['indel']['type'] in ['long', 'all']:
         variants += expand("results/{sample}/annotation/long.indels.vcf",
@@ -454,6 +459,11 @@ def get_variants(wildcards):
                            sample=config['data']['name'])
         variants += expand("results/{sample}/annotation/somatic.snvs.vcf",
                            sample=config['data']['name'])
+
+    # exitron
+    if config['exitronsplicing']['activate']:
+      variants += expand("results/{sample}/annotation/exitrons.vcf",
+                         sample=config['data']['name'])
 
     return variants
 

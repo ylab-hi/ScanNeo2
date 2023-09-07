@@ -29,7 +29,8 @@ if config['data']['rnaseq_filetype'] == '.fastq' or config['data']['rnaseq_filet
           --chimScoreJunctionNonGTAG 0 \
           --chimScoreSeparation 1 \
           --chimSegmentReadGapMax 3 \
-          --chimMultimapNmax 50"""
+          --chimMultimapNmax 50 \
+          --outSAMstrandField intronMotif"""
     threads: config['threads']
     wrapper:
         "v2.2.1/bio/star/align"
@@ -93,7 +94,8 @@ if config['data']['rnaseq_filetype'] == '.bam':
         --chimOutType WithinBAM HardClip --chimSegmentMin 20 \
         --chimJunctionOverhangMin 10 --chimScoreDropMax 30 \
         --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 \
-        --chimSegmentReadGapMax 3 --chimMultimapNmax 50"""
+        --chimSegmentReadGapMax 3 --chimMultimapNmax 50 \
+        --outSAMstrandField intronMotif"""
     threads: config['threads']
     wrapper:
       "v1.26.0/bio/star/align"

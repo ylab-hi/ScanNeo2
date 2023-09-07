@@ -13,8 +13,6 @@ rule download_genome:
       curl -L  https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/gencode.v37.annotation.gtf.gz \
           | gzip -d > resources/refs/gencode.v37.annotation.gtf
     """
-      #\
-          #| gzip -d > resources/refs/gencode.v37.annotation.gtf
       
 
 rule prepare_cds:
@@ -78,30 +76,39 @@ rule scanexitron:
           -c ../../../{input.config} \
           -i {input.bam} \
           -r hg38
+        mv {wildcards.group}_final_STAR.exitron {output}
+        mv {wildcards.group}_final_STAR* results/{wildcards.sample}/rnaseq/exitron/
       """
 
 rule exitron_to_vcf:
   input:
-    "results/exitron/{sample}/{group}.exitron"
+    "results/{sample}/rnaseq/exitron/{group}.exitron"
   output:
-    "results/exitron/{sample}/{group}.vcf"
+    "results/{sample}/rnaseq/exitron/{group}_exitron.vcf"
   log:
     "logs/exitron2vcf_{sample}_{group}.log"
   conda:
-    "../envs/basic.yml"
+    "../envs/scanexitron.yml"
   shell:
     """
-      workflow/scripts/exitron2vcf.py \
-        resources/refs/genome.fasta \
-        '{input}' \
-        {output} 2> {log}
+      python workflow/scripts/exitron2vcf.py \
+        -i {input} \
+        -r hg38  \
+        -o {output} > {log}
     """
 
-#rule combine_exitrons:
-    #input:
-        #expand("results/exitron/{sample}/res.vcf", sample=config["rnaseq"])
-    #output:
-        #"results/exitron/all.vcf"
-    #shell:
-        #"""
-        #"""
+rule combine_exitrons:
+  input:
+    get_exitrons,
+  output:
+    "results/{sample}/variants/exitrons.vcf"
+  message:
+    "Combining exitrons on sample:{wildcards.sample}"
+  log:
+    "logs/{sample}/scanexitron/combine_groups.log"
+  conda:
+    "../envs/manipulate_vcf.yml"
+  shell:
+    """
+      python workflow/scripts/combine_vcf.py '{input}' exitron {output} > {log} 2>&1
+    """
