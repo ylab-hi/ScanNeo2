@@ -36,9 +36,7 @@ def main():
             # print(entry.calls[0].data['GT'])
             # print(entry.calls[0].data['AD'])
 
-
 #           determine_allele_frequency(entry) 
-
 
             # FILTER (when applicable)
             if (entry.INFO['SRC'] == 'snv' or
@@ -208,7 +206,8 @@ def determine_read_depth(entry):
         entry.INFO['SRC'] == 'snv'):
         dp = entry.calls[0].data['DP']
 
-    if entry.INFO['SRC'] == 'long_indel':
+    if (entry.INFO['SRC'] == 'long_indel' or 
+        entry.INFO['SRC'] == 'exitron'):
         dp = entry.INFO['DP']
 
     return dp
@@ -225,7 +224,8 @@ def determine_allele_depth(entry, i):
         mt_ad = entry.calls[0].data['AD'][i+1]
 
     # transIndel
-    if entry.INFO['SRC'] == 'long_indel':
+    if (entry.INFO['SRC'] == 'long_indel' or 
+        entry.INFO['SRC'] == 'exitron'):
         mt_ad = entry.INFO['AO']
         wt_ad = str(int(float(entry.INFO['DP']) - float(mt_ad)))
 

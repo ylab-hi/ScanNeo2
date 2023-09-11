@@ -133,7 +133,7 @@ if config['data']['rnaseq'] is not None:
 
 if config['data']['rnaseq'] is not None:
   if config['hlatyping']['mode'] == 'BOTH' or config['hlatyping']['mode'] == 'RNA':
-    if config['data']['dnaseq_readtype'] == 'PE':
+    if config['data']['rnaseq_readtype'] == 'PE':
       rule get_hla_filtering_input_paired_RNA:
         input:
           unpack(get_hla_flt_rna_pe),

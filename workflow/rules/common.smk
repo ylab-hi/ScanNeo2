@@ -465,5 +465,13 @@ def get_variants(wildcards):
       variants += expand("results/{sample}/annotation/exitrons.vcf",
                          sample=config['data']['name'])
 
+    # gene fusions
+    if config['genefusion']['activate']:
+      variants += expand("results/{sample}/annotation/fusions.vcf",
+                         sample=config['data']['name'])
+
+
+
+
     return variants
 

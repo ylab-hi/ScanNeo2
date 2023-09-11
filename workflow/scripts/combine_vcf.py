@@ -21,8 +21,9 @@ def main():
         elif '_somatic.snvs.vcf' in str(Path(v).name):
             rpl = Path(v).name.split('_somatic.snvs.vcf')[0]
         elif '_fusions.vcf' in str(Path(v).name):
-            rpl= Path(v).name.split('_fusions.vcf')[0]
-    
+            rpl = Path(v).name.split('_fusions.vcf')[0]
+        elif '_exitron.vcf' in str(Path(v).name):
+            rpl = Path(v).name.split('_exitron.vcf')[0]
 
         reader = vcfpy.Reader.from_path(v)
         reader.header.add_info_line(
@@ -42,6 +43,7 @@ def main():
 
         # iterate through all records
         for record in reader:
+            print(record)
             record.INFO['GRP'] = rpl
             record.INFO['SRC'] = sys.argv[2]
             writer.write_record(record)

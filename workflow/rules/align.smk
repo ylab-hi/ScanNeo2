@@ -16,7 +16,7 @@ if config['data']['rnaseq_filetype'] == '.fastq' or config['data']['rnaseq_filet
     params:
       extra=lambda wildcards: f"""--outSAMtype BAM Unsorted \
           --genomeSAindexNbases 10 \
-          --outSAMattributes RG \
+          --outSAMattributes RG HI \
           --outSAMattrRGline ID:{wildcards.group} \
           --outFilterMultimapNmax 50 \
           --peOverlapNbasesMin 20 \
@@ -87,7 +87,7 @@ if config['data']['rnaseq_filetype'] == '.bam':
     params:
       extra=lambda wildcards: f"""--outSAMtype BAM Unsorted --genomeSAindexNbases 10 \
         --readFilesCommand zcat \
-        --outSAMattributes RG --outSAMattrRGline ID:{wildcards.rg} \
+        --outSAMattributes RG HI --outSAMattrRGline ID:{wildcards.rg} \
         --outFilterMultimapNmax 50 --peOverlapNbasesMin 20 \
         --alignSplicedMateMapLminOverLmate 0.5 \
         --alignSJstitchMismatchNmax 5 -1 5 5 \

@@ -33,17 +33,20 @@ rule index_variants:
   input:
     "results/{sample}/variants/{vartype}.vcf"
   output:
-    "results/{sample}/variants/{vartype}.vcf.gz",
-    "results/{sample}/variants/{vartype}.vcf.gz.tbi"
+    bgzip="results/{sample}/variants/{vartype}.vcf.gz",
+    idx="results/{sample}/variants/{vartype}.vcf.gz.tbi"
   log:
     "logs/indexvcf/{sample}_{vartype}.log"
   conda:
     "../envs/samtools.yml"
   shell:
     """
-      bgzip {input}
-      tabix {input}.gz
+      bcftools sort {input} -Oz -o {output.bgzip}
+      tabix {output.bgzip}
     """
+      
+      #tabix {output}
+     # bgzip {input}
 
 rule annotate_variants:
   input:
