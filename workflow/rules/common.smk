@@ -196,10 +196,16 @@ def get_hla_flt_rna_se(wildcards):
 
 def get_hla_flt_rna_pe(wildcards):
   if config['preproc']['activate']:
-    return expand("results/{sample}/rnaseq/reads/{group}_{readtype}_preproc.fq.gz",
+    return dict(
+        zip(
+          ["r1", "r2"],
+          expand("results/{sample}/rnaseq/reads/{group}_{readtype}_preproc.fq.gz",
                   group = wildcards.group, 
                   sample = wildcards.sample, 
                   readtype = ["r1","r2"])
+        )
+    )
+
   else:
     return config['data']['rnaseq'][wildcards.group]
 

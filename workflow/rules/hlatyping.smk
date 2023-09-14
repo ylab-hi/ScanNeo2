@@ -91,15 +91,17 @@ if config['data']['dnaseq'] is not None:
         threads: config['threads']
         shell:
           """
-            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna {input.r1} \
-                | samtools view -h -F 4 -b1 - | samtools sort - -o {output.fwd} > {log}
+            samtools fastq {input.r1} > results/{wildcards.sample}/hla/{wildcards.group}_flt_R1_dna.fastq
+            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna \
+                results/{wildcards.sample}/hla/{wildcards.group}_dna_R1.fastq \
+                | samtools view -h -F 4 -b1 - | samtools sort - -o {output.fwd}
             samtools index {output.fwd}
-            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna {input.r2} \
-                | samtools view -h -F 4 -b1 - | samtools sort - -o {output.rev} >> {log}
+            samtools fastq {input.r2} > results/{wildcards.sample}/hla/{wildcards.group}_flt_R2_dna.fastq
+            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna \
+                results/{wildcards.sample}/hla/{wildcards.group}_dna_R2.fastq \
+                | samtools view -h -F 4 -b1 - | samtools sort - -o {output.rev}
             samtools index {output.rev}
           """
-
-
 
 # map reads against reference RNA
 if config['data']['rnaseq'] is not None:
@@ -143,8 +145,8 @@ if config['data']['rnaseq'] is not None:
             ".sa.ind", ".sa.len", ".sa.val", 
             ".txt.concat", ".txt.limits", ".txt.size"),
         output:
-          "results/{sample}/hla/{group}_flt_r1_rna.bam",
-          "results/{sample}/hla/{group}_flt_r2_rna.bam",
+          fwd="results/{sample}/hla/{group}_flt_r1_rna.bam",
+          rev="results/{sample}/hla/{group}_flt_r2_rna.bam",
         message:
           "Mapping HLA reads against reference"
         log:
@@ -154,14 +156,18 @@ if config['data']['rnaseq'] is not None:
         threads: config['threads']
         shell:
           """
-            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna {input.r1} \
-                | samtools view -h -F 4 -b1 - > {output[0]}
-            samtools index {output[0]}
-            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna {input.r2} \
-                | samtools view -h -F 4 -b1 - > {output[1]}
-            samtools index {output[1]}
+            samtools fastq {input.r1} > results/{wildcards.sample}/hla/{wildcards.group}_flt_r1_rna.fastq
+            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna \
+                results/{wildcards.sample}/hla/{wildcards.group}_flt_r1_rna.fastq \
+                | samtools view -h -F 4 -b1 - | samtools sort - -o {output.fwd}
+            samtools index {output.fwd}
+            samtools fastq {input.r2} > results/{wildcards.sample}/hla/{wildcards.group}_flt_r2_rna.fastq
+            yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna \
+                results/{wildcards.sample}/hla/{wildcards.group}_flt_r2_rna.fastq \
+                | samtools view -h -F 4 -b1 - | samtools sort - -o {output.rev}
+            samtools index {output.rev}
           """
-
+            
 rule hla_genotyping_DNA:
   input:
     unpack(hlatyping_input_DNA),

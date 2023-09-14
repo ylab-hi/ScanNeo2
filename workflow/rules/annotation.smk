@@ -41,12 +41,9 @@ rule index_variants:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -Oz -o {output.bgzip}
-      tabix {output.bgzip}
+      bgzip {input}
+      tabix {input}.gz
     """
-      
-      #tabix {output}
-     # bgzip {input}
 
 rule annotate_variants:
   input:

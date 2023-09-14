@@ -53,7 +53,7 @@ rule combine_fusions:
   input:
     get_fusions,
   output:
-    "results/{sample}/variants/fusions.vcf"
+    "results/{sample}/rnaseq/genefusion/fusions.vcf"
   message:
     "Combining gene fusion events on sample:{wildcards.sample}"
   log: 
@@ -63,5 +63,21 @@ rule combine_fusions:
   shell:
     """
       python workflow/scripts/combine_vcf.py '{input}' fusion {output} > {log} 2>&1
+
     """
 
+rule sort_fusions:
+  input:
+    "results/{sample}/rnaseq/genefusion/fusions.vcf"
+  output:
+    "results/{sample}/variants/fusions.vcf"
+  message:
+    "Sorting gene fusion events on sample:{wildcards.sample}"
+  log:
+    "logs/{sample}/genefusion/sort_fusions.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools sort {input} -o {output} > {log} 2>&1
+    """
