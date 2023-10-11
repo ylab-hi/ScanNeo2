@@ -91,17 +91,17 @@ rule exitron_to_vcf:
     "../envs/scanexitron.yml"
   shell:
     """
-      python workflow/scripts/exitron2vcf.py \
-        -i {input} \
-        -r hg38  \
-        -o {output} > {log}
+      python workflow/scripts/exitron2vcf2.py \
+        {input} \
+        {output} \
+        resources/refs/hg38.fa > {log}
     """
 
 rule combine_exitrons:
   input:
     get_exitrons,
   output:
-    "results/{sample}/variants/exitrons.vcf"
+    "results/{sample}/rnaseq/exitron/exitrons_combined.vcf"
   message:
     "Combining exitrons on sample:{wildcards.sample}"
   log:
@@ -112,3 +112,18 @@ rule combine_exitrons:
     """
       python workflow/scripts/combine_vcf.py '{input}' exitron {output} > {log} 2>&1
     """
+
+rule sort_exitrons:
+  input:
+    "results/{sample}/rnaseq/exitron/exitrons_combined.vcf",
+  output:
+    "results/{sample}/variants/exitrons.vcf"
+  log:
+    "logs/{sample}/scanexitron/sort_exitrons.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools sort {input} -o {output}
+    """
+
