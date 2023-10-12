@@ -177,16 +177,30 @@ rule combine_short_indels_m2:
   input:
     get_shortindels,
   output:
-    "results/{sample}/variants/somatic.short.indels.vcf"
+    "results/{sample}/{seqtype}/indel/mutect2/somatic.short.indels_combined.vcf"
   message:
     "Combining somatic short indels detected by Mutect2 on sample:{wildcards.sample}"
   log: 
-    "logs/{sample}/transindel/combine_replicates.log"
+    "logs/{sample}/combine/{seqtype}/combine_short.indels.log"
   conda:
     "../envs/manipulate_vcf.yml"
   shell:
     """
       python workflow/scripts/combine_vcf.py '{input}' short_indel {output} > {log} 2>&1
+    """
+    
+rule sort_short_indels:
+  input:
+    "results/{sample}/rnaseq/indel/mutect2/somatic.short.indels_combined.vcf"
+  output:
+    "results/{sample}/variants/somatic.short.indels.vcf"
+  log:
+    "logs/{sample}/gatk/combined_somatic.snvs.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools sort {input} -o {output}
     """
 
 rule select_SNVs_m2:
@@ -207,19 +221,33 @@ rule select_SNVs_m2:
   wrapper:
     "v1.31.1/bio/gatk/selectvariants"
 
-rule combine_snvs_m2:
+rule combine_SNVs_m2:
   input:
     get_snvs,
   output:
-    "results/{sample}/variants/somatic.snvs.vcf"
+    "results/{sample}/{seqtype}/indel/mutect2/somatic.snvs_combined.vcf"
   message:
     "Combining somatic SNVs with Mutect2 on sample:{wildcards.sample}"
   log: 
-    "logs/{sample}/transindel/combine_replicates.log"
+    "logs/{sample}/combine/{seqtype}/combine_snvs.log"
   conda:
     "../envs/manipulate_vcf.yml"
   shell:
     """
       python workflow/scripts/combine_vcf.py '{input}' snv {output} > {log} 2>&1
+    """
+
+rule sort_SNVs:
+  input:
+    "results/{sample}/rnaseq/indel/mutect2/somatic.snvs_combined.vcf"
+  output:
+    "results/{sample}/variants/somatic.snvs.vcf"
+  log:
+    "logs/{sample}/gatk/combined_somatic.snvs.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools sort {input} -o {output}
     """
 
