@@ -38,6 +38,13 @@ git clone --recurse-submodules https://github.com/ylab-hi/ScanNeo2.git
 cd ScanNeo2
 ```
 
+3. (Optional) Install HLA-HD
+
+ScanNeo2 employs HLA-HD for HLA Class II genotyping which is required when ScanNeo2 has been configured to predict class II neoantigens. 
+Due to license reasons it has to be installed manually (download request). Please follow the instructions on the official 
+[website](https://w3.genome.med.kyoto-u.ac.jp/HLA-HD/). ScanNeo2 has been tested using HLA-HD v1.7.0
+
+
 <!--
 
     ```bash
@@ -70,8 +77,9 @@ easier to get started.
 
 In additon, we provided test data in `.tests/integration` with configuration and resulting file that can be used to test the installation
 
+## System requirements
 
-
+We recommend to run ScanNeo on a system with at least 64GB
 
 
 ## Conclusion
@@ -84,4 +92,4 @@ ScanNeo2 is licensed under MIT License.
 
 ## Contact
 
-If you have any issues or queries about ScanNeo2, please [raise an issue on GitHub](https://github.com/ylab-hi/ScanNeo2/issues/new) or contact us at [richard.schaefer@northwestern.edu](mailto:richard.schaefer@northwestern.edu).
+If you have any issues or queries about ScanNeo2, please [raise an issue on GitHub](https://github.com/ylab-hi/ScanNeo2/issues/new).
