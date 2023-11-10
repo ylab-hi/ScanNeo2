@@ -1,3 +1,4 @@
+####### CLASS I HLA GENOTYPING ###########
 rule get_hla_panel:
   output:
     dna="resources/hla/hla_ref_dna.fasta",
@@ -52,18 +53,18 @@ if config['data']['dnaseq'] is not None:
             ".sa.ind", ".sa.len", ".sa.val", 
             ".txt.concat", ".txt.limits", ".txt.size"),
         output:
-          "results/{sample}/hla/{group}_flt_dna.bam"
+          "results/{sample}/hla/{group}_flt_DNA.bam"
         message:
           "Mapping HLA reads against reference"
         log:
-          "logs/{sample}/{group}_hla_reads_filtering_dna"
+          "logs/{sample}/{group}_hla_reads_filtering_DNA"
         conda:
           "../envs/yara.yml"
         shell:
           """
-            samtools fastq {input[0]} > results/{wildcards.sample}/hla/{wildcards.group}_dna.fastq 
+            samtools fastq {input[0]} > results/{wildcards.sample}/hla/{wildcards.group}_DNA.fastq 
             yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna \
-              results/{wildcards.sample}/hla/{wildcards.group}_dna.fastq \
+              results/{wildcards.sample}/hla/{wildcards.group}_DNA.fastq \
               | samtools view -h -F 4 -b1 - | samtools sort - -o {output}
             samtools index {output}
           """
@@ -80,8 +81,8 @@ if config['data']['dnaseq'] is not None:
             ".sa.ind", ".sa.len", ".sa.val", 
             ".txt.concat", ".txt.limits", ".txt.size"),
         output:
-          fwd="results/{sample}/hla/{group}_flt_r1_dna.bam",
-          rev="results/{sample}/hla/{group}_flt_r2_dna.bam",
+          fwd="results/{sample}/hla/{group}_R1_flt_DNA.bam",
+          rev="results/{sample}/hla/{group}_R2_flt_DNA.bam",
         message:
           "Mapping HLA reads against reference"
         log:
@@ -91,14 +92,14 @@ if config['data']['dnaseq'] is not None:
         threads: config['threads']
         shell:
           """
-            samtools fastq {input.r1} > results/{wildcards.sample}/hla/{wildcards.group}_flt_R1_dna.fastq
+            samtools fastq {input.r1} > results/{wildcards.sample}/hla/{wildcards.group}_flt_R1_DNA.fastq
             yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna \
-                results/{wildcards.sample}/hla/{wildcards.group}_dna_R1.fastq \
+                results/{wildcards.sample}/hla/{wildcards.group}_flt_R1_DNA.fastq \
                 | samtools view -h -F 4 -b1 - | samtools sort - -o {output.fwd}
             samtools index {output.fwd}
-            samtools fastq {input.r2} > results/{wildcards.sample}/hla/{wildcards.group}_flt_R2_dna.fastq
+            samtools fastq {input.r2} > results/{wildcards.sample}/hla/{wildcards.group}_flt_R2_DNA.fastq
             yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/dna \
-                results/{wildcards.sample}/hla/{wildcards.group}_dna_R2.fastq \
+                results/{wildcards.sample}/hla/{wildcards.group}_flt_R2_DNA.fastq \
                 | samtools view -h -F 4 -b1 - | samtools sort - -o {output.rev}
             samtools index {output.rev}
           """
@@ -116,19 +117,19 @@ if config['data']['rnaseq'] is not None:
             ".sa.ind", ".sa.len", ".sa.val", 
             ".txt.concat", ".txt.limits", ".txt.size"),
         output:
-          "results/{sample}/hla/{group}_flt_rna.bam"
+          "results/{sample}/hla/{group}_flt_RNA.bam"
         message:
           "Mapping HLA reads against reference"
         log:
-          "logs/{sample}/{group}_hla_reads_filtering_rna"
+          "logs/{sample}/{group}_hla_reads_filtering_rna.log"
         threads: config['threads']
         conda:
           "../envs/yara.yml"
         shell:
           """
-            samtools fastq {input[0]} > results/{wildcards.sample}/hla/{wildcards.group}_rna.fastq 
+            samtools fastq {input[0]} > results/{wildcards.sample}/hla/{wildcards.group}.fastq 
             yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna \
-                results/{wildcards.sample}/hla/{wildcards.group}_rna.fastq \
+                results/{wildcards.sample}/hla/{wildcards.group}.fastq \
                 | samtools view -h -F 4 -b1 - | samtools sort - -o {output}
             samtools index {output}
           """
@@ -145,77 +146,202 @@ if config['data']['rnaseq'] is not None:
             ".sa.ind", ".sa.len", ".sa.val", 
             ".txt.concat", ".txt.limits", ".txt.size"),
         output:
-          fwd="results/{sample}/hla/{group}_flt_r1_rna.bam",
-          rev="results/{sample}/hla/{group}_flt_r2_rna.bam",
+          fwd="results/{sample}/hla/{group}_R1_flt_RNA.bam",
+          rev="results/{sample}/hla/{group}_R2_flt_RNA.bam",
         message:
           "Mapping HLA reads against reference"
         log:
-          "logs/{sample}/{group}_hla_reads_filtering_rna"
+          "logs/{sample}/{group}_hla_reads_filtering_RNA"
         conda:
           "../envs/yara.yml"
         threads: config['threads']
         shell:
           """
-            samtools fastq {input.r1} > results/{wildcards.sample}/hla/{wildcards.group}_flt_r1_rna.fastq
+            samtools fastq {input.r1} > results/{wildcards.sample}/hla/{wildcards.group}_r1.fastq
             yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna \
-                results/{wildcards.sample}/hla/{wildcards.group}_flt_r1_rna.fastq \
+                results/{wildcards.sample}/hla/{wildcards.group}_r1.fastq \
                 | samtools view -h -F 4 -b1 - | samtools sort - -o {output.fwd}
-            samtools index {output.fwd}
-            samtools fastq {input.r2} > results/{wildcards.sample}/hla/{wildcards.group}_flt_r2_rna.fastq
+            samtools index -m1g {output.fwd}
+            samtools fastq {input.r2} > results/{wildcards.sample}/hla/{wildcards.group}_r2.fastq
             yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara/idx/rna \
-                results/{wildcards.sample}/hla/{wildcards.group}_flt_r2_rna.fastq \
+                results/{wildcards.sample}/hla/{wildcards.group}_r2.fastq \
                 | samtools view -h -F 4 -b1 - | samtools sort - -o {output.rev}
-            samtools index {output.rev}
+            samtools index -m1g {output.rev}
           """
-            
-rule hla_genotyping_DNA:
-  input:
-    unpack(hlatyping_input_DNA),
-  output:
-    pdf="results/{sample}/hla/{group}_dna_coverage_plot.pdf",
-    tsv="results/{sample}/hla/{group}_dna_result.tsv",
-  log:
-    "logs/{sample}/optitype/{group}_call.log"
-  conda:
-    "../envs/optitype.yml"
-  shell:
-    """
-      OptiTypePipeline.py --input {input} \
-          --outdir results/{wildcards.sample}/hla/ \
-          --prefix {wildcards.group}_dna --dna > {log}
-    """
 
-rule hla_genotyping_RNA:
+checkpoint split_bam_single:
   input:
-    unpack(hlatyping_input_RNA),
+    "results/{sample}/hla/{group}_flt_{type}.bam",
   output:
-    pdf="results/{sample}/hla/{group}_rna_coverage_plot.pdf",
-    tsv="results/{sample}/hla/{group}_rna_result.tsv",
-  log:
-    "logs/{sample}/optitype/{group}_call.log"
-  conda:
-    "../envs/optitype.yml"
-  shell:
-    """
-      OptiTypePipeline.py --input {input} \
-          --outdir results/{wildcards.sample}/hla/ \
-          --prefix {wildcards.group}_rna --rna > {log}
-    """
-
-rule merge_alleles:
-  input:
-    get_alleles,
-  output:
-    "results/{sample}/hla/alleles.tsv"
+    directory("results/{sample}/hla/{group}_flt_{type}_splitted"),
   message:
-    "Merging the detected alleles in {wildcards.sample}"
+    "Splitting filtered BAM files for HLA typing"
   log:
-    "logs/{sample}/hla/merge_alleles"
+    "logs/{sample}/hla/split_bam_{group}_{type}.log"
+  conda:
+    "../envs/gatk.yml"
+  threads: 1
+  shell:
+    """
+      mkdir -p results/{wildcards.sample}/hla/{wildcards.group}_flt_{wildcards.type}_splitted/
+      gatk SplitSamByNumberOfReads \
+          -I {input[0]} \
+          --OUTPUT {output} \
+          --OUT_PREFIX R \
+          --SPLIT_TO_N_READS 100000
+    """
+
+
+rule hla_genotyping_single:
+  input:
+    "results/{sample}/hla/{group}_flt_{type}_splitted/R_{no}.bam",
+  output:
+    pdf="results/{sample}/hla/{group}_flt_{type}_typed/{no}_coverage_plot.pdf",
+    tsv="results/{sample}/hla/{group}_flt_{type}_typed/{no}_result.tsv"
+  message:
+    "HLA typing from splitted BAM files"
+  log:
+    "logs/{sample}/optitype/{group}_{type}_{no}_call.log"
+  conda:
+    "../envs/optitype.yml"
+  threads: config['threads']
+  shell:
+    """
+      samtools index {input}
+      if [ "{wildcards.type}" == "RNA" ]; then
+        OptiTypePipeline.py --input {input} \
+            --outdir results/{wildcards.sample}/hla/{wildcards.group}_flt_{wildcards.type}_typed/ \
+            --prefix {wildcards.no} --rna -v > {log}
+      elif [ "{wildcards.type}" == "DNA" ]; then
+        OptiTypePipeline.py --input {input} \
+            --outdir results/{wildcards.sample}/hla/{wildcards.group}_flt_{wildcards.type}_typed/ \
+            --prefix {wildcards.no} --dna -v > {log}
+      fi
+    """
+
+rule combine_genotyping_single:
+  input:
+    aggregate_genotyping_single
+  output:
+    "results/{sample}/hla/alleles/classI_{group}_{type}_SE.tsv"
+  log:
+    "logs/{sample}/optitype/{group}_{type}_call.log"
   conda:
     "../envs/basic.yml"
+  threads: 1
   shell:
     """
-      python3 workflow/scripts/merge_alleles.py '{input}' \
-          {output} 2> {log}
+      python3 workflow/scripts/merge_classI_alleles.py \
+          '{input}' {output}
+    """ 
+
+checkpoint split_bam_paired:
+  input:
+    fwd="results/{sample}/hla/{group}_R1_flt_{type}.bam",
+    rev="results/{sample}/hla/{group}_R2_flt_{type}.bam"
+  output:
+    directory("results/{sample}/hla/{group}_flt_{type}_splitted"),
+  message:
+    "Splitting filtered BAM files for HLA typing"
+  log:
+    "logs/{sample}/hla/split_bam_{group}_{type}.log"
+  conda:
+    "../envs/gatk.yml"
+  threads: 1
+  shell:
     """
+      mkdir -p results/{wildcards.sample}/hla/{wildcards.group}_flt_{wildcards.type}_splitted/
+      gatk SplitSamByNumberOfReads \
+          -I {input.fwd} \
+          --OUTPUT {output} \
+          --OUT_PREFIX R1 \
+          --SPLIT_TO_N_READS 100000
+      gatk SplitSamByNumberOfReads \
+          -I {input.rev} \
+          --OUTPUT {output} \
+          --OUT_PREFIX R2 \
+          --SPLIT_TO_N_READS 100000
+    """
+
+
+rule hla_genotyping_paired:
+  input:
+    fwd="results/{sample}/hla/{group}_flt_{type}_splitted/R1_{no}.bam",
+    rev="results/{sample}/hla/{group}_flt_{type}_splitted/R2_{no}.bam"
+  output:
+    pdf="results/{sample}/hla/{group}_flt_{type}_typed/{no}_coverage_plot.pdf",
+    tsv="results/{sample}/hla/{group}_flt_{type}_typed/{no}_result.tsv"
+  message:
+    "HLA typing from splitted BAM files"
+  log:
+    "logs/{sample}/optitype/{group}_{type}_{no}_call.log"
+  conda:
+    "../envs/optitype.yml"
+  threads: config['threads']
+  shell:
+    """
+      samtools index {input.fwd}
+      samtools index {input.rev}
+      if [ "{wildcards.type}" == "RNA" ]; then
+        OptiTypePipeline.py --input {input.fwd} {input.rev} \
+            --outdir results/{wildcards.sample}/hla/{wildcards.group}_flt_{wildcards.type}_typed/ \
+            --prefix {wildcards.no} --rna -v > {log}
+      elif [ "{wildcards.type}" == "DNA" ]; then
+        OptiTypePipeline.py --input {input.fwd} {input.rev} \
+            --outdir results/{wildcards.sample}/hla/{wildcards.group}_flt_{wildcards.type}_typed/ \
+            --prefix {wildcards.no} --dna -v > {log}
+      fi
+    """
+
+rule combine_genotyping_paired:
+  input:
+    aggregate_genotyping_paired
+  output:
+    "results/{sample}/hla/alleles/classI_{group}_{type}_PE.tsv"
+  log:
+    "logs/{sample}/optitype/{group}_{type}_call.log"
+  shell:
+    """
+      python3 workflow/scripts/merge_classI_alleles.py \
+          '{input}' {output}
+    """ 
+
+
+rule merge_allels:
+  input:
+    get_alleles
+  output:
+    "results/{sample}/hla/classI_alleles.tsv",
+  message:
+    "Merging HLA alleles from different sources"
+  log:
+    "logs/{sample}/optitype/merge_classI_alleles.log"
+  conda:
+    "../envs/basic.yml"
+  threads: 1
+  shell:
+    """
+      cat {input} | sort | uniq > {output}
+    """
+
+####### CLASS II HLA GENOTYPING ###########
+#rule classII_get_reads_DNA_SE:
+  #input:
+    #get_hla_flt_dna_se
+  #output:
+    #"results/{sample}/hla/classII/{group}_DNA.fastq"
+  #message:
+    #"Extracting DNA reads for HLA classII typing"
+  #log:
+    #"logs/{sample}/optitype/{group}_DNA_call.log"
+  #conda:
+    #"../envs/basic.yml"
+  #threads: 1
+  #shell:
+    #"""
+      
+    #"""
+
+
+#def get_hla_flt_dna_se(wildcards):
 
