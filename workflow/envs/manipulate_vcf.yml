@@ -3,8 +3,9 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - python=3.11
   - pip=23.1.2
+  - pyfaidx=0.7.0
   - pip:
       - vcfpy==0.13.6
       - intervaltree==3.1.0
-
