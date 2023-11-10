@@ -67,38 +67,68 @@ rule detect_long_indel_ti_call:
         """
 
 # resove alleles and remove PCR slippage
-rule long_indel_slippage_removal:
+rule long_indel_augment:
     input:
         "results/{sample}/{seqtype}/indel/transindel/{group}_call.indel.vcf"
     output:
-        "results/{sample}/{seqtype}/indel/transindel/{group}_sliprem.vcf"
+        "results/{sample}/{seqtype}/indel/transindel/{group}_long.indels_augmented.vcf"
     message:
-      "Resolving alleles and removing PCR slippage using transindel on sample:{wildcards.group} with replicate:{wildcards.group}"
+      "Augment indels with group and source information and resolving alleles and removing PCR slippage using transindel on sample:{wildcards.group} with replicate:{wildcards.group}"
     log:
         "logs/{sample}/transindel/{seqtype}_{group}_sliprem.log"
     conda:
-        "../envs/transindel.yml"
+        "../envs/manipulate_vcf.yml"
     shell:
         """
+            python3 workflow/scripts/add_infos_to_vcf.py \
+            {input} \
+            long_indel \
+            {output}_infos > {log} 2>&1
+            
+            python3 workflow/scripts/add_contigs_to_vcf.py \
+            {output}_infos \
+            {output}_contigs \
+            resources/refs/genome.fasta >> {log} 2>&1
+            
             python3 workflow/scripts/slippage_removal.py \
-            resources/refs/genome.fasta {input} {output} > {log} 2>&1
+            resources/refs/genome.fasta \
+            {output}_contigs \
+            {output} >> {log} 2>&1
+
+            rm -r {output}_contigs {output}_infos
+
         """
 
-# combines the replicates into one vcf
-rule combine_longindels:
+rule longindel_sort_and_compress:
   input:
-    get_longindels,
+    "results/{sample}/{seqtype}/indel/transindel/{group}_long.indels_augmented.vcf"
   output:
-    "results/{sample}/variants/long.indels.vcf" 
+    "results/{sample}/{seqtype}/indel/transindel/{group}_long.indels.vcf.gz"
   message:
-    "Combining long indels from replicates on sample:{wildcards.sample}"
-  log: 
-    "logs/{sample}/transindel/combine_groups.log"
+    "Sorting and compressing long indels on sample:{wildcards.sample}"
+  log:
+    "logs/{sample}/transindel/{seqtype}_{group}_longindel_sort.log"
   conda:
-    "../envs/manipulate_vcf.yml"
+    "../envs/samtools.yml"
   shell:
     """
-      python workflow/scripts/combine_vcf.py '{input}' long_indel {output} > {log} 2>&1
+      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+    """
+
+rule combine_longindels:
+  input:
+    get_longindels
+  output:
+    "results/{sample}/variants/long.indels.vcf.gz"
+  message:
+    "Combining long indels on sample:{wildcards.sample}"
+  log:
+    "logs/{sample}/transindel/combine_longindels.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
 
 
@@ -112,7 +142,7 @@ rule detect_short_indels_m2:
         bam="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.bam",
     message:
       "Detection of somatic SNVs/Indels with Mutect2 on sample:{wildcards.sample} with group:{wildcards.group}"
-    threads: config['threads']
+    threads: 1
     resources:
         mem_mb=10024,
     params:
@@ -173,36 +203,55 @@ rule select_short_indels_m2:
     wrapper:
         "v1.31.1/bio/gatk/selectvariants"
 
-rule combine_short_indels_m2:
+rule augment_short_indels_m2:
   input:
-    get_shortindels,
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf"
   output:
-    "results/{sample}/{seqtype}/indel/mutect2/somatic.short.indels_combined.vcf"
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels_augmented.vcf"
   message:
     "Combining somatic short indels detected by Mutect2 on sample:{wildcards.sample}"
   log: 
-    "logs/{sample}/combine/{seqtype}/combine_short.indels.log"
+    "logs/{sample}/combine/{seqtype}/{group}_combine_short.indels.log"
   conda:
     "../envs/manipulate_vcf.yml"
   shell:
     """
-      python workflow/scripts/combine_vcf.py '{input}' short_indel {output} > {log} 2>&1
+      python workflow/scripts/add_infos_to_vcf.py {input} short_indel {output} > {log} 2>&1
     """
-    
-rule sort_short_indels:
+
+rule sort_short_indels_m2:
   input:
-    "results/{sample}/rnaseq/indel/mutect2/somatic.short.indels_combined.vcf"
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels_augmented.vcf"
   output:
-    "results/{sample}/variants/somatic.short.indels.vcf"
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf.gz"
+  message:
+    "Sorting and compressing short indels on sample:{wildcards.sample}"
   log:
-    "logs/{sample}/gatk/combined_somatic.snvs.log"
+    "logs/{sample}/transindel/{seqtype}_{group}_shortindel_sort.log"
   conda:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o {output}
+      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
     """
 
+rule combine_short_indels_m2:
+  input:
+    get_shortindels
+  output:
+    "results/{sample}/variants/somatic.short.indels.vcf.gz"
+  message:
+    "Combining long indels on sample:{wildcards.sample}"
+  log:
+    "logs/{sample}/transindel/combine_longindels.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+    """
+
+            
 rule select_SNVs_m2:
   input:
     vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.flt.vcf",
@@ -221,33 +270,51 @@ rule select_SNVs_m2:
   wrapper:
     "v1.31.1/bio/gatk/selectvariants"
 
-rule combine_SNVs_m2:
+rule augment_somatic_SNVs_m2:
   input:
-    get_snvs,
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf"
   output:
-    "results/{sample}/{seqtype}/indel/mutect2/somatic.snvs_combined.vcf"
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs_augmented.vcf"
   message:
-    "Combining somatic SNVs with Mutect2 on sample:{wildcards.sample}"
+    "Combining somatic SNVs detected by Mutect2 on sample:{wildcards.sample}"
   log: 
-    "logs/{sample}/combine/{seqtype}/combine_snvs.log"
+    "logs/{sample}/indel/{seqtype}/{group}_combine_somatic_SNVs.log"
   conda:
     "../envs/manipulate_vcf.yml"
   shell:
     """
-      python workflow/scripts/combine_vcf.py '{input}' snv {output} > {log} 2>&1
+      python workflow/scripts/add_infos_to_vcf.py {input} short_indel {output} > {log} 2>&1
     """
 
-rule sort_SNVs:
+rule sort_somatic_SNVs_m2:
   input:
-    "results/{sample}/rnaseq/indel/mutect2/somatic.snvs_combined.vcf"
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs_augmented.vcf"
   output:
-    "results/{sample}/variants/somatic.snvs.vcf"
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf.gz"
+  message:
+    "Sorting and compressing short indels on sample:{wildcards.sample}"
   log:
-    "logs/{sample}/gatk/combined_somatic.snvs.log"
+    "logs/{sample}/transindel/{seqtype}_{group}_SNVs_sort.log"
   conda:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o {output}
+      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
     """
 
+rule combine_somatic_SNVs_m2:
+  input:
+    get_shortindels
+  output:
+    "results/{sample}/variants/somatic.snvs.vcf.gz"
+  message:
+    "Combining long indels on sample:{wildcards.sample}"
+  log:
+    "logs/{sample}/transindel/combine_somatic_SNVs.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+    """
+      
