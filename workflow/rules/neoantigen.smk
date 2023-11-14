@@ -31,7 +31,6 @@ rule download_prediction_binding_affinity_tools:
 rule compile_peptides_from_variants:
   input:
     var=get_variants,
-    alleles="results/{sample}/hla/alleles.tsv"
   output:
     "results/{sample}/priorization/peptides.tsv"
   message:
@@ -47,12 +46,36 @@ rule compile_peptides_from_variants:
           -i '{input.var}' -o {output} > {log}
     """
 
+rule compile_peptides_from_fusions:
+  input:
+    get_fusions
+  output:
+    pep="results/{sample}/priorization/peptides_fusions.tsv",
+    nmd="results/{sample}/priorization/nmd_fusions.tsv"
+  message:
+    "Compile peptides from fusions on sample:{wildcards.sample}"
+  log:
+    "logs/fusions/{sample}_fusions_to_peptides.log"
+  conda:
+    "../envs/priorization.yml"
+  params:
+  shell:
+    """
+      python workflow/scripts/compile_peptides_from_fusions.py \
+          -i {input} -c medium \
+          -p resources/refs/peptide.fasta \
+          -a resources/refs/genome.gtf \
+          -o {output.pep} \
+          -n {output.nmd} > {log}
+    """
+
+
 rule priorization:
   input:
     pred_aff="workflow/scripts/mhc_i/",
     pred_imm="workflow/scripts/immunogenicity/",
     peptides="results/{sample}/priorization/peptides.tsv",
-    alleles="results/{sample}/hla/alleles.tsv"
+    alleles="results/{sample}/hla/classI_alleles.tsv",
   output:
     "results/{sample}/priorization/neoantigens.tsv"
   message:
