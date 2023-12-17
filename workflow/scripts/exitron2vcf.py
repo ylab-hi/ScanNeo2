@@ -111,6 +111,7 @@ def main():
                         [('SVTYPE', 'DEL'),
                          ('END', end-1),
                          ('DP', dp),
+                         ('AO', ao),
                          ('STRAND', strand),
                          ('SplicedSite', spliced_site),
                          ('GeneName', gene_name),

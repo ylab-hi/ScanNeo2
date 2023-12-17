@@ -75,7 +75,7 @@ rule priorization:
     pred_aff="workflow/scripts/mhc_i/",
     pred_imm="workflow/scripts/immunogenicity/",
     peptides="results/{sample}/priorization/peptides.tsv",
-    alleles="results/{sample}/hla/classI_alleles.tsv",
+    alleles="results/{sample}/hla/mhc-I.tsv",
   output:
     "results/{sample}/priorization/neoantigens.tsv"
   message:

@@ -114,25 +114,45 @@ if config['data']['rnaseq_filetype'] == '.bam':
       "v1.32.1/bio/samtools/merge"
 
 # post-processingn and realignment
-rule postproc:
+rule rnaseq_postproc_fixmate:
   input:
     "results/{sample}/rnaseq/align/{group}_aligned_STAR.bam"
+  output:
+    "results/{sample}/rnaseq/align/{group}_fixmate_STAR.bam"
+  conda:
+    "../envs/samtools.yml"
+  log:
+    "logs/{sample}/postproc/rnaseq_{group}_fixmate.log"
+  threads: 4
+  params:
+    mapq="--min-MQ config['mapq']"
+  shell:
+    """
+      samtools view -h -F 4 {params.mapq} {input} -o - \
+      | samtools sort -n -@4 -m4g -O SAM - -o - \
+      | samtools fixmate -pcmu -O bam -@ {threads} - {output} > {log} 2>&1
+    """
+
+# sort and markdup needed to be separated (ensure no core dump for whatever reason) 
+rule rnaseq_postproc_markdup:
+  input:
+    bam="results/{sample}/rnaseq/align/{group}_fixmate_STAR.bam",
+    tmp="tmp/"
   output:
     "results/{sample}/rnaseq/align/{group}_final_STAR.bam"
   conda:
     "../envs/samtools.yml"
   log:
-    "logs/{sample}/postproc/rnaseq_{group}.log"
-  threads: config['threads']
-  params:
-    mapq="--min-MQ config['mapq']"
+    "logs/{sample}/postproc/rnaseq_{group}_markdup.log"
+  threads: 4
+  resources:
+    mem_mb_per_cpu=4000
   shell:
     """
-      samtools view -bh -F 4 {params.mapq} {input} -o - \
-      | samtools sort -n -@ {threads} -m1g -O bam - -o - \
-      | samtools fixmate -pcmu -O bam -@ {threads} - - \
-      | samtools sort -@ {threads} -m1g -O bam - -o - \
-      | samtools markdup -r -@ {threads} - {output} > {log} 2>&1 
+      samtools sort -@4 -m4G -O BAM -T tmp/ {input.bam} \
+          -o tmp/sorted.bam > {log} 2>&1
+      samtools markdup -r -@4 tmp/sorted.bam {output} > {log} 2>&1 
+      rm tmp/sorted.bam
     """
 
 rule postproc_bam_index:

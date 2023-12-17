@@ -31,18 +31,16 @@ rule download_vep_cache:
 
 rule index_variants:
   input:
-    "results/{sample}/variants/{vartype}.vcf"
+    "results/{sample}/variants/{vartype}.vcf.gz"
   output:
-    bgzip="results/{sample}/variants/{vartype}.vcf.gz",
-    idx="results/{sample}/variants/{vartype}.vcf.gz.tbi"
+    "results/{sample}/variants/{vartype}.vcf.gz.tbi"
   log:
     "logs/indexvcf/{sample}_{vartype}.log"
   conda:
     "../envs/samtools.yml"
   shell:
     """
-      bgzip {input}
-      tabix {input}.gz
+      tabix {input}
     """
 
 rule annotate_variants:

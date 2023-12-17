@@ -13,7 +13,6 @@ rule download_genome:
       curl -L  https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/gencode.v37.annotation.gtf.gz \
           | gzip -d > resources/refs/gencode.v37.annotation.gtf
     """
-      
 
 rule prepare_cds:
   output:
@@ -24,10 +23,16 @@ rule prepare_cds:
     "../envs/basic.yml"
   shell:
     """
-      cat resources/refs/gencode.v37.annotation.gtf \
+      cat resources/refs/genome.gtf \
           | awk 'OFS="\\t" {{if ($3=="CDS") {{print $1,$4-1,$5,$10,$16,$7}}}}' \
           | tr -d '";' > {output}
     """
+    
+    #"""
+      #cat resources/refs/gencode.v37.annotation.gtf \
+          #| awk 'OFS="\\t" {{if ($3=="CDS") {{print $1,$4-1,$5,$10,$16,$7}}}}' \
+          #| tr -d '";' > {output}
+    #"""
 
 rule prepare_scanexitron_config:
   output:
@@ -39,17 +44,24 @@ rule prepare_scanexitron_config:
   shell:
     """
       python3 workflow/scripts/prep_scanexitron_config.py \
-          resources/refs/hg38.fa \
-          resources/refs/gencode.v37.annotation.gtf \
+          resources/refs/genome.fasta \
+          resources/refs/genome.gtf \
           resources/refs/CDS.bed \
           {output} > {log}
     """
+      
+      #python3 workflow/scripts/prep_scanexitron_config.py \
+          #resources/refs/hg38.fa \
+          #resources/refs/gencode.v37.annotation.gtf \
+          #resources/refs/CDS.bed \
+          #{output} > {log}
 
 rule scanexitron:
     input: 
         bam = "results/{sample}/rnaseq/align/{group}_final_STAR.bam",
-        fasta = "resources/refs/hg38.fa",
-        gtf = "resources/refs/gencode.v37.annotation.gtf",
+        idx = "results/{sample}/rnaseq/align/{group}_final_STAR.bam.bai",
+        fasta = "resources/refs/genome.fasta",
+        gtf = "resources/refs/genome.gtf",
         cds = "resources/refs/CDS.bed",
         config="resources/scanexitron_config.ini"
     output:
@@ -84,46 +96,64 @@ rule exitron_to_vcf:
   input:
     "results/{sample}/rnaseq/exitron/{group}.exitron"
   output:
-    "results/{sample}/rnaseq/exitron/{group}_exitron.vcf"
+    "results/{sample}/rnaseq/exitron/{group}_exitrons.vcf"
   log:
     "logs/exitron2vcf_{sample}_{group}.log"
   conda:
     "../envs/scanexitron.yml"
   shell:
     """
-      python workflow/scripts/exitron2vcf2.py \
+      python workflow/scripts/exitron2vcf.py \
         {input} \
         {output} \
         resources/refs/hg38.fa > {log}
     """
 
-rule combine_exitrons:
+rule exitron_augment:
   input:
-    get_exitrons,
+    "results/{sample}/rnaseq/exitron/{group}_exitrons.vcf"
   output:
-    "results/{sample}/rnaseq/exitron/exitrons_combined.vcf"
+    "results/{sample}/rnaseq/exitron/{group}_exitrons_augmented.vcf"
   message:
-    "Combining exitrons on sample:{wildcards.sample}"
+    "Augmenting exitrons on sample:{wildcards.sample} of group:{wildcards.group}"
   log:
-    "logs/{sample}/scanexitron/combine_groups.log"
+    "logs/exitron_augment_{sample}_{group}.log"
   conda:
     "../envs/manipulate_vcf.yml"
   shell:
     """
-      python workflow/scripts/combine_vcf.py '{input}' exitron {output} > {log} 2>&1
+      python workflow/scripts/add_infos_to_vcf.py {input} exitron {output} > {log} 2>&1
     """
 
-rule sort_exitrons:
+rule sort_exitron:
   input:
-    "results/{sample}/rnaseq/exitron/exitrons_combined.vcf",
+    "results/{sample}/rnaseq/exitron/{group}_exitrons_augmented.vcf"
   output:
-    "results/{sample}/variants/exitrons.vcf"
+    "results/{sample}/rnaseq/exitron/{group}_exitrons.vcf.gz"
+  message:
+    "Sorting and compressing exitrons on sample:{wildcards.sample} of group:{wildcards.group}"
   log:
-    "logs/{sample}/scanexitron/sort_exitrons.log"
+    "logs/exitron_sort_{sample}_{group}.log"
   conda:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o {output}
+      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+    """
+
+rule combine_exitrons:
+  input:
+    get_exitrons
+  output:
+    "results/{sample}/variants/exitrons.vcf.gz"
+  message:
+    "Combining exitrons on sample:{wildcards.sample}"
+  log:
+    "logs/{sample}/exitrons/combine_exitrons.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools concat --naive -O z {input} -o  - | bcftools sort -O z -o {output} > {log} 2>&1
     """
 

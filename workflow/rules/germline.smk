@@ -37,6 +37,7 @@ rule detect_variants_htc_first_round:
   input:
     # single or list of bam files
     bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
+    idx="results/{sample}/{seqtype}/align/{group}_final_BWA.bam.bai",
     ref="resources/refs/genome.fasta",
     #known="resources/vqsr/dbSNP_b150.vcf.gz"  # optional
   output:
@@ -48,7 +49,7 @@ rule detect_variants_htc_first_round:
   params:
     extra="", 
     java_opts="",
-  threads: config['threads']
+  threads: 4
   resources:
     mem_mb=1024,
   wrapper:
@@ -82,7 +83,7 @@ rule recalibrate_variants_first_round:
     },
     annotation=["MQ", "QD", "MQRankSum", "ReadPosRankSum", "FS", "SOR", "DP"],
     extra=""
-  threads: config['threads']
+  threads: 4
   resources:
     mem_mb=1024,
   wrapper:
@@ -183,7 +184,7 @@ rule detect_variants_htc_final_round:
     params:
       extra="",  # optional
       java_opts="",  # optional
-    threads: config['threads']
+    threads: 4
     resources:
       mem_mb=1024,
     wrapper:
@@ -217,7 +218,7 @@ rule recalibrate_variants_final_round:
     },
     annotation=["MQ", "QD", "MQRankSum", "ReadPosRankSum", "FS", "SOR", "DP"],
     extra=""
-  threads: config['threads']
+  threads: 1
   resources:
     mem_mb=1024,
   wrapper:

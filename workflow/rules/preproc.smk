@@ -36,8 +36,8 @@ rule fastqc_forward:
     input:
       get_qc_input_fwd
     output:
-        html="results/{sample}/{seqtype}/qualitycontrol/{group}_r1_fastqc_raw.html",
-        zip="results/{sample}/{seqtype}/qualitycontrol/{group}_r1_fastqc_raw.zip"
+        html="results/{sample}/{seqtype}/qualitycontrol/{group}_R1_fastqc_raw.html",
+        zip="results/{sample}/{seqtype}/qualitycontrol/{group}_R1_fastqc_raw.zip"
     params:
         extra = ""
     log:
@@ -52,8 +52,8 @@ rule fastqc_reverse:
     input:
       get_qc_input_rev
     output:
-        html="results/{sample}/{seqtype}/qualitycontrol/{group}_r2_fastqc_raw.html",
-        zip="results/{sample}/{seqtype}/qualitycontrol/{group}_r2_fastqc_raw.zip"
+        html="results/{sample}/{seqtype}/qualitycontrol/{group}_R2_fastqc_raw.html",
+        zip="results/{sample}/{seqtype}/qualitycontrol/{group}_R2_fastqc_raw.zip"
     params:
         extra = "--quiet"
     log:
@@ -67,13 +67,13 @@ rule fastqc_reverse:
 rule preproc_paired_end:
     input:
       unpack(get_preproc_input),
-      qc1="results/{sample}/{seqtype}/qualitycontrol/{group}_r1_fastqc_raw.html",
-      qc2="results/{sample}/{seqtype}/qualitycontrol/{group}_r2_fastqc_raw.html"
+      qc1="results/{sample}/{seqtype}/qualitycontrol/{group}_R1_fastqc_raw.html",
+      qc2="results/{sample}/{seqtype}/qualitycontrol/{group}_R2_fastqc_raw.html"
     output:
-        trimmed=["results/{sample}/{seqtype}/reads/{group}_r1_preproc.fq.gz", 
-                 "results/{sample}/{seqtype}/reads/{group}_r2_preproc.fq.gz"],
-        unpaired1="results/{sample}/{seqtype}/reads/{group}_r1_preproc_unpaired.fq.gz",
-        unpaired2="results/{sample}/{seqtype}/reads/{group}_r2_preproc_unpaired.fq.gz",
+        trimmed=["results/{sample}/{seqtype}/reads/{group}_R1_preproc.fq.gz", 
+                 "results/{sample}/{seqtype}/reads/{group}_R2_preproc.fq.gz"],
+        unpaired1="results/{sample}/{seqtype}/reads/{group}_R1_preproc_unpaired.fq.gz",
+        unpaired2="results/{sample}/{seqtype}/reads/{group}_R2_preproc_unpaired.fq.gz",
         failed="results/{sample}/{seqtype}/reads/{group}_preproc_failed.fq.gz",
         html="results/{sample}/{seqtype}/reads/{group}_preproc_report.html",
         json="results/{sample}/{seqtype}/reads/{group}_preproc_report.json",
@@ -96,10 +96,10 @@ rule preproc_paired_end:
 # fastqc after pre-processing (forward)
 rule fastqc_forward_after:
     input:
-      "results/{sample}/{seqtype}/reads/{group}_r1_preproc.fq.gz"
+      "results/{sample}/{seqtype}/reads/{group}_R1_preproc.fq.gz"
     output:
-        html="results/{sample}/{seqtype}/qualitycontrol/{group}_r1_fastqc.html",
-        zip="results/{sample}/{seqtype}/qualitycontrol/{group}_r1_fastqc.zip"
+        html="results/{sample}/{seqtype}/qualitycontrol/{group}_R1_fastqc.html",
+        zip="results/{sample}/{seqtype}/qualitycontrol/{group}_R1_fastqc.zip"
     params:
         extra = ""
     log:
@@ -113,10 +113,10 @@ rule fastqc_forward_after:
 # fastqc after pre-processing (reverse)
 rule fastqc_reverse_after:
     input:
-      "results/{sample}/{seqtype}/reads/{group}_r2_preproc.fq.gz"
+      "results/{sample}/{seqtype}/reads/{group}_R2_preproc.fq.gz"
     output:
-        html="results/{sample}/{seqtype}/qualitycontrol/{group}_r2_fastqc.html",
-        zip="results/{sample}/{seqtype}/qualitycontrol/{group}_r2_fastqc.zip"
+        html="results/{sample}/{seqtype}/qualitycontrol/{group}_R2_fastqc.html",
+        zip="results/{sample}/{seqtype}/qualitycontrol/{group}_R2_fastqc.zip"
     params:
         extra = "--quiet"
     log:
