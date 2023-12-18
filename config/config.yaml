@@ -6,11 +6,10 @@ basequal: 20  # overall required base quality
 data:
   name:  samplename
   dnaseq: 
-    dna_normal: TESLA_testdata/patient2/WES/TESLA_9_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_9_2.fastq.gz
-    dna_tumor: TESLA_testdata/patient2/WES/TESLA_10_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_10_2.fastq.gz
+    dna_tumor: <path/to/reads>
   rnaseq:
-    rna_tumor: TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz
-  normal: dna_normal
+    rna_tumor: <path/to/to/reads>
+  normal: <normal/sample/identifier>
   
   custom:
     variants:
