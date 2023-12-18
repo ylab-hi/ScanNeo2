@@ -1,7 +1,8 @@
 rule get_genome:
   output:
-    genome="resources/refs/genome.fasta",
-    annotation="resources/refs/genome.gtf"
+    genome="resources/refs/genome_tmp.fasta",
+    annotation="resources/refs/genome_tmp.gtf",
+    peptide="resources/refs/peptide.fasta"
   message:
     "Download reference genome and annotation"
   conda:
@@ -11,17 +12,32 @@ rule get_genome:
   params:
   shell:
     """
-      mkdir -p resources/refs
-      curl -L -o {output.genome}.gz https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.primary_assembly.genome.fa.gz 
+      curl -L -o {output.genome}.gz https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz 
       gzip -d {output.genome}.gz
-      curl -L -o {output.annotation}.gz https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.annotation.gtf.gz 
-      gzip -d {output.annotation}
+      curl -L -o {output.annotation}.gz https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz 
+      gzip -d {output.annotation}.gz
+      curl -L -o {output.peptide}.gz https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz
+      gzip -d {output.peptide}.gz
     """
 
-      #curl -L -o - https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz \
-        #| gzip -d - > {output.genome}
-      #curl -L -o - https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz \
-          #| gzip -d - > {output.annotation}
+rule mod_genome:
+  input:
+    genome="resources/refs/genome_tmp.fasta",
+    annotation="resources/refs/genome_tmp.gtf"
+  output:
+    genome="resources/refs/genome.fasta",
+    annotation="resources/refs/genome.gtf"
+  message:
+    "Modify header in reference genome/annotation"
+  conda:
+    "../envs/basic.yml"
+  shell:
+    """
+      python3 workflow/scripts/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation}
+      rm resources/refs/genome_tmp.fasta
+      rm resources/refs/genome_tmp.gtf
+    """
+
 
 rule genome_index: 
   input:
@@ -109,3 +125,41 @@ rule create_sequence_dictionary:
     mem_mb=10024,
   wrapper:
     "v1.31.1/bio/picard/createsequencedictionary"
+
+
+rule get_hla_info:
+  output:
+    "resources/hla/hla_gen.fasta"
+  message:
+    "Download full resolution HLA information"
+  log:
+    "logs/get_hla_info.log"
+  conda:
+    "../envs/basic.yml"
+  shell:
+    """
+      curl -L -o {output} ftp://ftp.ebi.ac.uk/pub/databases/ipd/imgt/hla/hla_gen.fasta
+    """
+
+rule create_hla_idx_bowtie:
+  input:
+    ref="resources/hla/hla_gen.fasta"
+  output:
+    multiext(
+            "resources/hla/bowtie2_index",
+            ".1.bt2",
+            ".2.bt2",
+            ".3.bt2",
+            ".4.bt2",
+            ".rev.1.bt2",
+            ".rev.2.bt2",
+        ),
+  message:
+    "Create bowtie index of HLA reference"
+  log:
+    "logs/bowtie2/create_hla_idx.log"
+  params:
+      extra="",  # optional parameters
+  threads: 8
+  wrapper:
+      "v2.11.1/bio/bowtie2/build"

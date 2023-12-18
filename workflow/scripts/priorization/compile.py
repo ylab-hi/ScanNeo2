@@ -34,9 +34,9 @@ def main():
                                            options.mhcI,  
                                            options.mhcII,
                                            options.mhcI_len,
-                                           options.mhcII_len)
-
-
+                                           options.mhcII_len,
+                                           options.threads,
+                                           options.output_dir)
 
 def parse_arguments():
     p = configargparse.ArgParser()
@@ -53,6 +53,7 @@ def parse_arguments():
     p.add('-p', '--proteome', required=True, help='proteome file')
     p.add('-a', '--anno', required=True, help='annotation file')
     p.add('-o', '--output_dir', required=True, help='output directory')
+    p.add('-t', '--threads', required=False, help='number of threads')
 
     return p.parse_args()
     

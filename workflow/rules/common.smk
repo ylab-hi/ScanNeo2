@@ -492,9 +492,10 @@ def get_exitrons(wildcards):
 def get_fusions(wildcards):
   fusions = []
   if config['data']['rnaseq'] is not None:
-    fusions += expand("results/{sample}/rnaseq/genefusion/{group}_fusions.tsv",
-      sample=config['data']['name'], 
-      group=list(config['data']['rnaseq'].keys()))
+    if config['genefusion']['activate']:
+      fusions += expand("results/{sample}/rnaseq/genefusion/{group}_fusions.tsv",
+        sample=config['data']['name'], 
+        group=list(config['data']['rnaseq'].keys()))
 
   return fusions
 

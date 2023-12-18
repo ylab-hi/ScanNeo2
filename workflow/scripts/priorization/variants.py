@@ -262,7 +262,7 @@ class Fusions:
                                               "fusion", group, consequence, # var_type
                                               wt_subseq, mt_subseq, var_start, 
                                               local_var_start, local_var_end,
-                                              ".", # vaf not available for fusions 
+                                              -1, # vaf not available for fusions 
                                               ao, dp)
 
                     #vee.print_vee()
@@ -552,49 +552,52 @@ class Variants():
                         # else:
                             # var_end = var_start
 
-                        # print(f'var_start: {var_start}')
-                        # print(f'var_end: {var_end}')
-                        # print('-------')
-                        # print(f'field-Protein_Position:{field["Protein_position"]}')
-                        # print(f'aa_change:{aa_change}')
-                        # print(f'wt_seq: {wt_seq}')
-
-                        # print(f'wt_aa_change: {wt_aa_change}')
-                        # print(f'mt_aa_change: {mt_aa_change}')
-
-                        # print(f'mt_seq: {mt_seq}')
 
                         # # generate subsequence
                         wt_subseq, mt_subseq, n_var_start, n_var_end = self.determine_subseq(wt_seq,
                                                                      mt_seq, 
                                                                      var_start,
                                                                      len(mt_aa_change))
+                        
 
+                        # print(f'var_start: {var_start}')
+# #                        print(f'var_end: {var_end}')
+                        # print('-------')
+                        # print(f'field-Protein_Position:{field["Protein_position"]}')
+                        # print(f'aa_change:{aa_change}')
+                        # print(f'wt_seq: {wt_seq}')
+                        # print(f'wt_aa_change: {wt_aa_change}')
+                        # print(f'mt_aa_change: {mt_aa_change}')
+                        # print(f'mt_seq: {mt_seq}')
 
-                        vee = VariantEffectsEntry(entry.CHROM, 
-                                                  start, 
-                                                  stop,
-                                                  gene_id,
-                                                  gene_name,
-                                                  transcript_id,
-                                                  '.', # transcript
-                                                  '.', # cds
-                                                  '.', # cds_breakpoint
-                                                  entry.INFO["SRC"],
-                                                  entry.INFO["GRP"],
-                                                  csq,
-                                                  wt_subseq,
-                                                  mt_subseq,
-                                                  var_start,
-                                                  n_var_start,
-                                                  n_var_end,
-                                                  vaf,
-                                                  mt_ad,
-                                                  dp)
+                        # print(f'n_var_start: {n_var_start}')
 
-                        effects.print_entry(vee)
+                        
 
+                        if wt_subseq != mt_subseq:
+                            vee = VariantEffectsEntry(entry.CHROM, 
+                                                      start, 
+                                                      stop,
+                                                      gene_id,
+                                                      gene_name,
+                                                      transcript_id,
+                                                      '.', # transcript
+                                                      '.', # cds
+                                                      '.', # cds_breakpoint
+                                                      entry.INFO["SRC"],
+                                                      entry.INFO["GRP"],
+                                                      csq,
+                                                      wt_subseq,
+                                                      mt_subseq,
+                                                      var_start,
+                                                      n_var_start,
+                                                      n_var_end,
+                                                      vaf,
+                                                      mt_ad,
+                                                      dp)
+#                            vee.print_vee()
 
+                            effects.print_entry(vee)
 
 
                         # print(f'wt_subseq: {wt_subseq}')

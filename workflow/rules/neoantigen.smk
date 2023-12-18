@@ -28,70 +28,27 @@ rule download_prediction_binding_affinity_tools:
           | tar xz -C workflow/scripts/
     """
 
-rule compile_peptides_from_variants:
-  input:
-    var=get_variants,
-  output:
-    "results/{sample}/priorization/peptides.tsv"
-  message:
-    "Compile peptides from variants on sample:{wildcards.sample}"
-  log:
-    "logs/vep/{sample}_variants_to_peptides.log"
-  conda:
-    "../envs/priorization.yml"
-  params:
-  shell:
-    """
-      python workflow/scripts/compile_peptides_from_variants.py \
-          -i '{input.var}' -o {output} > {log}
-    """
-
-rule compile_peptides_from_fusions:
-  input:
-    get_fusions
-  output:
-    pep="results/{sample}/priorization/peptides_fusions.tsv",
-    nmd="results/{sample}/priorization/nmd_fusions.tsv"
-  message:
-    "Compile peptides from fusions on sample:{wildcards.sample}"
-  log:
-    "logs/fusions/{sample}_fusions_to_peptides.log"
-  conda:
-    "../envs/priorization.yml"
-  params:
-  shell:
-    """
-      python workflow/scripts/compile_peptides_from_fusions.py \
-          -i {input} -c medium \
-          -p resources/refs/peptide.fasta \
-          -a resources/refs/genome.gtf \
-          -o {output.pep} \
-          -n {output.nmd} > {log}
-    """
-
-
 rule priorization:
   input:
-    pred_aff="workflow/scripts/mhc_i/",
-    pred_imm="workflow/scripts/immunogenicity/",
-    peptides="results/{sample}/priorization/peptides.tsv",
-    alleles="results/{sample}/hla/mhc-I.tsv",
+    var=get_variants,
+    fus=get_fusions,
+    mhcI="results/{sample}/hla/mhc-I.tsv",
+    peptide="resources/refs/peptide.fasta",
+    annotation="resources/refs/genome_tmp.gtf",
   output:
-    "results/{sample}/priorization/neoantigens.tsv"
+    effects = "results/{sample}/priorization/variant_effects.tsv",
+    affinities = "results/{sample}/priorization/binding_affinities.tsv",
   message:
-    "Predicting affinities on sample:{wildcards.sample}"
-  log:
-    "logs/mhci/{sample}_affinities.log"
-  threads: config["threads"]
-  params:
-    mhc_i=config["priorization"]["lengths"]["MHC-I"]
+    "Predicting binding affinities on sample:{wildcards.sample}"
   conda:
     "../envs/priorization.yml"
   shell:
     """
-      python workflow/scripts/predict_affinities.py \
-          -i {input.peptides} -a {input.alleles} \
-          -e {params.mhc_i} -t {threads} -o {output} 
-      python workflow/scripts/predict_immunogenicity.py \
-          {output}
+      python workflow/scripts/priorization/compile.py \
+          -i '{input.var}' -f {input.fus} \
+          --output_dir results/{wildcards.sample}/priorization/ \
+          -p {input.peptide} -a {input.annotation} \
+          --confidence low \
+          --mhcI {input.mhcI} \
+          --mhc_len {config["priorization"]["lengths"]["MHC-I"]}
     """

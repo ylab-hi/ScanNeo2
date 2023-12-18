@@ -2,9 +2,10 @@ import tempfile
 import pdb
 import os
 import concurrent.futures
+import subprocess
 
 class BindingAffinities:
-    def __init__(self, effects, mhcI, mhcII, mhcI_len, mhcII_len):
+    def __init__(self, effects, mhcI, mhcII, mhcI_len, mhcII_len, threads, outdir):
     
         with tempfile.TemporaryDirectory() as tmp_seqs:
             if mhcI is not None:
@@ -52,8 +53,8 @@ class BindingAffinities:
             next(fh)   # skip header
             for line in fh:
                 entries = line.rstrip().split('\t')
-                print(entries)
                 # print(line)
+
 
                 for epilen in epilens:
                     local_var_start = int(entries[15])
@@ -64,17 +65,23 @@ class BindingAffinities:
 
                     # adjust length of seqs (according to epilen)
                     if local_var_start >= epilen + 1:
-                        left = local_var_start - (epilen + 1)
+                        left = local_var_start - (epilen - 1)
                     else:
                         left = 0
 
                     if local_var_end + (epilen - 1) <= len(mt_subseq):
-                        right = local_var_end + (epilen - 1)
+                        right = local_var_end + epilen - 1
                     else:
-                        right = len(mt_subseq) - 1
+                        right = len(mt_subseq)
 
                     wt_subseq_adj = wt_subseq[left:right]
                     mt_subseq_adj = mt_subseq[left:right]
+
+                    # print(f'epilen: {epilen}')
+                    # print(f'left: {left}')
+                    # print(f'right: {right}')
+                    # print(f'wt_subseq_adj: {wt_subseq_adj}')
+                    # print(f'mt_subseq_adj: {mt_subseq_adj}')
 
                     # determine the epitope sequences
                     if '$' in wt_subseq_adj:
@@ -105,41 +112,130 @@ class BindingAffinities:
                 fh_wt[epilen].close()
                 fh_mt[epilen].close()
         
-            wt_affinities = self.collect_binding_affinities(alleles, wt_fname, epilens, 'wt', options.threads)
-            mt_affinities = self.collect_binding_affinities(alleles, mt_fname, epilens, 'mt', options.threads)
+            wt_affinities = self.collect_binding_affinities(mhcI_alleles, wt_fname, epilens, 'wt', threads)
+            mt_affinities = self.collect_binding_affinities(mhcI_alleles, mt_fname, epilens, 'mt', threads)
+
+            outfile = open(os.path.join(outdir, 'binding_affinities.tsv'),'w')
+            BindingAffinities.print_header(outfile)
+
+            for entry in subseqs:
+                final_result = {}
+                final_result['chrom'] = entry[0]
+                final_result['start'] = entry[1]
+                final_result['end'] = entry[2]
+                final_result['gene_name'] = entry[4]
+                final_result['gene_id'] = entry[3]
+                final_result['transcript_id'] = entry[5]
+                final_result['source'] = entry[9]
+                final_result['group'] = entry[10]
+                final_result['variant_type'] = entry[11]
+                final_result['wt_subseq'] = entry[12]
+                final_result['mt_subseq'] = entry[13]
+                final_result['new_var_start_pos'] = int(entry[14])
+                final_result['vaf'] = float(entry[17])
+                final_result['mt_allele_depth'] = int(entry[18])
+                final_result['read_depth'] = int(entry[19])
+            
+                # check results of different epilens
+                for epilen_idx in range(0,len(epilens)):
+
+#                    print(entry)
+
+                    # retrieve sequence numbers (from binding affinities results)
+                    wt_seqnum = int(entry[24:][epilen_idx*2])
+                    mt_seqnum = int(entry[24:][epilen_idx*2+1])
+
+                    wt = None
+                    if wt_seqnum in wt_affinities[epilens[epilen_idx]].keys():
+                        wt = wt_affinities[epilens[epilen_idx]][wt_seqnum]
+                    else:
+                        final_result['wt_epitope_ic50'] = 'NA'
+                        final_result['wt_epitope_rank'] = 'NA'
+
+                    if mt_seqnum in mt_affinities[epilens[epilen_idx]].keys():
+                        mt = mt_affinities[epilens[epilen_idx]][mt_seqnum]
+                    else:
+                        continue
+
+                    for epitope in mt.keys(): 
+                        # determine by mhc_i / convert to 0-based
+                        start_pos_in_subseq = int(mt[epitope][1])
+                        end_pos_in_subseq = int(mt[epitope][2])
+
+                        # check if mutation is part of the subsequence (within or upstream)
+                        if final_result['new_var_start_pos'] >= end_pos_in_subseq:
+                            continue
+                        elif final_result['new_var_start_pos'] <= start_pos_in_subseq:
+                            final_result['mutation_position'] = 0
+                        else:
+                            final_result['mutation_position'] = final_result['new_var_start_pos'] - start_pos_in_subseq
+
+                        final_result['mt_epitope_seq'] = epitope
+                        final_result['allele'] = mt[epitope][0]
+                        final_result['mt_epitope_ic50'] = mt[epitope][3]
+                        final_result['mt_epitope_rank'] = mt[epitope][4]
+
+                        # # search for corresponding WT
+                        startpos_epitope_subseq = final_result['mt_epitope_seq'].find(epitope)
+                        final_result['wt_epitope_seq'] = final_result['wt_subseq'][startpos_epitope_subseq:len(epitope)]
+
+                        if wt is not None:
+                            if final_result['wt_epitope_seq'] in wt.keys():
+                                final_result['wt_epitope_ic50'] = wt[final_result['wt_epitope_seq']][3]
+                                final_result['wt_epitope_rank'] = wt[final_result['wt_epitope_seq']][4]
+                            else:
+                                final_result['wt_epitope_ic50'] = 'NA'
+                                final_result['wt_epitope_rank'] = 'NA'
+
+
+                        # calculate ranking calc_ranking_score 
+                        score = BindingAffinities.calc_ranking_score(final_result['vaf'], final_result['wt_epitope_ic50'], final_result['mt_epitope_ic50'])
+                        final_result['ranking_score'] = score
+                    
+                        BindingAffinities.print_row(final_result, outfile)
+
+
+            outfile.close()
+
 
 
     @staticmethod
     def collect_binding_affinities(alleles, fnames, epilens, group, threads):
+        print("collect binding affinities")
         affinities_results = {}
-        number_of_threads = int(threads)
+        no_threads = int(threads)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=number_of_threads) as executor:
+        # only iterate through keys (alleles)
+        # TODO: also incorporate sources
+        with concurrent.futures.ThreadPoolExecutor(max_workers=no_threads) as executor:
             futures = {}
             for allele in alleles:
                 for epilen in epilens:
-                    future = executor.submit(calc_binding_affinities, fnames[epilen], allele, epilen, group)
+                    future = executor.submit(BindingAffinities.calc_binding_affinities, fnames[epilen], allele, epilen, group)
                     futures[future] = epilen
+        
+        for future in concurrent.futures.as_completed(futures):
+            epilen = futures[future]
+            binding_affinities = future.result()
 
-            for future in concurrent.futures.as_completed(futures):
-                epilen = futures[future]
-                binding_affinities = future.result()
+            # check epilen already present
+            if epilen not in affinities_results.keys():
+                affinities_results[epilen] = {}
 
-                # check epilen already present
-                if epilen not in affinities_results.keys():
-                    affinities_results[epilen] = {}
-
-                for seqnum in binding_affinities.keys():
-                    if seqnum not in affinities_results[epilen].keys():
-                        affinities_results[epilen][seqnum] = binding_affinities[seqnum]
-                    else:
-                        for seq in binding_affinities[seqnum].keys():
-                            if seq not in affinities_results[epilen][seqnum].keys():
-                                affinities_results[epilen][seqnum][seq] = binding_affinities[seqnum][seq]
+            for seqnum in binding_affinities.keys():
+                if seqnum not in affinities_results[epilen].keys():
+                    affinities_results[epilen][seqnum] = binding_affinities[seqnum]
+                else:
+                    for seq in binding_affinities[seqnum].keys():
+                        if seq not in affinities_results[epilen][seqnum].keys():
+                            affinities_results[epilen][seqnum][seq] = binding_affinities[seqnum][seq]
 
         return affinities_results
 
 
+
+
+    @staticmethod
     def calc_binding_affinities(fa_file, allele, epilen, group):
         binding_affinities = {}
 #    binding_affinities[epilen] = {}
@@ -182,8 +278,51 @@ class BindingAffinities:
 
         return binding_affinities
 
+    @staticmethod
+    def calc_ranking_score(vaf, wt_ic50, mt_ic50):
+        if vaf == -1.0:
+            return -1.0
 
+        # fold change
+        if wt_ic50 != 'NA':
+            fold_change = float(wt_ic50) / float(mt_ic50)
+        else:
+            fold_change = float(100000.0) / float(mt_ic50)
 
+        score = (1/float(mt_ic50)) + fold_change + vaf * 100.0
 
-            
+        return score
 
+    @staticmethod
+    def print_header(outputfile):
+        outputfile.write(f"chrom\tstart\tend\tgene_name\tgene_id")
+        outputfile.write(f"\ttranscript_id\tsource\tgroup\tvariant_type")
+        outputfile.write(f"\tallele\twt_epitope_seq\twt_epitope_ic50\twt_epitope_rank")
+        outputfile.write(f"\tmt_epitope_seq\tmt_epitope_ic50\tmt_epitope_rank\tmutation_position")
+        outputfile.write(f"\tvaf\tmt_allele_depth\tread_depth\t")
+        outputfile.write(f"\tranking_score\n")
+
+    @staticmethod
+    def print_row(row, outputfile):
+        outputfile.write(f'{row["chrom"]}\t')
+        outputfile.write(f'{row["start"]}\t')
+        outputfile.write(f'{row["end"]}\t')
+        outputfile.write(f'{row["gene_name"]}\t')
+        outputfile.write(f'{row["gene_id"]}\t')
+        outputfile.write(f'{row["transcript_id"]}\t')
+        outputfile.write(f'{row["source"]}\t')
+        outputfile.write(f'{row["group"]}\t')
+        outputfile.write(f'{row["variant_type"]}\t')
+        outputfile.write(f'{row["allele"]}\t')
+        outputfile.write(f'{row["wt_epitope_seq"]}\t')
+        outputfile.write(f'{row["wt_epitope_ic50"]}\t')
+        outputfile.write(f'{row["wt_epitope_rank"]}\t')
+        outputfile.write(f'{row["mt_epitope_seq"]}\t')
+        outputfile.write(f'{row["mt_epitope_ic50"]}\t')
+        outputfile.write(f'{row["mt_epitope_rank"]}\t')
+        outputfile.write(f'{row["mutation_position"]}\t')
+        outputfile.write(f'{row["vaf"]}\t')
+        outputfile.write(f'{row["mt_allele_depth"]}\t')
+        outputfile.write(f'{row["read_depth"]}\t')
+        outputfile.write(f'{row["ranking_score"]}\n')
+        

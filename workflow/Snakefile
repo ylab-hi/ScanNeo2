@@ -8,7 +8,7 @@ min_version("6.4.1")
 
 rule all:
   input:
-    expand("results/{sample}/priorization/neoantigens.tsv", sample=config['data']['name'])
+    expand("results/{sample}/priorization/binding_affinities.tsv", sample=config['data']['name'])
 
 #### load rules ####
 include: "rules/prelim.smk"

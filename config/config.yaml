@@ -3,20 +3,21 @@ threads: 30
 mapq: 30  # overall required mapping quality
 basequal: 20  # overall required base quality 
 
-### data
 data:
-  name:  patient2_test
+  name:  samplename
   dnaseq: 
     dna_normal: TESLA_testdata/patient2/WES/TESLA_9_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_9_2.fastq.gz
     dna_tumor: TESLA_testdata/patient2/WES/TESLA_10_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_10_2.fastq.gz
   rnaseq:
     rna_tumor: TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz
   normal: dna_normal
-
-custom:
-  variants:
-  hlatyping:
-  readgroups: 
+  
+  custom:
+    variants:
+    hlatyping:
+      MHC-I:
+      MHC-II:
+    readgroups: 
 
 ### pre-processing (only applied on fastq reads)
 preproc: 
@@ -49,7 +50,7 @@ exitronsplicing:
   activate: true # whether (=true) or not (=false) to include exitron-splicing events
   ao: 3  # allele observation
   pso: 0.05  # percent spliced out
-  
+
 # gene fusion
 genefusion:
   activate: true # whether (=true) or not (=false) to include gene fusion events
@@ -68,8 +69,8 @@ genefusion:
 ### indel
 indel:
   activate: true # whether (=true) or not (=false) to include indels
-  type: long # long, short, all
-  mode: RNA  # DNA, RNA or BOTH - 
+  type: all # long, short, all
+  mode: BOTH  # DNA, RNA or BOTH - 
   # strategy for optimizing posterior probability threshold
   strategy: OPTIMAL_F_SCORE # OPTIMAL_F_SCORE, FALSE_DISCOVERY_RATE, CONSTANT 
   fscorebeta: 1.0  # rel. weight of recall to precision (when OPTIMAL_F_SCORE is selected)
@@ -78,11 +79,18 @@ indel:
   sliprate: 0.1  # frequency of slippage when it is supsected
 
 hlatyping:
-  mode: DNA  # DNA, RNA, BOTH, None
+  class: BOTH # I, II or BOTH
+  mode: BOTH  # DNA, RNA or BOTH
+  # specific path for class II hlatyping (only required when class: II, or BOTH)
+  MHC-I_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
+  MHC-II_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
+  freqdata: ./hlahd_files/freq_data/ 
+  split: ./hlahd_files/HLA_gene.split.txt
+  dict: ./hlahd_files/dictionary/
 
 priorization:
   class: I # I, II or BOTH
   lengths:
     MHC-I: 8,9,10,11
-    MHC-II: 13,14,20
-    
+    MHC-II: 13,14,15
+
