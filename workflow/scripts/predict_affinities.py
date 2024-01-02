@@ -29,6 +29,7 @@ def main():
         # counters to store number of sequence in fa
         wt_cnt = {}
         mt_cnt = {}
+
         # file handler for wt and mt sequences
         fh_wt = {}
         fh_mt = {}
@@ -89,7 +90,6 @@ def main():
         
 #        wt_affinities = calc_peptide_binding(alleles, wt_fname, 'wt')
 #        mt_affinities = calc_peptide_binding(alleles, mt_fname, 'mt')
-
 #        print(mt_affinities)
 
 #        print(wt_affinities.keys())
@@ -120,6 +120,8 @@ def main():
 
             # check results of different epilens
             for epilen_idx in range(0,len(epilens)):
+
+                print(entry)
 
                 # retrieve sequence numbers (from binding affinities results)
                 wt_seqnum = int(entry[18:][epilen_idx*2])
