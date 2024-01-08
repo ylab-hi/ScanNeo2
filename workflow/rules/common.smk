@@ -499,6 +499,16 @@ def get_fusions(wildcards):
 
   return fusions
 
+########### ALT SPLICING ##########
+def get_altsplicing(wildcards):
+  altsplicing = []
+  if config['data']['rnaseq'] is not None:
+    if config['altsplicing']['activate']:
+      altsplicing += expand("results/{sample}/rnaseq/altsplicing/spladder/{group}_altsplicing.vcf.gz",
+        sample=config['data']['name'], 
+        group=list(config['data']['rnaseq'].keys()))
+  return altsplicing
+
 
 ########### NEOANTIGEN PRIORIZATION ##########
 def get_variants(wildcards):

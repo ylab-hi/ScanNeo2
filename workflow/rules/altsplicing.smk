@@ -21,26 +21,52 @@ rule spladder:
               --qmode all > {log} 2>&1
         """
 
-#rule splicing_to_vcf:
-    #input:
-      #"results/{sample}/rnaseq/altsplicing/spladder/{group}/merge_graphs_{type}_{confidence}.confirmed.txt.gz"
-    #output:
-        #"results/as/{sample}.vcf"
-    #message:
-      #"Converting splicing events to VCF format"
-    #log:
-      #"logs/{sample}/spladder/{group}_vcf.log"
-    #conda:
-        #"../envs/spladder.yml"
-    #shell:
-        #"""
-        #"""
+rule splicing_to_vcf:
+  input:
+    "results/{sample}/rnaseq/altsplicing/spladder/{group}"
+  output:
+    "results/{sample}/rnaseq/altsplicing/spladder/{group}_altsplicing.vcf"
+  message:
+    "Converting splicing events to VCF format"
+  log:
+    "logs/{sample}/spladder/{group}_to_vcf.log"
+  conda:
+    "../envs/manipulate_vcf.yml"
+  shell:
+    """
+      python workflow/scripts/altsplc2vcf.py \
+          -i {input} -r resources/refs/genome.fasta \
+          -g {wildcards.group} -o {output} > {log} 2>&1
+    """
 
-#rule combine_splicing:
-    #input:
-        #expand("results/as/{sample}.vcf", sample=config["rnaseq"])
-    #output:
-        #"results/as/all.vcf"
-    #shell:
-        #"""
-        #"""
+rule sort_altsplicing:
+  input:
+    "results/{sample}/rnaseq/altsplicing/spladder/{group}_altsplicing.vcf"
+  output:
+    "results/{sample}/rnaseq/altsplicing/spladder/{group}_altsplicing.vcf.gz"
+  message:
+    "Sorting and compressing splicing events on sample:{wildcards.sample} of group:{wildcards.group}"
+  log:
+    "logs/{sample}/spladder/{group}_sort.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+    """
+
+rule combine_altsplicing:
+  input:
+    get_altsplicing
+  output:
+    "results/{sample}/variants/altsplicing.vcf.gz"
+  message:
+    "Combining exitrons on sample:{wildcards.sample}"
+  log:
+    "logs/{sample}/exitrons/combine_exitrons.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools concat --naive -O z {input} -o  - | bcftools sort -O z -o {output} > {log} 2>&1
+    """
