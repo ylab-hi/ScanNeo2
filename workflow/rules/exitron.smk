@@ -27,12 +27,6 @@ rule prepare_cds:
           | awk 'OFS="\\t" {{if ($3=="CDS") {{print $1,$4-1,$5,$10,$16,$7}}}}' \
           | tr -d '";' > {output}
     """
-    
-    #"""
-      #cat resources/refs/gencode.v37.annotation.gtf \
-          #| awk 'OFS="\\t" {{if ($3=="CDS") {{print $1,$4-1,$5,$10,$16,$7}}}}' \
-          #| tr -d '";' > {output}
-    #"""
 
 rule prepare_scanexitron_config:
   output:
@@ -50,12 +44,6 @@ rule prepare_scanexitron_config:
           {output} > {log}
     """
       
-      #python3 workflow/scripts/prep_scanexitron_config.py \
-          #resources/refs/hg38.fa \
-          #resources/refs/gencode.v37.annotation.gtf \
-          #resources/refs/CDS.bed \
-          #{output} > {log}
-
 rule scanexitron:
     input: 
         bam = "results/{sample}/rnaseq/align/{group}_final_STAR.bam",
@@ -100,12 +88,11 @@ rule exitron_to_vcf:
   log:
     "logs/exitron2vcf_{sample}_{group}.log"
   conda:
-    "../envs/scanexitron.yml"
+    "../envs/manipulate_vcf.yml"
   shell:
     """
       python workflow/scripts/exitron2vcf.py \
-        {input} \
-        {output} \
+        {input} {output} \
         resources/refs/hg38.fa > {log}
     """
 
