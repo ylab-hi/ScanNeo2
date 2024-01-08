@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-
 import os
 import sys
-import argparse
 from pyfaidx import Fasta
 import vcfpy
 from pathlib import Path
