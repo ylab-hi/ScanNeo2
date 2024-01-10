@@ -246,7 +246,7 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
     shell:
       """
         samtools fixmate -pcmu -O bam -@ 6 {input} - \
-            | samtools sort -m1g -O bam - -o - \
+            | samtools sort -m1g -O bam -T tmp/ - -o - \
             | samtools markdup -r -@ 6 - {output.bam} > {log} 2>&1
       """
     
