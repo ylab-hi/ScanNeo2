@@ -5,6 +5,7 @@ dependencies:
   - python=3.8
   - bwa=0.7.17
   - samtools=1.16.1
+  - configargparse=1.7
   - pyfaidx
   - biopython=1.78
   - gffutils
