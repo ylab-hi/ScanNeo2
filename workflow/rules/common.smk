@@ -418,6 +418,25 @@ def get_aligned_reads(wildcards):
   return val
 
 
+def get_counts(wildcards):
+  counts = []
+
+  if config['quantification']['activate']:
+    if config['quantification']['mode'] in ['DNA','BOTH']:
+      counts += expand("results/{sample}/{seqtype}/quantification/{group}_counts.txt",
+        sample=config['data']['name'], 
+        seqtype='dnaseq',
+        group=list(config['data']['dnaseq'].keys()))
+
+    if config['quantification']['mode'] in ['RNA','BOTH']:
+      counts += expand("results/{sample}/{seqtype}/quantification/{group}_counts.txt",
+        sample=config['data']['name'], 
+        seqtype='rnaseq',
+        group=list(config['data']['rnaseq'].keys()))
+
+  return counts
+
+
 ########### INDEL CALLING ##########
 def get_longindels(wildcards):
   indels = []
