@@ -31,13 +31,14 @@ rule mod_genome:
     "Modify header in reference genome/annotation"
   conda:
     "../envs/basic.yml"
+  log:
+    "logs/mod-genome.log"
   shell:
     """
       python3 workflow/scripts/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation}
       rm resources/refs/genome_tmp.fasta
       rm resources/refs/genome_tmp.gtf
     """
-
 
 rule genome_index: 
   input:

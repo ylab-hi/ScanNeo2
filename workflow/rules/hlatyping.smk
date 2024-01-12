@@ -355,6 +355,10 @@ rule hlatyping_mhcII:
     "logs/{sample}/hla/{group}_{type}_hlahd.log"
   conda:
     "../envs/hlahd.yml"
+  params:
+    freqdata=f"""-f {config['hlatyping']['freqdata']}""",
+    split=f"""{config['hlatyping']['split']}""",
+    dic=f"""{config['hlatyping']['dict']}"""
   threads: config['threads']
   shell:
     """
@@ -362,8 +366,9 @@ rule hlatyping_mhcII:
           -t {threads} \
           -m 100 \
           -c 0.95 \
-          -f {config[hlatyping][freqdata]} \
+          {params.freqdata} \
           {input.fwd} {input.rev} \
+          {params.split} {params.dic} \
           {config[hlatyping][split]} \
           {config[hlatyping][dict]} \
           {wildcards.group}_{wildcards.type} \

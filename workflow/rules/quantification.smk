@@ -39,9 +39,11 @@ rule countfeatures_rnaseq:
   threads: 2
   conda:
     "../envs/subread.yml"
+  params:
+    rna_readtype=f"""{config['data']['rnaseq_readtype']}"""
   shell:
     """
-    if [ "{config[data][rnaseq_readtype]}" == "SE" ]; then
+    if [ {params.readtype} == "SE" ]; then
       featureCounts \
           -F GTF \
           -a {input.annotation_file} \
@@ -51,7 +53,7 @@ rule countfeatures_rnaseq:
           -Q {config[mapq]} \
           -T {threads} \
           -o {output.table} {input.sample} > {log} 2>&1
-    elif [ "{config[data][rnaseq_readtype]}" == "PE" ]; then
+    elif [ {params.readtype} == "PE" ]; then
       featureCounts \
           -p \
           -F GTF \

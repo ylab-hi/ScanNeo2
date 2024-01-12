@@ -233,7 +233,8 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
 
   rule dnaseq_postproc:
     input:
-      "results/{sample}/dnaseq/align/{group}_aligned_BWA.bam"
+      aln="results/{sample}/dnaseq/align/{group}_aligned_BWA.bam"
+      tmp="tmp/"
     output:
       bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
     log:
@@ -245,7 +246,7 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
     threads: config['threads']
     shell:
       """
-        samtools fixmate -pcmu -O bam -@ 6 {input} - \
+        samtools fixmate -pcmu -O bam -@ 6 {input.aln} - \
             | samtools sort -m1g -O bam -T tmp/ - -o - \
             | samtools markdup -r -@ 6 - {output.bam} > {log} 2>&1
       """
