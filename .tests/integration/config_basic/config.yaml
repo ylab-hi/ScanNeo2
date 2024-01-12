@@ -13,10 +13,12 @@ data:
     rna_tumor: TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz
   normal: dna_normal
 
-custom:
-  variants:
-  hlatyping:
-  readgroups: 
+  custom:
+    variants:
+    hlatyping:
+      MHC-I:
+      MHC-II:
+    readgroups: 
 
 ### pre-processing (only applied on fastq reads)
 preproc: 
@@ -46,11 +48,10 @@ altsplicing:
 
 # exitron splicing
 exitronsplicing:
-  version: 1
   activate: true # whether (=true) or not (=false) to include exitron-splicing events
   ao: 3  # allele observation
   pso: 0.05  # percent spliced out
-  
+
 # gene fusion
 genefusion:
   activate: true # whether (=true) or not (=false) to include gene fusion events
@@ -69,7 +70,7 @@ genefusion:
 ### indel
 indel:
   activate: true # whether (=true) or not (=false) to include indels
-  type: long # long, short, all
+  type: all # long, short, all
   mode: BOTH  # DNA, RNA or BOTH - 
   # strategy for optimizing posterior probability threshold
   strategy: OPTIMAL_F_SCORE # OPTIMAL_F_SCORE, FALSE_DISCOVERY_RATE, CONSTANT 
@@ -78,27 +79,23 @@ indel:
   sliplen: 8  # min number of reference bases to suspect slippage event
   sliprate: 0.1  # frequency of slippage when it is supsected
 
+quantification:
+  activate: true
+  mode: BOTH # RNA, RNA or BOTH
+
 hlatyping:
-  mode: DNA  # DNA, RNA, BOTH, None
+  class: BOTH # I, II or BOTH
+  mode: BOTH  # DNA, RNA or BOTH
+  # specific path for class II hlatyping (only required when class: II, or BOTH)
+  MHC-I_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
+  MHC-II_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
+  freqdata: ./hlahd_files/freq_data/ 
+  split: ./hlahd_files/HLA_gene.split.txt
+  dict: ./hlahd_files/dictionary/
 
 priorization:
   class: I # I, II or BOTH
   lengths:
     MHC-I: 8,9,10,11
-    MHC-II: 13,14,20
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    MHC-II: 13,14,15
 
