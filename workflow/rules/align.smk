@@ -104,9 +104,9 @@ if config['data']['rnaseq_filetype'] == '.bam':
     input:
       aggregate_aligned_rg
     output:
-      "results/{sample}/rnaseq/align/{group}_aligned_STAR.bam",
+      "results/{sample}/rnaseq/align/{group}_aligned_STAR.bam"
     log:
-      "logs/{sample}/samtools/merge/{group}.log",
+      "logs/{sample}/samtools/merge/{group}.log"
     params:
       extra="",  # optional additional parameters as string
     threads: config['threads']
