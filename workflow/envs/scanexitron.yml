@@ -1,9 +1,9 @@
 channels:
   - conda-forge
   - bioconda
+  - defaults
 dependencies:
   - samtools
   - bedtools
   - pyfaidx
-  - pip:
-      - vcfpy==0.13.6
+  - vcfpy
