@@ -153,8 +153,7 @@ def main():
                                 if e2_start == e2_end:
                                     continue
 
-
-                                ref = (str(seq[chrom][start-1:start]) + str(seq[chrom][start:end-1])).upper()
+                                ref = (str(seq[chrom][start-1:start]) + str(seq[chrom][start:end+1])).upper()
                                 alt = str(seq[chrom][start-1:start]).upper()
                                 
                                 ao = column[16]
