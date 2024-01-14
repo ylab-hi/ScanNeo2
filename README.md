@@ -29,6 +29,10 @@ To get started with ScanNeo2, follow the steps below:
     mamba activate scanneo2
     ```
 
+    Note: This installs Snakemake v7.32.x. In its current form, ScanNeo2 is not comptabile with Snakemake >= 8.x.x. 
+    If ScanNeo2 is configured to use the exitron module, singularity needs to be installed. For that, the 
+    `environment_singularity.yml' can be used. However, most HPC servers provide their own module installation.
+
 2. Deploy ScanNeo2:
 
 ```
@@ -40,9 +44,9 @@ cd ScanNeo2
 
 3. (Optional) Install HLA-HD
 
-ScanNeo2 employs HLA-HD for HLA Class II genotyping which is required when ScanNeo2 has been configured to predict class II neoantigens. 
-Due to license reasons it has to be installed manually (download request). Please follow the instructions on the official 
-[website](https://w3.genome.med.kyoto-u.ac.jp/HLA-HD/). ScanNeo2 has been tested using HLA-HD v1.7.0
+    ScanNeo2 employs HLA-HD for HLA Class II genotyping which is required when ScanNeo2 has been configured to predict class II neoantigens. 
+    Due to license reasons it has to be installed manually (download request). Please follow the instructions on the official 
+    [website](https://w3.genome.med.kyoto-u.ac.jp/HLA-HD/). ScanNeo2 has been tested using HLA-HD v1.7.0
 
 
 <!--
