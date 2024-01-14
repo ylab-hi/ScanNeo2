@@ -9,7 +9,7 @@ authors:
   orcid: "https://orcid.org/0000-0002-3694-3428"
 - family-names: "Yang"
   given-names: "Rendong"
-  orcid: https://orcid.org/0000-0002-9512-2240
+  orcid: "https://orcid.org/0000-0002-9512-2240"
 title: "ScanNeo2"
 version: 0.1.0
 doi: 10.1093/bioinformatics/btad659
@@ -25,7 +25,7 @@ preferred-citation:
     orcid: "https://orcid.org/0000-0002-3694-3428"
   - family-names: "Yang"
     given-names: "Rendong"
-    orcid: https://orcid.org/0000-0002-9512-2240
+    orcid: "https://orcid.org/0000-0002-9512-2240"
   doi: "10.1093/bioinformatics/btad659"
   journal: "Bioinformatics"
   month: 39
