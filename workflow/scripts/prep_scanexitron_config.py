@@ -2,22 +2,20 @@ import sys
 import os
 
 def main():
-    template = """
-    [fasta]
+    template = """[fasta]
 
-    hg38={hg38_path}
-    hg19=
+hg38={hg38_path}
+hg19=
 
-    [annotation]
+[annotation]
 
-    hg38={hg38_annotation_path}
-    hg19=
+hg38={hg38_annotation_path}
+hg19=
 
-    [cds]
+[cds]
     
-    hg38={hg38_cds_path}
-    hg19=
-    """
+hg38={hg38_cds_path}
+hg19="""
     parameters = {
             'hg38_path': str(os.path.abspath(sys.argv[1])),
             'hg38_annotation_path': str(os.path.abspath(sys.argv[2])),
@@ -27,7 +25,8 @@ def main():
     filled_template = template.format(**parameters)
     output_path = sys.argv[4]
 
-    with open(output_path, 'w') as output_file:
-        output_file.write(filled_template)
+    output_file = open(output_path, 'w')
+    output_file.write(filled_template)
+    output_file.close()
 
 main()
