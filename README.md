@@ -90,6 +90,10 @@ We recommend to run ScanNeo on a system with at least 64GB
 
 ScanNeo2 provides an accessible, efficient method for predicting neoantigens. Its comprehensive support for multiple sources of neoantigens, along with its ease of installation and use, make it a powerful tool for researchers in the field. Please don't hesitate to reach out with any questions or feedback - we're always looking to improve ScanNeo2.
 
+## Citation
+
+If ScanNeo2 has proven useful in your work please cite it using the linked publication.
+
 ## License
 
 ScanNeo2 is licensed under MIT License.

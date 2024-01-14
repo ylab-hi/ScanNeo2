@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Schäfer"
+  given-names: "Richard A."
+  orcid: "https://orcid.org/0000-0001-9938-1920"
+- family-names: "Guo"
+  given-names: "Qingxiang"
+  orcid: "https://orcid.org/0000-0002-3694-3428"
+- family-names: "Yang"
+  given-names: "Rendong"
+title: "ScanNeo2"
+version: 0.1.0
+doi: 10.1093/bioinformatics/btad659
+url: "https://github.com/ylab-hi/ScanNeo2"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Schäfer"
+    given-names: "Richard A."
+    orcid: "https://orcid.org/0000-0001-9938-1920"
+  - family-names: "Guo"
+    given-names: "Qingxiang"
+  doi: "10.1093/bioinformatics/btad659"
+  journal: "Bioinformatics"
+  month: 39
+  start: 1 # First page number
+  end: 3 # Last page number
+  title: "ScanNeo2: a comprehensive workflow for neoantigen detection and immunogenicity prediction from diverse genomic and transcriptomic alterations"
+  issue: 11
+  volume: 39
+  year: 2023
