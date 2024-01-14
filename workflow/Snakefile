@@ -8,7 +8,8 @@ min_version("6.4.1")
 
 rule all:
   input:
-    expand("results/{sample}/priorization/binding_affinities.tsv", sample=config['data']['name'])
+    expand("results/{sample}/prioritization/", 
+           sample=config['data']['name'])
 
 #### load rules ####
 include: "rules/prelim.smk"
@@ -24,4 +25,4 @@ include: "rules/exitron.smk"
 include: "rules/indel.smk"
 include: "rules/germline.smk"
 include: "rules/annotation.smk"
-include: "rules/neoantigen.smk"
+include: "rules/prioritization.smk"

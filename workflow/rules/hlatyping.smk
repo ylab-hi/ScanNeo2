@@ -369,8 +369,6 @@ rule hlatyping_mhcII:
           {params.freqdata} \
           {input.fwd} {input.rev} \
           {params.split} {params.dic} \
-          {config[hlatyping][split]} \
-          {config[hlatyping][dict]} \
           {wildcards.group}_{wildcards.type} \
           results/{wildcards.sample}/hla/mhc-II/genotyping/
     """

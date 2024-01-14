@@ -233,7 +233,7 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
 
   rule dnaseq_postproc:
     input:
-      aln="results/{sample}/dnaseq/align/{group}_aligned_BWA.bam"
+      aln="results/{sample}/dnaseq/align/{group}_aligned_BWA.bam",
       tmp="tmp/"
     output:
       bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",

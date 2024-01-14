@@ -550,3 +550,17 @@ def get_variants(wildcards):
 
     return variants
 
+def get_mhcI(wildcards):
+  alleles = []
+  if config['prioritization']['class'] in ['I', 'BOTH']:
+    alleles += expand("results/{sample}/hla/mhc-I.tsv",
+                      sample=config['data']['name'])
+  return alleles
+
+def get_mhcII(wildcards):
+  alleles = []
+  if config['prioritization']['class'] in ['II', 'BOTH']:
+    alleles += expand("results/{sample}/hla/mhc-II.tsv",
+                      sample=config['data']['name'])
+  return alleles
+
