@@ -28,7 +28,7 @@ preferred-citation:
     orcid: "https://orcid.org/0000-0002-9512-2240"
   doi: "10.1093/bioinformatics/btad659"
   journal: "Bioinformatics"
-  month: 39
+  month: 10
   start: 1 # First page number
   end: 3 # Last page number
   title: "ScanNeo2: a comprehensive workflow for neoantigen detection and immunogenicity prediction from diverse genomic and transcriptomic alterations"
