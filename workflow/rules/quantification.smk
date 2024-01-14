@@ -4,13 +4,15 @@ rule countfeatures_dnaseq:
     sample = "results/{sample}/dnaseq/align/{group}_final_BWA.bam",
     annotation_file = "resources/refs/genome.gtf"
   output:
-    table = "results/{sample}/dnaseq/quantification/{group}_counts.txt",
-    summary = "results/{sample}/dnaseq/quantification/{group}_counts.txt.summary",
+    "results/{sample}/dnaseq/quantification/{group}_counts.txt",
   log:
     "logs/{sample}/featurecounts/dnaseq_{group}.log",
   threads: 2
   conda:
     "../envs/subread.yml"
+  params:
+    mpq=f"""{config['mapq']}"""
+
   shell:
     """
       featureCounts \
@@ -19,9 +21,9 @@ rule countfeatures_dnaseq:
           -t gene \
           -g gene_id \
           --fracOverlap 0.2 \
-          -Q {config[mapq]} \
+          -Q {params.mapq} \
           -T {threads} \
-          -o {output.table} {input.sample} > {log} 2>&1
+          -o {output} {input.sample} > {log} 2>&1
     """
 
 # TODO: add support for PE reads (BWA stores reads as single-end?)
@@ -40,7 +42,8 @@ rule countfeatures_rnaseq:
   conda:
     "../envs/subread.yml"
   params:
-    rna_readtype=f"""{config['data']['rnaseq_readtype']}"""
+    rna_readtype=f"""{config["data"]["rnaseq_readtype"]}""",
+    mapq=f"""{config['mapq']}"""
   shell:
     """
     if [ {params.readtype} == "SE" ]; then
@@ -50,7 +53,7 @@ rule countfeatures_rnaseq:
           -t gene \
           -g gene_id \
           --fracOverlap 0.2 \
-          -Q {config[mapq]} \
+          -Q {params.mapq} \
           -T {threads} \
           -o {output.table} {input.sample} > {log} 2>&1
     elif [ {params.readtype} == "PE" ]; then
@@ -61,7 +64,7 @@ rule countfeatures_rnaseq:
           -t gene \
           -g gene_id \
           --fracOverlap 0.2 \
-          -Q {config[mapq]} \
+          -Q {params.mapq} \
           -T {threads} \
           -o {output.table} {input.sample} > {log} 2>&1
     fi

@@ -6,6 +6,8 @@ rule create_tmp_folder:
     "Creating temporary folder"
   conda:
     "../envs/basic.yml"
+  log:
+    "logs/prelim.log"
   shell:
     """
       mkdir -p {output}
