@@ -77,6 +77,10 @@ indel:
   sliplen: 8  # min number of reference bases to suspect slippage event
   sliprate: 0.1  # frequency of slippage when it is supsected
 
+quantification:
+  activate: true
+  mode: BOTH # RNA, RNA or BOTH
+
 hlatyping:
   class: BOTH # I, II or BOTH
   mode: BOTH  # DNA, RNA or BOTH
@@ -87,7 +91,7 @@ hlatyping:
   split: ./hlahd_files/HLA_gene.split.txt
   dict: ./hlahd_files/dictionary/
 
-priorization:
+prioritization:
   class: I # I, II or BOTH
   lengths:
     MHC-I: 8,9,10,11
