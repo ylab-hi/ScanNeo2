@@ -36,9 +36,11 @@ rule mod_genome:
   shell:
     """
       python3 workflow/scripts/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation}
-      rm resources/refs/genome_tmp.fasta
-      rm resources/refs/genome_tmp.gtf
     """
+
+# this forces to redownload the reference on each execution
+##      rm resources/refs/genome_tmp.fasta
+#      rm resources/refs/genome_tmp.gtf
 
 rule genome_index: 
   input:
