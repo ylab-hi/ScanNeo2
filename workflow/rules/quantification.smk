@@ -11,7 +11,7 @@ rule countfeatures_dnaseq:
   conda:
     "../envs/subread.yml"
   params:
-    mpq=f"""{config['mapq']}"""
+    mapq=f"""{config['mapq']}"""
 
   shell:
     """
@@ -42,7 +42,7 @@ rule countfeatures_rnaseq:
   conda:
     "../envs/subread.yml"
   params:
-    rna_readtype=f"""{config["data"]["rnaseq_readtype"]}""",
+    readtype=f"""{config["data"]["rnaseq_readtype"]}""",
     mapq=f"""{config['mapq']}"""
   shell:
     """
