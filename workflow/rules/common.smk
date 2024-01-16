@@ -243,7 +243,7 @@ def get_predicted_mhcI_alleles(wildcards):
 
   return values
 
-def get_all_mhcI_alleles{wildcards):
+def get_all_mhcI_alleles(wildcards):
   values = []
 
   if ("DNA" in config['hlatyping']['MHC-I_mode'] or
