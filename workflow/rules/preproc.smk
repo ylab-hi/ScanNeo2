@@ -82,7 +82,7 @@ rule preproc_paired_end:
     params:
       dapters="",
       extra=lambda wildcards: "-u 100 -e {0} -l {1} {2} ".format(
-          config['preproc']['qual'], 
+          config['basequal'], 
           config['preproc']['minlen'],
           "-3 --cut_tail_window_size {} cut_tail_mean_quality {}".format(
               config['preproc']['slidingwindow']['wsize'],
