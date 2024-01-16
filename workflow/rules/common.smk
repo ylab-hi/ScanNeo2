@@ -252,7 +252,7 @@ def get_all_mhcI_alleles(wildcards):
                     sample = wildcards.sample)
 
   if "custom" in config["hlatyping"]["MHC-I_mode"]:
-    values += config["data"]["custom"]["hlatyping"]["MHC-I"]
+    values += [config["data"]["custom"]["hlatyping"]["MHC-I"]]
 
   if len(values) == 0:
     print('No hla data found. Check config file for correct specification of data and hla genotyping mode')
