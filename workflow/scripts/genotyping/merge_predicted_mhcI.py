@@ -29,9 +29,4 @@ def main():
                 out.write(f',{v}')
         out.write(f'\t{al}\n')
 
-    
-    
-
-
-
 main()

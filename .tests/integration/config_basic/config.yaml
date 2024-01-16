@@ -5,14 +5,14 @@ basequal: 20  # overall required base quality
 
 ### data
 data:
-  name:  patient2_test
+  name:  basic_sample
   dnaseq: 
     dna_normal: TESLA_testdata/patient2/WES/TESLA_9_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_9_2.fastq.gz
     dna_tumor: TESLA_testdata/patient2/WES/TESLA_10_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_10_2.fastq.gz
   rnaseq:
     rna_tumor: TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz
   normal: dna_normal
-
+  
   custom:
     variants:
     hlatyping:
@@ -84,16 +84,15 @@ quantification:
   mode: BOTH # RNA, RNA or BOTH
 
 hlatyping:
-  class: BOTH # I, II or BOTH
-  mode: BOTH  # DNA, RNA or BOTH
+  class: I # I, II or BOTH
   # specific path for class II hlatyping (only required when class: II, or BOTH)
-  MHC-I_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
+  MHC-I_mode: DNA, RNA # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
   MHC-II_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
   freqdata: ./hlahd_files/freq_data/ 
   split: ./hlahd_files/HLA_gene.split.txt
   dict: ./hlahd_files/dictionary/
 
-priorization:
+prioritization:
   class: I # I, II or BOTH
   lengths:
     MHC-I: 8,9,10,11
