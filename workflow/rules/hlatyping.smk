@@ -288,22 +288,40 @@ rule combine_mhcI_PE:
           '{input}' {output}
     """
 
-rule merge_mhcI_allels:
+rule merge_predicted_mhcI_allels:
   input:
-    get_mhcI_alleles
+    get_predicted_mhcI_alleles
   output:
-    "results/{sample}/hla/mhc-I.tsv",
+    "results/{sample}/hla/genotyping/mhc-I.tsv",
   message:
     "Merging HLA alleles from different sources"
   log:
-    "logs/{sample}/optitype/merge_classI_alleles.log"
+    "logs/{sample}/optitype/merge_predicted_mhc-I.log"
   conda:
     "../envs/basic.yml"
   threads: 1
   shell:
     """
-      python workflow/scripts/merge_mhcI_alleles.py \
+      python workflow/scripts/genotyping/merge_predicted_mhcI.py \
           '{input}' {output}
+    """
+
+rule combine_all_mhcI_alleles:
+  input:
+    get_all_mhcI_alleles:
+  output:
+    "results/{sample}/hla/mhc-I.tsv"
+  message:
+    "Combining HLA alleles from different sources"
+  log:
+    "logs/{sample}/genotyping/combine_all_mhc-I.log"
+  conda:
+    "../envs/basic.yml"
+  threads: 1
+  shell:
+    """
+      python workflow/scripts/genotyping/combine_all_alleles.py \
+          '{input}' {output} > {log} 2>&1\
     """
     
 ######### MHC-II HLA GENOTYPING ###########

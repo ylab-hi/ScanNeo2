@@ -62,7 +62,7 @@ cd ScanNeo2
 
 ### Running the Workflow
 
-    To run the workflow, use the following command:
+To run the workflow, use the following command:
 
 ```bash
 cd /path/to/your/working/directory/
