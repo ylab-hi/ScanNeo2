@@ -308,7 +308,7 @@ rule merge_predicted_mhcI_allels:
 
 rule combine_all_mhcI_alleles:
   input:
-    get_all_mhcI_alleles:
+    get_all_mhcI_alleles
   output:
     "results/{sample}/hla/mhc-I.tsv"
   message:
