@@ -346,7 +346,12 @@ def aggregate_aligned_rg(wildcards):
 def get_readgroups_input(wildcards):
   # return only bam from STAR align
   if config['data'][f'{wildcards.seqtype}_filetype'] in ['.fq','.fastq']:
-    return ["results/{sample}/{seqtype}/align/{group}_final_STAR.bam".format(**wildcards)]
+    return expand("results/{sample}/{seqtype}/align/{group}_final_STAR.bam",
+                  sample=wildcards.sample,
+                  seqtype=wildcards.seqtype,
+                  group=wildcards.group)
+
+#    return ["results/{sample}/{seqtype}/align/{group}_final_STAR.bam".format(**wildcards)]
 
   elif config['data'][f'{wildcards.seqtype}_filetype'] in ['.bam']:
     val = []
@@ -358,6 +363,7 @@ def get_readgroups_input(wildcards):
       # needs both the raw data and star aligned bam 
       val.append(str(config['data']['rnaseq'][wildcards.group]))
       val += expand("results/{sample}/{seqtype}/align/{group}_final_STAR.bam",
+          sample=wildcards.sample,
           seqtype='rnaseq',
           group=wildcards.group)
     
