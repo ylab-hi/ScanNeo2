@@ -5,9 +5,6 @@ import variants
 import prediction
 import filtering
 
-import pdb
-
-
 def main():
     options = parse_arguments()
 
