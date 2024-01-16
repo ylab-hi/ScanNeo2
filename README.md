@@ -75,7 +75,8 @@ As mentioned above, when exitron detection is activated the singularity option `
 snakemake --cores all --use-conda --use-singularity
 ```
 
-In addition, custom configfiles can be configured using `--configfile <path/to/configfile>`. 
+In addition, custom configfiles can be configured using `--configfile <path/to/configfile>`. In principle, this merely 
+overwrites the default config, and should include all key/value pairs of the valid config file.
 
 For more detailed instructions and explanations on how to use ScanNeo2, please consult the [wiki](https://github.com/ylab-hi/ScanNeo2/wiki).
 
