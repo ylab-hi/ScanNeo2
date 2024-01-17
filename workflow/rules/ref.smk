@@ -35,7 +35,7 @@ rule mod_genome:
     "logs/mod-genome.log"
   shell:
     """
-      python3 workflow/scripts/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation}
+      python3 workflow/scripts/reference/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation}
     """
 
 # this forces to redownload the reference on each execution
