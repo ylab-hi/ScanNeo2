@@ -199,11 +199,11 @@ def aggregate_mhcI_PE(wildcards):
     no=glob_wildcards(os.path.join(checkpoint_output, "R1_{no}.bam")).no)
 
 
-def get_mhcI_alleles(wildcards):
+def get_predicted_mhcI_alleles(wildcards):
   values = []
 
   # routines to genotype from DNA
-  if config['hlatyping']['MHC-I_mode'] in ['DNA', 'BOTH']:
+  if "DNA" in config['hlatyping']['MHC-I_mode']:
     if config['data']['dnaseq'] is not None:
       for key in config['data']['dnaseq'].keys():
         if key not in config['data']['normal']:
@@ -216,7 +216,7 @@ def get_mhcI_alleles(wildcards):
       print('dnaseq data has not been specified in the config file, but specified mode for hla genotyping in config file is DNA or BOTH -- will be ignored')
 
   # routines to genotype from RNA
-  if config['hlatyping']['MHC-I_mode'] in ['RNA', 'BOTH']:
+  if "RNA" in config['hlatyping']['MHC-I_mode']:
     if config['data']['rnaseq'] is not None:
       for key in config['data']['rnaseq'].keys():
         if key not in config['data']['normal']:
@@ -230,8 +230,11 @@ def get_mhcI_alleles(wildcards):
 
 
   # if alleles have been specified in the config file, add them to the list
-  if config['data']['custom']['hlatyping']['MHC-I'] is not None:
-    values.append(config['custom']['hlatyping']['MHC-I'])
+  #if "custom" in config['hlatyping']['MHC-I_mode']:
+    #if config['data']['custom']['hlatyping']['MHC-I'] is not None:
+      #values.append(config['custom']['hlatyping']['MHC-I'])
+  #if config['data']['custom']['hlatyping']['MHC-I'] is not None:
+    #values.append(config['custom']['hlatyping']['MHC-I'])
 
 
   if len(values) == 0:
@@ -240,12 +243,26 @@ def get_mhcI_alleles(wildcards):
 
   return values
 
+def get_all_mhcI_alleles(wildcards):
+  values = []
+
+  if ("DNA" in config['hlatyping']['MHC-I_mode'] or
+      "RNA" in config['hlatyping']['MHC-I_mode']):
+    values += expand("results/{sample}/hla/mhc-I/genotyping/mhc-I.tsv",
+                    sample = wildcards.sample)
+
+  if "custom" in config["hlatyping"]["MHC-I_mode"]:
+    values += [config["data"]["custom"]["hlatyping"]["MHC-I"]]
+
+  if len(values) == 0:
+    print('No hla data found. Check config file for correct specification of data and hla genotyping mode')
+    sys.exit(1)
+
+  return values
+
+
 
 ##### MHC CLASS I
-
-
-
-
 
 
 # returns list of hla typing results for the given sample and group
@@ -329,7 +346,12 @@ def aggregate_aligned_rg(wildcards):
 def get_readgroups_input(wildcards):
   # return only bam from STAR align
   if config['data'][f'{wildcards.seqtype}_filetype'] in ['.fq','.fastq']:
-    return ["results/{sample}/{seqtype}/align/{group}_final_STAR.bam".format(**wildcards)]
+    return expand("results/{sample}/{seqtype}/align/{group}_final_STAR.bam",
+                  sample=wildcards.sample,
+                  seqtype=wildcards.seqtype,
+                  group=wildcards.group)
+
+#    return ["results/{sample}/{seqtype}/align/{group}_final_STAR.bam".format(**wildcards)]
 
   elif config['data'][f'{wildcards.seqtype}_filetype'] in ['.bam']:
     val = []
@@ -341,6 +363,7 @@ def get_readgroups_input(wildcards):
       # needs both the raw data and star aligned bam 
       val.append(str(config['data']['rnaseq'][wildcards.group]))
       val += expand("results/{sample}/{seqtype}/align/{group}_final_STAR.bam",
+          sample=wildcards.sample,
           seqtype='rnaseq',
           group=wildcards.group)
     
@@ -555,6 +578,7 @@ def get_mhcI(wildcards):
   if config['prioritization']['class'] in ['I', 'BOTH']:
     alleles += expand("results/{sample}/hla/mhc-I.tsv",
                       sample=config['data']['name'])
+
   return alleles
 
 def get_mhcII(wildcards):

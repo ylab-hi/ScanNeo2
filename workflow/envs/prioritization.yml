@@ -1,0 +1,13 @@
+channels:
+ - bioconda
+ - conda-forge
+ - anaconda
+dependencies:
+ - python>=3.6
+ - vcfpy
+ - pyfaidx
+ - configargparse
+ - pandas
+ - pip
+ - pip:
+   - gffutils

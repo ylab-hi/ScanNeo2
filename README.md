@@ -69,6 +69,15 @@ cd /path/to/your/working/directory/
 snakemake --cores all --use-conda
 ```
 
+As mentioned above, when exitron detection is activated the singularity option `--use-singularity` has to be used as well.
+
+```bash
+snakemake --cores all --use-conda --use-singularity
+```
+
+In addition, custom configfiles can be configured using `--configfile <path/to/configfile>`. In principle, this merely 
+overwrites the default config, and should include all key/value pairs of the valid config file.
+
 For more detailed instructions and explanations on how to use ScanNeo2, please consult the [wiki](https://github.com/ylab-hi/ScanNeo2/wiki).
 
 ## Docker Support
