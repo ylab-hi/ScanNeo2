@@ -46,17 +46,6 @@ rule countfeatures_rnaseq:
     mapq=f"""{config['mapq']}"""
   shell:
     """
-    if [ {params.readtype} == "SE" ]; then
-      featureCounts \
-          -F GTF \
-          -a {input.annotation_file} \
-          -t gene \
-          -g gene_id \
-          --fracOverlap 0.2 \
-          -Q {params.mapq} \
-          -T {threads} \
-          -o {output.table} {input.sample} > {log} 2>&1
-    elif [ {params.readtype} == "PE" ]; then
       featureCounts \
           -p \
           -F GTF \
@@ -67,7 +56,6 @@ rule countfeatures_rnaseq:
           -Q {params.mapq} \
           -T {threads} \
           -o {output.table} {input.sample} > {log} 2>&1
-    fi
     """
 
 # merges the count tables from all samples into single table (calculates TPM)
