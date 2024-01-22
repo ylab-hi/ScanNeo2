@@ -52,7 +52,7 @@ rule priorization:
     mhcII_len = f"""config["priorization"]["lengths"]["MHC-II"]""",
   shell:
     """
-      python workflow/scripts/priorization/compile.py \
+      python workflow/scripts/prioritization/compile.py \
           -i '{input.var}' -f {input.fus} \
           --output_dir results/{wildcards.sample}/priorization/ \
           -p {input.peptide} -a {input.annotation} \
