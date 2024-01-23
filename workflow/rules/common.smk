@@ -228,15 +228,6 @@ def get_predicted_mhcI_alleles(wildcards):
     else: # if no rnaseq data is specified, but mode is RNA or BOTH, then ignore
       print('rnaseq data has not been specified in the config file, but specified mode for hla genotyping in config file is RNA or BOTH -- will be ignored')
 
-
-  # if alleles have been specified in the config file, add them to the list
-  #if "custom" in config['hlatyping']['MHC-I_mode']:
-    #if config['data']['custom']['hlatyping']['MHC-I'] is not None:
-      #values.append(config['custom']['hlatyping']['MHC-I'])
-  #if config['data']['custom']['hlatyping']['MHC-I'] is not None:
-    #values.append(config['custom']['hlatyping']['MHC-I'])
-
-
   if len(values) == 0:
     print('No data found. Check config file for correct specification of data and hla genotyping mode')
     sys.exit(1)

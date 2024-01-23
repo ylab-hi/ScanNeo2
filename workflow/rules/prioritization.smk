@@ -47,21 +47,21 @@ rule priorization:
     "logs/prioritization/{sample}.log"
   threads: config["threads"]
   params:
-    mhc_class = f"""config["priorization"]["class"]""",
-    mhcI_len = f"""config["priorization"]["lengths"]["MHC-I"]""",
-    mhcII_len = f"""config["priorization"]["lengths"]["MHC-II"]""",
+    mhc_class = f"""{config["prioritization"]["class"]}""",
+    mhcI_len = f"""{config["prioritization"]["lengths"]["MHC-I"]}""",
+    mhcII_len = f"""{config["prioritization"]["lengths"]["MHC-II"]}""",
   shell:
     """
       python workflow/scripts/prioritization/compile.py \
-          -i '{input.var}' -f {input.fus} \
-          --output_dir results/{wildcards.sample}/priorization/ \
+          -i "{input.var}" -f "{input.fus}" \
+          --output_dir results/{wildcards.sample}/prioritization/ \
           -p {input.peptide} -a {input.annotation} \
           --confidence medium \
           --mhc_class {params.mhc_class} \
-          --mhcI {input.mhcI} \
-          --mhc_len {params.mhcI_len} \
-          --mhcII {input.mhcII} \
-          --mhcII_len {params.mhcII_len} \
+          --mhcI "{input.mhcI}" \
+          --mhcI_len "{params.mhcI_len}" \
+          --mhcII "{input.mhcII}" \
+          --mhcII_len "{params.mhcII_len}" \
           --counts {input.counts} \
           --threads {threads} \
           --output_dir {output}

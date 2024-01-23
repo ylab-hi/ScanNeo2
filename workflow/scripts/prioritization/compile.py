@@ -16,14 +16,14 @@ def main():
                                               options.counts)
     variant_effects.write_header()
 
-    if options.fusion is not None:
+    if options.fusion is not "":
         fusions = variants.Fusions(options.fusion, 
                                    options.confidence, 
                                    proteome.proteome, 
                                    annotation.anno,
                                    variant_effects)
 
-    if options.input is not None:
+    if options.input is not "":
         other_variants = variants.Variants(options.input, 
                                            annotation.anno,
                                            variant_effects)
