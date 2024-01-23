@@ -38,7 +38,7 @@ rule priorization:
     annotation="resources/refs/genome_tmp.gtf",
     counts="results/{sample}/quantification/allcounts.txt"
   output:
-    "results/{sample}/prioritization/",
+    directory("results/{sample}/prioritization/"),
   message:
     "Predicting binding affinities on sample:{wildcards.sample}"
   conda:
