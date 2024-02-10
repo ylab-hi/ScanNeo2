@@ -292,7 +292,7 @@ rule merge_predicted_mhcI_allels:
   input:
     get_predicted_mhcI_alleles
   output:
-    "results/{sample}/hla/genotyping/mhc-I.tsv",
+    "results/{sample}/hla/mhc-I/genotyping/mhc-I.tsv",
   message:
     "Merging HLA alleles from different sources"
   log:
