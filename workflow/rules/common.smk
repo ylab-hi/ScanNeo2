@@ -119,6 +119,7 @@ def all_identical(l):
   else:
     return False
 
+
 # load up the config
 config['data'] = data_structure(config['data'])
 
@@ -206,6 +207,11 @@ def get_predicted_mhcI_alleles(wildcards):
   if "DNA" in config['hlatyping']['MHC-I_mode']:
     if config['data']['dnaseq'] is not None:
       for key in config['data']['dnaseq'].keys():
+        
+        if config['data']['normal'] is not None:
+          if key in config['data']['normal']:
+            continue
+
         if key not in config['data']['normal']:
           values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_{type}_{readtype}.tsv",
                            sample = wildcards.sample,
@@ -219,8 +225,14 @@ def get_predicted_mhcI_alleles(wildcards):
   if "RNA" in config['hlatyping']['MHC-I_mode']:
     if config['data']['rnaseq'] is not None:
       for key in config['data']['rnaseq'].keys():
-        if key not in config['data']['normal']:
-          values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_{type}_{readtype}.tsv",
+
+        # exclude normal samples (if specified)
+        if config['data']['normal'] is not None:
+          normal = config['data']['normal'].split(' ')
+          if key in normal:
+            continue
+
+        values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_{type}_{readtype}.tsv",
                            sample = wildcards.sample,
                            group = key,
                            type = "RNA",
