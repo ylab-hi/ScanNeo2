@@ -1,19 +1,3 @@
-rule download_genome:
-  output:
-    "resources/refs/hg38.fa",
-    "resources/refs/gencode.v37.annotation.gtf"
-  log:
-    "logs/prepare_cds.log"
-  conda:
-    "../envs/basic.yml"
-  shell:
-    """
-      curl -L https://hgdownload.cse.ucsc.edu/goldenpath/hg38/bigZips/hg38.fa.gz \
-          | gzip -d > resources/refs/hg38.fa 
-      curl -L  https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/gencode.v37.annotation.gtf.gz \
-          | gzip -d > resources/refs/gencode.v37.annotation.gtf
-    """
-
 rule prepare_cds:
   input:
     "resources/refs/genome.gtf"
@@ -31,6 +15,10 @@ rule prepare_cds:
     """
 
 rule prepare_scanexitron_config:
+  input:
+    genome="resources/refs/genome.fasta",
+    annotation="resources/refs/genome.gtf",
+    cds="resources/refs/CDS.bed"
   output:
     "resources/scanexitron_config.ini"
   log:
@@ -40,9 +28,9 @@ rule prepare_scanexitron_config:
   shell:
     """
       python3 workflow/scripts/prep_scanexitron_config.py \
-          resources/refs/genome.fasta \
-          resources/refs/genome.gtf \
-          resources/refs/CDS.bed \
+          {input.genome} \
+          {input.annotation} \
+          {input.cds} \
           {output} > {log}
     """
       
@@ -95,7 +83,7 @@ rule exitron_to_vcf:
     """
       python workflow/scripts/exitron2vcf.py \
         {input} {output} \
-        resources/refs/hg38.fa > {log}
+        resources/refs/genome.fasta > {log}
     """
 
 rule exitron_augment:
