@@ -50,7 +50,7 @@ rule detect_long_indel_ti_call:
     output:
         "results/{sample}/{seqtype}/indel/transindel/{group}_call.indel.vcf"
     message:
-      "Calling short indels using transindel on sample:{wildcards.sample} with group:{wildcards.group}"
+      "Calling long indels using transindel on sample:{wildcards.sample} with group:{wildcards.group}"
     log:
         "logs/{sample}/transindel/{seqtype}_{group}_call.log"
     conda:
@@ -73,7 +73,7 @@ rule long_indel_augment:
     output:
         "results/{sample}/{seqtype}/indel/transindel/{group}_long.indels_augmented.vcf"
     message:
-      "Augment indels with group and source information and resolving alleles and removing PCR slippage using transindel on sample:{wildcards.group} with replicate:{wildcards.group}"
+      "Augment long indels with group and source information and resolving alleles and removing PCR slippage using transindel on sample:{wildcards.group} with replicate:{wildcards.group}"
     log:
         "logs/{sample}/transindel/{seqtype}_{group}_sliprem.log"
     conda:
