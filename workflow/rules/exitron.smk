@@ -15,6 +15,8 @@ rule download_genome:
     """
 
 rule prepare_cds:
+  input:
+    "resources/refs/genome.gtf"
   output:
     "resources/refs/CDS.bed"
   log:
