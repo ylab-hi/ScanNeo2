@@ -36,7 +36,9 @@ rule priorization:
     mhcII=get_mhcII,
     peptide="resources/refs/peptide.fasta",
     annotation="resources/refs/genome_tmp.gtf",
-    counts="results/{sample}/quantification/allcounts.txt"
+    counts="results/{sample}/quantification/allcounts.txt",
+    mhcI_ba="workflow/scripts/mhc_i/",
+    mhcI_im="workflow/scripts/immunogenicity/"
   output:
     directory("results/{sample}/prioritization/"),
   message:
