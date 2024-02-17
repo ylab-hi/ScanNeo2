@@ -33,33 +33,153 @@ rule get_gatk_vqsr_training_sets:
     """
 
 # do a first round of variant calling on original, unrecalibrated data
+# TODO: split
+
+checkpoint split_bam_htc_first_round:
+  input:
+    bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
+    idx="results/{sample}/{seqtype}/align/{group}_final_BWA.bam.bai"
+  output:
+    directory("results/{sample}/{seqtype}/align/{group}_final_BWA_split")
+  message:
+    "Splitting bam file for first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
+  log:
+    "logs/{sample}/align/{seqtype}_{group}_split.log"
+  conda:
+    "../envs/basic.yml"
+  shell:
+    """
+      python workflow/scripts/split_bam_by_chr.py \
+          {input.bam} {output}
+    """
+
+rule index_split_bam_htc_first_round:
+  input:
+    bam="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam"
+  output:
+    idx="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam.bai"
+  message:
+    "Indexing split bam file for first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
+  log:
+    "logs/{sample}/align/{seqtype}_{group}_split_{chr}_index.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      samtools index {input.bam} > {log} 2>&1
+    """
+
 rule detect_variants_htc_first_round:
   input:
-    # single or list of bam files
-    bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
-    idx="results/{sample}/{seqtype}/align/{group}_final_BWA.bam.bai",
-    ref="resources/refs/genome.fasta",
-    #known="resources/vqsr/dbSNP_b150.vcf.gz"  # optional
+    bam="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam",
+    idx="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam.bai",
+    ref="resources/refs/genome.fasta"
   output:
-    vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf"
+    vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf"
   message:
-    "First round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}" 
+    "First round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
-    "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd.log",
-  params:
-    extra="", 
-    java_opts="",
+    "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_{chr}.log",
   threads: 4
   resources:
-    mem_mb=1024,
+    mem_mb=1024
   wrapper:
     "v1.31.1/bio/gatk/haplotypecaller"
+
+rule sort_variants_htc_first_round:
+  input:
+    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf"
+  output:
+    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz",
+  message:
+    "Sorting vcf file from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
+  log:
+    "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_{chr}_sort.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+    """
+
+rule index_variants_htc_first_round:
+  input:
+    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz"
+  output:
+    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz.tbi"
+  message:
+    "Indexing vcf file from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
+  log:
+     "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_{chr}_index.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools index -t {input} > {log} 2>&1
+    """
+
+rule merge_variants_htc_first_round:
+  input:
+    vcf=aggregate_vcf_htc_first_round,
+    idx=aggregate_idx_htc_first_round
+  output:
+    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf.gz"
+  message:
+    "Merging vcf files from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
+  log:
+    "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_merge.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools concat -O z -a {input.vcf} -o {output} > {log} 2>&1
+    """
+
+rule index_merged_variants_htc_first_round:
+  input:
+    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf.gz"
+  output:
+    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf.gz.tbi"
+  message:
+    "Indexing merged vcf file from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
+  log:
+    "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_index.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools index -t {input} > {log} 2>&1
+    """
+
+      
+#rule detect_variants_htc_first_round:
+  #input:
+    ## single or list of bam files
+    #bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
+    #idx="results/{sample}/{seqtype}/align/{group}_final_BWA.bam.bai",
+    #ref="resources/refs/genome.fasta",
+    ##known="resources/vqsr/dbSNP_b150.vcf.gz"  # optional
+  #output:
+    #vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf"
+  #message:
+    #"First round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}" 
+  #log:
+    #"logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd.log",
+  #params:
+    #extra="", 
+    #java_opts="",
+  #threads: 4
+  #resources:
+    #mem_mb=1024,
+  #wrapper:
+    #"v1.31.1/bio/gatk/haplotypecaller"
 
 
 # recalibrate variants (SNP)
 rule recalibrate_variants_first_round:
   input:
-    vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf",
+    vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf.gz",
+    idx="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf.gz.tbi",
     ref="resources/refs/genome.fasta",
     hapmap="resources/vqsr/hapmap_3.3.hg38.vcf.gz",
     omni="resources/vqsr/1000G_omni2.5.hg38.vcf.gz",
@@ -88,6 +208,8 @@ rule recalibrate_variants_first_round:
     mem_mb=1024,
   wrapper:
     "v1.31.1/bio/gatk/variantrecalibrator"
+
+    ## TODO after here
 
 rule apply_VQSR_SNVs_first_round:
   input:

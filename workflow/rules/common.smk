@@ -122,6 +122,7 @@ def all_identical(l):
 
 # load up the config
 config['data'] = data_structure(config['data'])
+print(config)
 
 ########### PREPROCESSING ##########
 def get_raw_reads(wildcards):
@@ -160,6 +161,11 @@ def get_preproc_input(wildcards):
 
 ########### HLA GENOTYPING ##########
 def get_input_hlatyping_SE(wildcards):
+  # special case: filetype is BAM (single-end) - just return (raw) BAM file
+  seqtype = "dnaseq" if wildcards.type == "DNA" else "rnaseq"
+  if config["data"][f"{seqtype}_filetype"] == ".bam":
+    return config["data"][seqtype][wildcards.group]
+
   if config['preproc']['activate']:
     return expand("results/{sample}/{seqtype}/reads/{group}_preproc.fq.gz",
                   sample = wildcards.sample,
@@ -482,6 +488,24 @@ def get_longindels(wildcards):
 
   return indels
 
+# htc first round collect/combine results
+def aggregate_vcf_htc_first_round(wildcards):
+  checkpoint_output = checkpoints.split_bam_htc_first_round.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+
+def aggregate_idx_htc_first_round(wildcards):
+  checkpoint_output = checkpoints.split_bam_htc_first_round.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz.tbi",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+
+
 def get_shortindels(wildcards):
   indels=[]
  
@@ -568,6 +592,10 @@ def get_variants(wildcards):
                            sample=config['data']['name'])
         variants += expand("results/{sample}/annotation/somatic.snvs.vcf",
                            sample=config['data']['name'])
+
+    if config['altsplicing']['activate']:
+      variants += expand("results/{sample}/annotation/altsplicing.vcf",
+                         sample=config['data']['name'])
 
     # exitron
     if config['exitronsplicing']['activate']:
