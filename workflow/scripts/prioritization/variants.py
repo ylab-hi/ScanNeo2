@@ -294,6 +294,17 @@ class Variants():
                         mt_aa_change, mt_stop_codon = self.scan_stop_codon(mt_aa_change)
 
                         wt_seq = field["WildtypeProtein"] # wildtype peptide sequence
+                        # check if there are unknown amino Amino_acids
+                        if 'X' in wt_seq:
+                            # needs to occur before varstart...
+                            unknown_pos = wt_seq.find('X')
+                            if unknown_pos != -1 and unknown_pos < var_start:
+                                var_start = var_start - unknown_pos - 1
+                                wt_seq = wt_seq[unknown_pos+1:]
+                            else:
+                                # ...otherwise subsequence is altered - skip
+                                continue
+
                         mt_seq = wt_seq[:var_start] + mt_aa_change
                         if not mt_stop_codon:
                             mt_seq += wt_seq[var_start+len(wt_aa_change):]
