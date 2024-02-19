@@ -10,7 +10,7 @@ class Immunogenicity:
         infile = os.path.join(output_dir, f"{mhc_class}_neoepitopes.txt")  
         df = pd.read_csv(infile, sep="\t")
 
-        if mhc_class in ["I", "BOTH"]:
+        if mhc_class is "mhc_I":
            
             # mutant immunogenicity scores
             mt_epitope_seq = df["mt_epitope_seq"]
