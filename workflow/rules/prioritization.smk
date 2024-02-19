@@ -28,7 +28,7 @@ rule download_prediction_binding_affinity_tools:
           | tar xz -C workflow/scripts/
     """
 
-rule priorization:
+rule prioritization:
   input:
     var=get_variants,
     fus=get_fusions,
