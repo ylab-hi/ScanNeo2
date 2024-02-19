@@ -122,7 +122,6 @@ def all_identical(l):
 
 # load up the config
 config['data'] = data_structure(config['data'])
-print(config)
 
 ########### PREPROCESSING ##########
 def get_raw_reads(wildcards):
@@ -499,6 +498,40 @@ def aggregate_vcf_htc_first_round(wildcards):
 def aggregate_idx_htc_first_round(wildcards):
   checkpoint_output = checkpoints.split_bam_htc_first_round.get(**wildcards).output[0]
   return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz.tbi",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+
+def aggregate_vcf_htc_final_round(wildcards):
+  # htc final round collect/combine results
+  checkpoint_output = checkpoints.split_bam_htc_final_round.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf.gz",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+
+def aggregate_idx_htc_final_round(wildcards):
+  checkpoint_output = checkpoints.split_bam_htc_final_round.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf.gz.tbi",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+  
+# htc final round collect/combine results
+def aggregate_vcf_mutect2(wildcards):
+  checkpoint_output = checkpoints.split_bam_detect_short_indels_m2.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}_flt.vcf.gz",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+
+def aggregate_idx_mutect2(wildcards):
+  checkpoint_output = checkpoints.split_bam_detect_short_indels_m2.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}_flt.vcf.gz.tbi",
                 sample=wildcards.sample,
                 seqtype=wildcards.seqtype,
                 group=wildcards.group,
