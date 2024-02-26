@@ -5,21 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
-## [0.2.0] - 2024-02-19
+## [0.2.0] - 2024-02-25
 
 ### Features
 
 - ScanNeo2 supports Snakmake>=8 
     - --use-conda replaced by --software-deployment-method conda
     - --use-singularity replaced by --software-deployment-method apptainer
-- gather/scatter of the indel calling speeds up ScanNeo2 on multiple cores
-    - haplotypecaller first/final round
-    - mutect2
+- Gather/scatter of the indel calling speeds up ScanNeo2 on multiple cores
+    - added script to split bamfiles by chromosome (scripts/split_bam_by_chr.py)
+    - haplotypecaller first/final round is done per chromosome and later merged
+    - mutect2 is done per chromosome and later merged
+- Genotyping MHC-II works now on both single-end and paired-end
 
 ### Fix 
 
 - When using BAMfiles the HLA typing wrongly expected single-end reads and performed preprocessing
+- Each environment is no thoroughly versioned to ensure interoperability
+- Missing immunogenicity calculation on certain values of MHC-I fixed
 
 
 ## [0.1.6] - 2024-02-13

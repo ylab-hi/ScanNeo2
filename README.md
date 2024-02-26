@@ -1,6 +1,6 @@
 <div align="left">
     <h1>ScanNeo2</h1>
-    <img src="https://img.shields.io/badge/snakemake-≥6.4.1-brightgreen.svg">
+    <img src="https://img.shields.io/badge/snakemake-≥8.0.0-brightgreen.svg">
     <img src="https://github.com/ylab-hi/ScanNeo2/actions/workflows/linting.yml/badge.svg" alt="Workflow status badge">
 </div>
 
@@ -72,7 +72,7 @@ snakemake --cores all --use-conda
 As mentioned above, when exitron detection is activated the singularity option `--use-singularity` has to be used as well.
 
 ```bash
-snakemake --cores all --use-conda --use-singularity
+snakemake --cores all --software-deployment-method conda apptainer 
 ```
 
 In addition, custom configfiles can be configured using `--configfile <path/to/configfile>`. In principle, this merely 
