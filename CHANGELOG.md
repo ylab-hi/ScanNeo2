@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - haplotypecaller first/final round is done per chromosome and later merged
     - mutect2 is done per chromosome and later merged
 - Genotyping MHC-II works now on both single-end and paired-end
+- User-defined HLA alleles are matched against the hla refset
 
 ### Fix 
 

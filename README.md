@@ -29,9 +29,10 @@ To get started with ScanNeo2, follow the steps below:
     mamba activate scanneo2
     ```
 
-    Note: This installs Snakemake v7.32.x. In its current form, ScanNeo2 is not comptabile with Snakemake >= 8.x.x. 
-    If ScanNeo2 is configured to use the exitron module, singularity needs to be installed. For that, the 
-    `environment_singularity.yml' can be used. However, most HPC servers provide their own module installation.
+    Note: ScanNeo2 requires Snakemake >= 8.x.x is not compatible with Snakemake <= 8.x.x. If ScanNeo2 
+    is configured to use the exitron module, apptainer (formerly singularity) needs to be installed.
+    For that, the `environment_apptainer.yml` can be used. However, most HPC servers provide their own 
+    module installation (which should be preferred)
 
 2. Deploy ScanNeo2:
 
@@ -66,10 +67,10 @@ To run the workflow, use the following command:
 
 ```bash
 cd /path/to/your/working/directory/
-snakemake --cores all --use-conda
+snakemake --cores all --software-deployment-method conda 
 ```
 
-As mentioned above, when exitron detection is activated the singularity option `--use-singularity` has to be used as well.
+As mentioned above, when exitron detection is activated the singularity option `--software-deployment-method apptainer` has to be used as well.
 
 ```bash
 snakemake --cores all --software-deployment-method conda apptainer 
@@ -101,7 +102,19 @@ ScanNeo2 provides an accessible, efficient method for predicting neoantigens. It
 
 ## Citation
 
-If ScanNeo2 has proven useful in your work please cite it using the linked publication.
+@article{Schafer2023Nov,
+	author = {Sch{\ifmmode\ddot{a}\else\"{a}\fi}fer, Richard A. and Guo, Qingxiang and Yang, Rendong},
+	title = {{ScanNeo2: a comprehensive workflow for neoantigen detection and immunogenicity prediction from diverse genomic and transcriptomic alterations}},
+	journal = {Bioinformatics},
+	volume = {39},
+	number = {11},
+	pages = {btad659},
+	year = {2023},
+	month = nov,
+	issn = {1367-4811},
+	publisher = {Oxford Academic},
+	doi = {10.1093/bioinformatics/btad659}
+}
 
 ## License
 
