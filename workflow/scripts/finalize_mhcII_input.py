@@ -44,19 +44,20 @@ def split(infile, out_fwd, out_rev):
     print("Done.")
 
 def main():
-    input_files = sys.argv[1]
+    inputfile = sys.argv[1]
     out_fwd = sys.argv[2]
     out_rev = sys.argv[3]
 
-    fext = Path(input_files[0]).suffix # determine file extension
+    fext = Path(inputfile).suffix # determine file extension
+    print("Detected File extension: ", fext)
     if fext == ".fq":
-        in_fh = open(input_files[0], "r")
+        in_fh = open(inputfile, "r")
         first_line = in_fh.readline()
 
         # check if fq is interleaved (paired-end)
         if "/" in first_line:
             print(f"Interleaved fastq file detected. Splitting into two files...")
-            split(input_files[0], out_fwd, out_rev)
+            split(inputfile, out_fwd, out_rev)
 
         else:
             print(f"Single-end fastq file detected. Splitting into two files...")
