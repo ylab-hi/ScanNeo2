@@ -14,7 +14,7 @@ rule augment_custom_variants:
       python workflow/scripts/add_infos_to_vcf.py \
           {input} \
           custom \
-          {wildcards.group} \
+          custom \
           {output} > {log} 2>&1
     """
 
