@@ -1,6 +1,6 @@
 ### align reads to genome using STAR (when reads are in FASTQ)
 if config['data']['rnaseq_filetype'] == '.fastq' or config['data']['rnaseq_filetype'] == '.fq':
-  rule star_fq_paired_end:
+  rule star_align_fastq:
     input:
       unpack(get_star_input),
       faidx = "resources/refs/genome.fasta.fai",
@@ -19,22 +19,23 @@ if config['data']['rnaseq_filetype'] == '.fastq' or config['data']['rnaseq_filet
           --outSAMattributes RG HI \
           --outSAMattrRGline ID:{wildcards.group} \
           --outFilterMultimapNmax 50 \
-          --peOverlapNbasesMin 20 \
+          --peOverlapNbasesMin 15 \
           --alignSplicedMateMapLminOverLmate 0.5 \
           --alignSJstitchMismatchNmax 5 -1 5 5 \
           --chimOutType WithinBAM HardClip \
-          --chimSegmentMin 20 \
-          --chimJunctionOverhangMin 10 \
-          --chimScoreDropMax 30 \
+          --chimSegmentMin {config["align"]["chimSegmentMin"]} \
+          --chimJunctionOverhangMin {config["align"]["chimJunctionOverhangMin"]} \
+          --chimScoreDropMax {config["align"]["chimScoreDropMax"]} \
+          --chimScoreMin {config["align"]["chimScoreMin"]} \
           --chimScoreJunctionNonGTAG 0 \
-          --chimScoreSeparation 1 \
+          --chimScoreSeparation {config["align"]["chimScoreSeparation"]} \
           --chimSegmentReadGapMax 3 \
           --chimMultimapNmax 50 \
           --outSAMstrandField intronMotif"""
     threads: config['threads']
     wrapper:
         "v2.2.1/bio/star/align"
-
+          
 ### align reads to genome using STAR (when reads are in BAM - no preprocessing performed)
 if config['data']['rnaseq_filetype'] == '.bam':
   checkpoint split_bamfile_RG:
@@ -88,12 +89,17 @@ if config['data']['rnaseq_filetype'] == '.bam':
       extra=lambda wildcards: f"""--outSAMtype BAM Unsorted --genomeSAindexNbases 10 \
         --readFilesCommand zcat \
         --outSAMattributes RG HI --outSAMattrRGline ID:{wildcards.rg} \
-        --outFilterMultimapNmax 50 --peOverlapNbasesMin 20 \
+        --outFilterMultimapNmax 50 \
+        --peOverlapNbasesMin 15 \
         --alignSplicedMateMapLminOverLmate 0.5 \
         --alignSJstitchMismatchNmax 5 -1 5 5 \
-        --chimOutType WithinBAM HardClip --chimSegmentMin 20 \
-        --chimJunctionOverhangMin 10 --chimScoreDropMax 30 \
-        --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 \
+        --chimOutType WithinBAM HardClip \
+        --chimSegmentMin {config["align"]["chimSegmentMin"]} \
+        --chimJunctionOverhangMin {config["align"]["chimJunctionOverhangMin"]} \
+        --chimScoreDropMax {config["align"]["chimScoreDropMax"]} \
+        --chimScoreMin {config["align"]["chimScoreMin"]} \
+        --chimScoreJunctionNonGTAG 0 \
+        --chimScoreSeparation {config["align"]["chimScoreSeparation"]} \
         --chimSegmentReadGapMax 3 --chimMultimapNmax 50 \
         --outSAMstrandField intronMotif"""
     threads: config['threads']
