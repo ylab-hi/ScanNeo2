@@ -16,7 +16,6 @@ data:
     hlatyping:
       MHC-I:
       MHC-II:
-    readgroups: 
 
 ### pre-processing (only applied on fastq reads)
 preproc: 
@@ -29,11 +28,11 @@ preproc:
 
 ### alingment
 align:
-  minovlps: 10
-  chimsegmin: 20
-  chimoverhang: 10
-  chimmax: 50
-  chimmaxdrop: 30
+  chimSegmentMin: 20
+  chimScoreMin: 10
+  chimJunctionOverhangMin: 10
+  chimScoreDropMax: 30
+  chimScoreSeparation: 10
 
 ### variant calling
 # alternative splicing
@@ -77,7 +76,6 @@ indel:
   sliprate: 0.1  # frequency of slippage when it is supsected
 
 quantification:
-  activate: true
   mode: BOTH # RNA, RNA or BOTH
 
 hlatyping:
@@ -86,6 +84,9 @@ hlatyping:
   # specific path for class II hlatyping (only required when class: II, or BOTH)
   MHC-I_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
   MHC-II_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
+  
+  # specific path for class II hlatyping (only required when class: II, or BOTH)
+  hlahd_path: ./hlahd.1.7.0/
   freqdata: ./hlahd_files/freq_data/ 
   split: ./hlahd_files/HLA_gene.split.txt
   dict: ./hlahd_files/dictionary/
