@@ -423,13 +423,14 @@ rule hlatyping_mhcII:
   conda:
     "../envs/hlahd.yml"
   params:
+    hlahdpath=f"""{config['hlatyping']['hlahd_path']}""",
     freqdata=f"""-f {config['hlatyping']['freqdata']}""",
     split=f"""{config['hlatyping']['split']}""",
     dic=f"""{config['hlatyping']['dict']}"""
   threads: config['threads']
   shell:
     """
-      {config["hlatyping"]["hlahd_path"]}/hlahd.sh \
+      {params.hlahdpath}/hlahd.sh \
           -t {threads} \
           -m 100 \
           -c 0.95 \
