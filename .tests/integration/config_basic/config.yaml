@@ -87,7 +87,6 @@ hlatyping:
   MHC-I_mode: DNA, RNA # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
   MHC-II_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
 
-  hlahd_path: ./hlahd.1.7.0/
   freqdata: ./hlahd_files/freq_data/ 
   split: ./hlahd_files/HLA_gene.split.txt
   dict: ./hlahd_files/dictionary/
