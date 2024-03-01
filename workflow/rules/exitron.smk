@@ -94,12 +94,16 @@ rule exitron_augment:
   message:
     "Augmenting exitrons on sample:{wildcards.sample} of group:{wildcards.group}"
   log:
-    "logs/exitron_augment_{sample}_{group}.log"
+    "logs/{sample}/exitron/{group}_exitron_augment.log"
   conda:
     "../envs/manipulate_vcf.yml"
   shell:
     """
-      python workflow/scripts/add_infos_to_vcf.py {input} exitron {output} > {log} 2>&1
+      python workflow/scripts/add_infos_to_vcf.py \
+          {input} \
+          exitron \
+          {wildcards.group} \
+          {output} > {log} 2>&1
     """
 
 rule sort_exitron:

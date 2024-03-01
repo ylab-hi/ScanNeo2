@@ -242,6 +242,7 @@ class Variants():
 
                     nmd = None
                     csq = self.resolve_consequence(field['Consequence'])
+
                     if csq is None:
                         continue
                     elif csq == "frameshift":
@@ -284,6 +285,7 @@ class Variants():
                     elif (csq == "missense" or
                           csq == "inframe_INS" or 
                           csq == "inframe_DEL"):
+
                         
                         # retrieve the start and end of the variant / initial variant start 
                         var_start = self.get_variant_startpos(field["Protein_position"])
@@ -294,6 +296,17 @@ class Variants():
                         mt_aa_change, mt_stop_codon = self.scan_stop_codon(mt_aa_change)
 
                         wt_seq = field["WildtypeProtein"] # wildtype peptide sequence
+                        # check if there are unknown amino Amino_acids
+                        if 'X' in wt_seq:
+                            # needs to occur before varstart...
+                            unknown_pos = wt_seq.find('X')
+                            if unknown_pos != -1 and unknown_pos < var_start:
+                                var_start = var_start - unknown_pos - 1
+                                wt_seq = wt_seq[unknown_pos+1:]
+                            else:
+                                # ...otherwise subsequence is altered - skip
+                                continue
+
                         mt_seq = wt_seq[:var_start] + mt_aa_change
                         if not mt_stop_codon:
                             mt_seq += wt_seq[var_start+len(wt_aa_change):]
@@ -440,8 +453,11 @@ class Variants():
             entry.INFO['SRC'] == 'snv'):
             vaf = entry.calls[0].data['AF'][i]
 
-        if entry.INFO['SRC'] == 'long_indel':
+        elif entry.INFO['SRC'] == 'long_indel':
             vaf = entry.INFO['AB']
+
+        elif "AF" in entry.INFO:
+            vaf = entry.INFO['AF']
 
         return vaf
 
@@ -451,10 +467,13 @@ class Variants():
             entry.INFO['SRC'] == 'snv'):
             dp = entry.calls[0].data['DP']
 
-        if (entry.INFO['SRC'] == 'long_indel' or 
+        elif (entry.INFO['SRC'] == 'long_indel' or 
             entry.INFO['SRC'] == 'exitron'):
             dp = entry.INFO['DP']
 
+        # for any other custom file
+        elif "DP" in entry.INFO:
+            dp = entry.INFO['DP']
 
         return dp
 
@@ -470,7 +489,7 @@ class Variants():
             mt_ad = entry.calls[0].data['AD'][i+1]
 
         # transIndel
-        if (entry.INFO['SRC'] == "long_indel" or 
+        elif (entry.INFO['SRC'] == "long_indel" or 
             entry.INFO['SRC'] == "exitron" or 
             entry.INFO['SRC'] == "alt_5prime" or 
             entry.INFO['SRC'] == "alt_3prime" or
@@ -480,6 +499,10 @@ class Variants():
 
             mt_ad = entry.INFO['AO']
             #wt_ad = str(int(float(entry.INFO['DP']) - float(mt_ad)))
+
+        # for other custom annotatins (when custom vcf is provided)
+        elif 'AO' in entry.INFO:
+            mt_ad = entry.INFO['AO']
 
         return mt_ad
                             

@@ -4,5 +4,5 @@ channels:
  - conda-forge
  - anaconda
 dependencies:
- - snakemake=7.32.3
+ - snakemake=8.4.11
  - snakemake-wrapper-utils

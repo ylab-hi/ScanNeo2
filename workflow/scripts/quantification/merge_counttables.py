@@ -7,46 +7,50 @@ import subprocess
 
 def main():
     options = parse_arguments()
-    samples = options.input.split(' ')
 
-    counts = {}
-    groups = []
-    for idx, val in enumerate(options.input.split(' ')):
-        groups.append(Path(val).stem.split('_counts')[0])
+    """make sure this works if the input is empty - this happens when the user
+    does not provide sequencing files (and instead works on provided vcf files)"""
+                                                   
+    if options.input is not "":
+        samples = options.input.split(" ")
+        counts = {}
+        groups = []
+        for idx, val in enumerate(options.input.split(' ')):
+            groups.append(Path(val).stem.split('_counts')[0])
 
-        fh = open(val, 'r')
-        # skip header
-        next(fh)
-        next(fh)
+            fh = open(val, 'r')
+            # skip header
+            next(fh)
+            next(fh)
 
-        rpk_sum = 0
-        for line in fh:
-            val = line.rstrip().split('\t')
+            rpk_sum = 0
+            for line in fh:
+                val = line.rstrip().split('\t')
 
-            gene_id = val[0]
-            chrom = val[1]
-            strand = val[4]
+                gene_id = val[0]
+                chrom = val[1]
+                strand = val[4]
 
-            key = (gene_id, chrom, strand)
-            if key not in counts.keys():
-                counts[key] = [0]*len(samples)
+                key = (gene_id, chrom, strand)
+                if key not in counts.keys():
+                    counts[key] = [0]*len(samples)
 
-            count = int(val[6])
-            gene_len = int(val[5])
+                count = int(val[6])
+                gene_len = int(val[5])
 
-            if count != 0:
-                rpk = count/gene_len
-                counts[key][idx] = count/gene_len
-                rpk_sum += rpk
+                if count != 0:
+                    rpk = count/gene_len
+                    counts[key][idx] = count/gene_len
+                    rpk_sum += rpk
 
-        fh.close()
-        scale_factor = rpk_sum/1000000
+            fh.close()
+            scale_factor = rpk_sum/1000000
 
-        for el in counts.keys():
-            counts[el][idx] = round(counts[el][idx]/scale_factor, 3)
+            for el in counts.keys():
+                counts[el][idx] = round(counts[el][idx]/scale_factor, 3)
 
 
-    # generate output
+    # generate output (even if input is empty)
     fh_output = open(options.output, 'w')
     fh_output.write('gene_id\tchrom\tstrand\t' + '\t'.join(groups) + '\n')
 
@@ -55,6 +59,7 @@ def main():
         fh_output.write(f'{key[1]}\t')
         fh_output.write(f'{key[2]}\t')
         fh_output.write('\t'.join(map(str, counts[key])) + '\n')
+    fh_output.close()
 
 def parse_arguments():
     p = configargparse.ArgParser()

@@ -83,6 +83,7 @@ rule long_indel_augment:
             python3 workflow/scripts/add_infos_to_vcf.py \
             {input} \
             long_indel \
+            {wildcards.group} \
             {output}_infos > {log} 2>&1
             
             python3 workflow/scripts/add_contigs_to_vcf.py \
@@ -131,63 +132,157 @@ rule combine_longindels:
       bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
 
+####### MUTECT2 ######
 
-# detects short somatic variants (SNVs and indels) using mutect2
+checkpoint split_bam_detect_short_indels_m2:
+  input:
+    bam="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal.bam",
+    idx="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal.bam.bai"
+  output:
+    directory("results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split")
+  message:
+    "Splitting bam file for somatic SNV/Indel detection with Mutect2 on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
+  log:
+    "logs/{sample}/indel/gatk/mutect2/split_recal_{seqtype}_{group}.log"
+  conda:
+    "../envs/basic.yml"
+  shell:
+    """
+      python workflow/scripts/split_bam_by_chr.py \
+          {input.bam} {output}
+    """
+
+rule index_split_bam_detect_short_indels_m2:
+  input:
+    bam="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam"
+  output:
+    idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai"
+  message:
+    "Indexing splitted bam files for somatic SNV/Indel detection with Mutect2 on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
+  log:
+    "logs/{sample}/indel/gatk/mutect2/index_recal_{seqtype}_{group}_{chr}.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      samtools index {input.bam} > {log} 2>&1
+    """
+
 rule detect_short_indels_m2:
-    input:
-        fasta="resources/refs/genome.fasta",
-        map="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal.bam",
-    output:
-        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf",
-        bam="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.bam",
-    message:
-      "Detection of somatic SNVs/Indels with Mutect2 on sample:{wildcards.sample} with group:{wildcards.group}"
-    threads: 1
-    resources:
-        mem_mb=10024,
-    params:
-        extra="",
-    log:
-        "logs/{sample}/gatk/mutect2/{seqtype}_{group}.log",
-    wrapper:
-        "v1.31.1/bio/gatk/mutect"
+  input:
+    map="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam",
+    idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
+    fasta="resources/refs/genome.fasta"
+  output:
+    vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}.vcf"
+  message:
+    "Detection of somatic SNVs/Indels with Mutect2 on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
+  log:
+    "logs/{sample}/indel/gatk/mutect2/m2_{seqtype}_{group}_{chr}.log",
+  threads: 4
+  resources:
+    mem_mb=1024
+  wrapper:
+    "v1.31.1/bio/gatk/mutect"
 
+rule filter_short_indels_m2:
+  input:
+    vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}.vcf",
+    bam="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam",
+    idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
+    ref="resources/refs/genome.fasta"
+  output:
+    vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf"
+  message:
+    "Filtering somatic SNVs/Indels with FilterMutectCalls on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
+  log:
+    "logs/{sample}/indel/gatk/filtermutect/filter_{seqtype}_{group}_{chr}.log"
+  params:
+    extra=f"""--max-alt-allele-count 3 \
+      --min-median-base-quality {config['basequal']} \
+      --min-median-mapping-quality {config['mapq']} \
+      --threshold-strategy {config['indel']['strategy']} \
+      --f-score-beta {config['indel']['fscorebeta']} \
+      --false-discovery-rate {config['indel']['fdr']} \
+      --pcr-slippage-rate {config['indel']['sliprate']} \
+      --min-slippage-length {config['indel']['sliplen']}""",
+    java_opts="",  # optional
+  resources:
+    mem_mb=1024,
+  wrapper:
+    "v1.31.1/bio/gatk/filtermutectcalls"
 
-# filters short somatic variants (SNVs and indels) using FilterMutectCalls
-rule filter_short_indels:
-    input:
-        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf",
-        bam="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal.bam",
-        ref="resources/refs/genome.fasta",
-        # intervals="intervals.bed",
-        # contamination="", # from gatk CalculateContamination
-        # segmentation="", # from gatk CalculateContamination
-        # f1r2="", # from gatk LearnReadOrientationBias
-    output:
-        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.flt.vcf"
-    message:
-      "Filtering somatic SNVs/Indels with FilterMutectCalls on sample:{wildcards.sample} and group:{wildcards.group}"
-    log:
-        "logs/{sample}/gatk/filtermutect/{seqtype}_{group}.log",
-    params:
-        extra=f"""--max-alt-allele-count 3 \
-          --min-median-base-quality {config['basequal']} \
-          --min-median-mapping-quality {config['mapq']} \
-          --threshold-strategy {config['indel']['strategy']} \
-          --f-score-beta {config['indel']['fscorebeta']} \
-          --false-discovery-rate {config['indel']['fdr']} \
-          --pcr-slippage-rate {config['indel']['sliprate']} \
-          --min-slippage-length {config['indel']['sliplen']}""",
-        java_opts="",  # optional
-    resources:
-        mem_mb=1024,
-    wrapper:
-        "v1.31.1/bio/gatk/filtermutectcalls"
+rule sort_short_indels_m2:
+  input:
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf"
+  output:
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf.gz",
+  message:
+    "Sorting vcf file from somatic variant calling (mutect2) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
+  log:
+    "logs/{sample}/gatk/mutect2/sort_{seqtype}_{group}_{chr}.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+    """
 
+rule index_short_indels_m2:
+  input:
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf.gz",
+  output:
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf.gz.tbi"
+  message:
+    "Indexing vcf file from somatic variant valling (mutect2) first round on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
+  log:
+     "logs/{sample}/gatk/mutect2/index_{seqtype}_{group}_{chr}.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools index -t {input} > {log} 2>&1
+    """
 
+rule merge_short_indels_m2:
+  input:
+    vcf=aggregate_vcf_mutect2,
+    idx=aggregate_idx_mutect2
+  output:
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz"
+  message:
+    "Merging vcf files from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
+  log:
+    "logs/{sample}/gatk/mutect2/merge_{seqtype}_{group}.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools concat -O z -a {input.vcf} -o {output} > {log} 2>&1
+    """
+
+######### POST-PROCESSING ########
+
+rule index_merged_short_indels_m2:
+  input:
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz"
+  output:
+    "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz.tbi"
+  message:
+    "Indexing vcf file from somatic variant valling (mutect2) on merged recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
+  log:
+     "logs/{sample}/gatk/mutect2/index_merged_{seqtype}_{group}.log"
+  conda:
+    "../envs/samtools.yml"
+  shell:
+    """
+      bcftools index -t {input} > {log} 2>&1
+    """
+ 
 rule select_short_indels_m2:
     input:
-        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.flt.vcf",
+        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz",
+        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz.tbi",
         ref="resources/refs/genome.fasta",
     output:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf"
@@ -216,10 +311,14 @@ rule augment_short_indels_m2:
     "../envs/manipulate_vcf.yml"
   shell:
     """
-      python workflow/scripts/add_infos_to_vcf.py {input} short_indel {output} > {log} 2>&1
+      python workflow/scripts/add_infos_to_vcf.py \
+          {input} \
+          short_indel \
+          {wildcards.group} \
+          {output} > {log} 2>&1
     """
 
-rule sort_short_indels_m2:
+rule sort_aug_short_indels_m2:
   input:
     "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels_augmented.vcf"
   output:
@@ -235,7 +334,7 @@ rule sort_short_indels_m2:
       bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
     """
 
-rule combine_short_indels_m2:
+rule combine_aug_short_indels_m2:
   input:
     get_shortindels
   output:
@@ -250,11 +349,10 @@ rule combine_short_indels_m2:
     """
       bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
-
             
 rule select_SNVs_m2:
   input:
-    vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.flt.vcf",
+    vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz",
     ref="resources/refs/genome.fasta",
   output:
     vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf"
@@ -283,7 +381,11 @@ rule augment_somatic_SNVs_m2:
     "../envs/manipulate_vcf.yml"
   shell:
     """
-      python workflow/scripts/add_infos_to_vcf.py {input} short_indel {output} > {log} 2>&1
+      python workflow/scripts/add_infos_to_vcf.py \
+          {input} \
+          snv \
+          {wildcards.group} \
+          {output} > {log} 2>&1
     """
 
 rule sort_somatic_SNVs_m2:
@@ -317,4 +419,4 @@ rule combine_somatic_SNVs_m2:
     """
       bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
-      
+

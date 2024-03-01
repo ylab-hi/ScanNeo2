@@ -160,22 +160,26 @@ def get_preproc_input(wildcards):
 
 ########### HLA GENOTYPING ##########
 def get_input_hlatyping_SE(wildcards):
-  if config['preproc']['activate']:
+  # special case: filetype is BAM (single-end) - just return (raw) BAM file
+  seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
+  if config["data"][f"{seqtype}_filetype"] == ".bam":
+    return config["data"][seqtype][wildcards.group]
+
+  if config["preproc"]["activate"]:
     return expand("results/{sample}/{seqtype}/reads/{group}_preproc.fq.gz",
                   sample = wildcards.sample,
-                  seqtype = "dnaseq" if wildcards.type == "DNA" else "rnaseq",
                   group = wildcards.group)
   else:
-    return config['data'][wildcards.type][wildcards.group]
+    return config["data"][f"{seqtype}"][wildcards.group]
 
 def get_input_hlatyping_PE(wildcards):
-  if config['preproc']['activate']:
+  if config["preproc"]["activate"]:
     return dict(
         zip(
           ["fwd", "rev"],
           expand("results/{sample}/{seqtype}/reads/{group}_{readtype}_preproc.fq.gz",
                   sample = wildcards.sample,
-                  seqtype = "dnaseq" if wildcards.type == "DNA" else "rnaseq",
+                  seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
                   group = wildcards.group,
                   readtype = wildcards.readtype)
           )
@@ -184,19 +188,19 @@ def get_input_hlatyping_PE(wildcards):
 
 def aggregate_mhcI_SE(wildcards):
   checkpoint_output = checkpoints.split_reads_mhcI_SE.get(**wildcards).output[0]
-  return expand("results/{sample}/hla/mhc-I/genotyping/{group}_{type}_flt_SE/{no}_result.tsv",
+  return expand("results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE/{no}_result.tsv",
     sample=wildcards.sample,
     group=wildcards.group,
-    type=wildcards.type,
+    nartype=wildcards.nartype,
     no=glob_wildcards(os.path.join(checkpoint_output, "R_{no}.bam")).no)
 
 
 def aggregate_mhcI_PE(wildcards):
   checkpoint_output = checkpoints.split_reads_mhcI_PE.get(**wildcards).output[0]
-  return expand("results/{sample}/hla/mhc-I/genotyping/{group}_{type}_flt_PE/{no}_result.tsv",
+  return expand("results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE/{no}_result.tsv",
     sample=wildcards.sample,
     group=wildcards.group,
-    type=wildcards.type,
+    nartype=wildcards.nartype,
     no=glob_wildcards(os.path.join(checkpoint_output, "R1_{no}.bam")).no)
 
 
@@ -213,10 +217,10 @@ def get_predicted_mhcI_alleles(wildcards):
             continue
 
         if key not in config['data']['normal']:
-          values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_{type}_{readtype}.tsv",
+          values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_{readtype}.tsv",
                            sample = wildcards.sample,
                            group = key,
-                           type = "DNA",
+                           nartype = "DNA",
                            readtype = config['data']['dnaseq_readtype']) # add either SE or PE
     else: # if no dnaseq data is specified, but mode is DNA or BOTH, then ignore
       print('dnaseq data has not been specified in the config file, but specified mode for hla genotyping in config file is DNA or BOTH -- will be ignored')
@@ -232,10 +236,10 @@ def get_predicted_mhcI_alleles(wildcards):
           if key in normal:
             continue
 
-        values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_{type}_{readtype}.tsv",
+        values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_{readtype}.tsv",
                            sample = wildcards.sample,
                            group = key,
-                           type = "RNA",
+                           nartype = "RNA",
                            readtype = config['data']['rnaseq_readtype']) # add either SE or PE)
     else: # if no rnaseq data is specified, but mode is RNA or BOTH, then ignore
       print('rnaseq data has not been specified in the config file, but specified mode for hla genotyping in config file is RNA or BOTH -- will be ignored')
@@ -265,49 +269,99 @@ def get_all_mhcI_alleles(wildcards):
 
 
 
-##### MHC CLASS I
+##### MHC CLASS II #####
+def get_input_hlatyping_mhcII(wildcards):
+
+  if wildcards.nartype == "DNA":
+    if config["data"]["dnaseq_readtype"] == "SE":
+      return expand("results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_SE.fq",
+                    sample=wildcards.sample,
+                    group=wildcards.group,
+                    nartype=wildcards.nartype)
+
+    elif config["data"]["dnaseq_readtype"] == "PE":
+      return expand("results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_PE.bam",
+                    sample=wildcards.sample,
+                    group=wildcards.group,
+                    nartype=wildcards.nartype)
+
+  elif wildcards.nartype == "RNA":
+    if config["data"]["rnaseq_readtype"] == "SE":
+      return expand("results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_SE.fq",
+                    sample=wildcards.sample,
+                    group=wildcards.group,
+                    nartype=wildcards.nartype)
+
+    elif config["data"]["rnaseq_readtype"] == "PE":
+      return expand("results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_PE.bam",
+                    sample=wildcards.sample,
+                    group=wildcards.group,
+                    nartype=wildcards.nartype)
 
 
-# returns list of hla typing results for the given sample and group
+def get_predicted_mhcII_alleles(wildcards):
+  values = []
 
-###### MHC Class II #########
+  # routines to genotype from DNA
+  if "DNA" in config['hlatyping']['MHC-II_mode']:
+    if config['data']['dnaseq'] is not None:
+      for key in config['data']['dnaseq'].keys():
+        
+        if config['data']['normal'] is not None:
+          if key in config['data']['normal']:
+            continue
 
-#def get_input_reads_classII_hlatyping(wildcards):
-  #if config['preproc']['activate']:
-    #return dict(
-        #zip(
-          #["fwd", "rev"],
-          #expand("results/{sample}/{seqtype}/reads/{group}_{readtype}_preproc.fq.gz",
-                 #group = wildcards.group,
-                 #sample = wildcards.sample,
-                 #readtype = ["r1", "r2"],
-                 #seqtype = "dnaseq" if wildcards.type == "DNA" else "rnaseq")
-        #)
-    #)
-  #else:
-    #return dict(
-        #zip(
-          #["fwd", "rev"],
-          #config['data'][wildcards.seqtype][wildcards.group]
-        #)
-    #)
+        if key not in config['data']['normal']:
+          values += expand("results/{sample}/hla/mhc-II/genotyping/{group}_{nartype}/result/{group}_{nartype}_final.result.txt",
+                           sample=wildcards.sample,
+                           group=key,
+                           nartype="DNA")
+
+    else: # if no dnaseq data is specified, but mode is DNA or BOTH, then ignore
+      print('dnaseq data has not been specified in the config file, but specified mode for hla genotyping in config file is DNA or BOTH -- will be ignored')
+
+  # routines to genotype from RNA
+  if "RNA" in config['hlatyping']['MHC-II_mode']:
+    if config['data']['rnaseq'] is not None:
+      for key in config['data']['rnaseq'].keys():
+
+        # exclude normal samples (if specified)
+        if config['data']['normal'] is not None:
+          normal = config['data']['normal'].split(' ')
+          if key in normal:
+            continue
+
+        values += expand("results/{sample}/hla/mhc-II/genotyping/{group}_{nartype}/result/{group}_{nartype}_final.result.txt",
+                         sample=wildcards.sample,
+                         group=key,
+                         nartype="RNA")
+
+    else: # if no rnaseq data is specified, but mode is RNA or BOTH, then ignore
+      print('rnaseq data has not been specified in the config file, but specified mode for hla genotyping in config file is RNA or BOTH -- will be ignored')
+
+  if len(values) == 0:
+    print('No data found. Check config file for correct specification of data and hla genotyping mode')
+    sys.exit(1)
+
+  return values
 
 
+def get_all_mhcII_alleles(wildcards):
+  values = []
 
+  if ("DNA" in config['hlatyping']['MHC-II_mode'] or
+      "RNA" in config['hlatyping']['MHC-II_mode']):
+    values += expand("results/{sample}/hla/mhc-II/genotyping/mhc-II.tsv",
+                    sample = wildcards.sample)
 
+  if "custom" in config["hlatyping"]["MHC-II_mode"]:
+    values += [config["data"]["custom"]["hlatyping"]["MHC-II"]]
 
-#def get_mhcII_allels(wildcards):
-  #if config['hlatyping']['MHC-II_mode'] in ['DNA', 'BOTH']:
-    #if config['data']['dnaseq'] is not None:
-      #if config['data']['dnaseq_readtype'] == 'PE':
-        #if wildcards.
-        #gT
+  if len(values) == 0:
+    print('No hla data found. Check config file for correct specification of data and hla genotyping mode')
+    sys.exit(1)
 
-
-
-
-
-
+  return values
 
 ########### ALIGNMENT ##########
 def get_star_input(wildcards):
@@ -447,20 +501,41 @@ def get_aligned_reads(wildcards):
 def get_counts(wildcards):
   counts = []
 
-  if config['quantification']['activate']:
+  if config["data"]["dnaseq"] is not None:
     if config['quantification']['mode'] in ['DNA','BOTH']:
       counts += expand("results/{sample}/{seqtype}/quantification/{group}_counts.txt",
         sample=config['data']['name'], 
         seqtype='dnaseq',
         group=list(config['data']['dnaseq'].keys()))
 
+  else:
+    message = (f"dnaseq data has not been specified in the config file"
+               f"but specified mode for counts in config file is RNA or BOTH"
+               f" -- will be ignored")
+    print(message)
+
+  if config["data"]["rnaseq"] is not None:
     if config['quantification']['mode'] in ['RNA','BOTH']:
       counts += expand("results/{sample}/{seqtype}/quantification/{group}_counts.txt",
         sample=config['data']['name'], 
         seqtype='rnaseq',
         group=list(config['data']['rnaseq'].keys()))
+  else:
+    message = (f"rnaseq data has not been specified in the config file"
+               f"but specified mode for counts in config file is DNA or BOTH"
+               f" -- will be ignored")
+    print(message)
+
+
+  if len(counts) == 0:
+    print("No counts will be generated!")
 
   return counts
+
+
+########### CUSTOM VARIANTS ##########
+def get_custom_variants(wildcards):
+  return config["data"]["custom"]["variants"]
 
 
 ########### INDEL CALLING ##########
@@ -481,6 +556,59 @@ def get_longindels(wildcards):
         group=list(config['data']['rnaseq'].keys()))
 
   return indels
+
+# htc first round collect/combine results
+def aggregate_vcf_htc_first_round(wildcards):
+  checkpoint_output = checkpoints.split_bam_htc_first_round.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+
+def aggregate_idx_htc_first_round(wildcards):
+  checkpoint_output = checkpoints.split_bam_htc_first_round.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz.tbi",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+
+# htc final round collect/combine results
+def aggregate_vcf_htc_final_round(wildcards):
+  checkpoint_output = checkpoints.split_bam_htc_final_round.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf.gz",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+
+def aggregate_idx_htc_final_round(wildcards):
+  checkpoint_output = checkpoints.split_bam_htc_final_round.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf.gz.tbi",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+  
+# mutect2 collect/combine results
+def aggregate_vcf_mutect2(wildcards):
+  checkpoint_output = checkpoints.split_bam_detect_short_indels_m2.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf.gz",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+    
+    
+def aggregate_idx_mutect2(wildcards):
+  checkpoint_output = checkpoints.split_bam_detect_short_indels_m2.get(**wildcards).output[0]
+  return expand("results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf.gz.tbi",
+                sample=wildcards.sample,
+                seqtype=wildcards.seqtype,
+                group=wildcards.group,
+                chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr)
+    
 
 def get_shortindels(wildcards):
   indels=[]
@@ -559,20 +687,34 @@ def get_altsplicing(wildcards):
 def get_variants(wildcards):
     variants = []
     # indels
-    if config['indel']['activate']:
-      if config['indel']['type'] in ['long', 'all']:
+    if config["indel"]["activate"]:
+      if config["indel"]["type"] in ["long", "all"]:
         variants += expand("results/{sample}/annotation/long.indels.vcf",
-                           sample=config['data']['name'])
-      if config['indel']['type'] in ['short', 'all']:
+                           sample=config["data"]["name"])
+      if config["indel"]["type"] in ["short", "all"]:
         variants += expand("results/{sample}/annotation/somatic.short.indels.vcf",
-                           sample=config['data']['name'])
+                           sample=config["data"]["name"])
         variants += expand("results/{sample}/annotation/somatic.snvs.vcf",
-                           sample=config['data']['name'])
+                           sample=config["data"]["name"])
+
+    # alternative splicing
+    if config["altsplicing"]["activate"]:
+      variants += expand("results/{sample}/annotation/altsplicing.vcf",
+                         sample=config["data"]["name"])
 
     # exitron
-    if config['exitronsplicing']['activate']:
+    if config["exitronsplicing"]["activate"]:
       variants += expand("results/{sample}/annotation/exitrons.vcf",
-                         sample=config['data']['name'])
+                         sample=config["data"]["name"])
+
+    # custom variants
+    if config["data"]["custom"]["variants"] is not None:
+      variants += expand("results/{sample}/annotation/custom.vcf",
+                       sample=config["data"]["name"])
+
+    if len(variants) == 0:
+      print(f"Could not detect any variants. Please check the config file")
+      sys.exit(1)
 
     return variants
 

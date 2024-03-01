@@ -40,21 +40,22 @@ class Counts:
     def __init__(self, countFile):
         # parse counts
         self.counts = {}
-        count_fh = open(countFile, 'r')
-        lines = count_fh.readlines()
-        groups = lines[0].rstrip().split('\t')[3:]
-        for line in lines[1:]:
-            cols = line.rstrip().split('\t')
+        if countFile is not None and countFile is not "":
+            count_fh = open(countFile, 'r')
+            lines = count_fh.readlines()
+            groups = lines[0].rstrip().split('\t')[3:]
+            for line in lines[1:]:
+                cols = line.rstrip().split('\t')
 
-            gene_id = cols[0]
-            chrom = cols[1]
+                gene_id = cols[0]
+                chrom = cols[1]
 
-            key = (gene_id, chrom)
+                key = (gene_id, chrom)
 
-            if key not in self.counts:
-                self.counts[key] = {}
-                for group in groups:
-                    self.counts[key][group] = float(cols[3+groups.index(group)])
+                if key not in self.counts:
+                    self.counts[key] = {}
+                    for group in groups:
+                        self.counts[key][group] = float(cols[3+groups.index(group)])
 
-        count_fh.close()
+            count_fh.close()
 

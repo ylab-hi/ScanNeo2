@@ -1,4 +1,5 @@
 import os
+import sys
 import configargparse
 import reference
 import variants
@@ -29,20 +30,40 @@ def main():
                                            variant_effects)
 
     variant_effects.close_file()
+    print("Determine variant efffects and peptide sequences")
 
     binding = prediction.BindingAffinities(options.threads)
 
     if (options.mhc_class == "I" or 
         options.mhc_class == "BOTH"):
-        binding.start(options.mhcI, 
-                      options.mhcI_len, 
-                      options.output_dir,
-                      "mhc-I")
+
+        # check that allele file is not empty
+        if os.stat(options.mhcI).st_size != 0:
+            binding.start(options.mhcI, 
+                          options.mhcI_len, 
+                          options.output_dir,
+                          "mhc-I")
+
+            # this overwrite the previous outfile (now including immunogenicity)
+            immunogenicity = filtering.Immunogenicity(options.output_dir,
+                                                      "mhc-I")
+        else:
+            print(f"No MHC-I alleles were detected: {options.mhcI} is empty")
+            sys.exit(1)
 
 
-        # this overwrite the previous outfile (now including immunogenicity)
-        immunogenicity = filtering.Immunogenicity(options.output_dir,
-                                                  "mhc-I")
+    if (options.mhc_class == "II" or 
+        options.mhc_class == "BOTH"):
+
+        if os.stat(options.mhcII).st_size != 0:
+            binding.start(options.mhcII,
+                          options.mhcII_len,
+                          options.output_dir,
+                          "mhc-II")
+
+        else:
+            print(f"No MHC-II alleles were detected: {options.mhcII} is empty")
+            sys.exit(1)
 
 
 def parse_arguments():
@@ -62,7 +83,7 @@ def parse_arguments():
     p.add('-a', '--anno', required=True, help='annotation file')
     p.add('-o', '--output_dir', required=True, help='output directory')
     p.add('-t', '--threads', required=False, help='number of threads')
-    p.add('--counts', required=True, help='featurecounts file')
+    p.add('--counts', required=False, help='featurecounts file')
 
     return p.parse_args()
     

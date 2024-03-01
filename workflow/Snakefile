@@ -1,7 +1,7 @@
 from snakemake.utils import min_version
 
 ##### set minimum snakemake version #####
-min_version("6.4.1")
+min_version("8.0.0")
 
 #### setup #######
 configfile: "config/config.yaml"
@@ -23,6 +23,7 @@ include: "rules/genefusion.smk"
 include: "rules/altsplicing.smk"
 include: "rules/exitron.smk"
 include: "rules/indel.smk"
+include: "rules/custom.smk"
 include: "rules/germline.smk"
 include: "rules/annotation.smk"
 include: "rules/prioritization.smk"
