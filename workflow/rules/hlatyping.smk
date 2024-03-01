@@ -429,7 +429,7 @@ rule hlatyping_mhcII:
   threads: config['threads']
   shell:
     """
-      hlahd.sh \
+      {config["hlatyping"]["hlahd_path"]}/hlahd.sh \
           -t {threads} \
           -m 100 \
           -c 0.95 \
