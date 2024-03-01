@@ -27,7 +27,7 @@ class BindingAffinities:
             fh_mt = {}
 
             epilens = self.extract_epilens(epitope_lengths)
-            
+
             for epilen in epilens:
                 wt_fname[epilen] = os.path.join(tmp_seqs, f'wt_{epilen}.fa')
                 mt_fname[epilen] = os.path.join(tmp_seqs, f'mt_{epilen}.fa')
@@ -40,7 +40,7 @@ class BindingAffinities:
                 mt_cnt[epilen] = 1
             
             subseqs = []
-            
+
             # iterate through the varianteffectsfile
             fh = open(Path(output_dir, "variant_effects.tsv"), 'r')
             next(fh)   # skip header
@@ -69,8 +69,8 @@ class BindingAffinities:
                     try to extend it to the left """
                     while left > 0 and right - left + 1 < epilen + 1:
                         left -= 1
-                    if right - left + 1 < epilen + 1:
-                        continue
+#                    if right - left + 1 < epilen + 1:
+#                        continue
 
                     wt_subseq_adj = wt_subseq[left:right+1]
                     mt_subseq_adj = mt_subseq[left:right+1]
@@ -107,7 +107,8 @@ class BindingAffinities:
             for epilen in epilens:
                 fh_wt[epilen].close()
                 fh_mt[epilen].close()
-            
+
+            print(f"calculate binding affinities...")
             wt_affinities = self.collect_binding_affinities(self.alleles, 
                                                             wt_fname, 
                                                             epilens, 
@@ -121,6 +122,7 @@ class BindingAffinities:
                                                             'mt',
                                                             mhc_class,
                                                             self.threads)
+            print("Done")
             
             outfile = open(os.path.join(output_dir,
                                         f'{mhc_class}_neoepitopes.txt'),'w')
@@ -162,12 +164,18 @@ class BindingAffinities:
                     wt_seqnum = int(entry[22:][epilen_idx*2])
                     mt_seqnum = int(entry[22:][epilen_idx*2+1])
 
+                    print(f"epilen_idx:{epilen_idx}")
+                    print(wt_affinities)
+
+
+
+
                     wt = None
                     if wt_seqnum in wt_affinities[epilens[epilen_idx]].keys():
                         wt = wt_affinities[epilens[epilen_idx]][wt_seqnum]
                     else:
-                        final['wt_epitope_ic50'] = 'NA'
-                        final['wt_epitope_rank'] = 'NA'
+                        final["wt_epitope_ic50"] = None
+                        final["wt_epitope_rank"] = None
 
                     if mt_seqnum in mt_affinities[epilens[epilen_idx]].keys():
                         mt = mt_affinities[epilens[epilen_idx]][mt_seqnum]
@@ -197,11 +205,11 @@ class BindingAffinities:
                         to return the WT epitope sequence"""
                         startpos_epitope_in_subseq = mt_subseq.find(epitope)
                         startpos = startpos_epitope_in_subseq
-                        final["wt_epitope_seq"] = wt_subseq[startpos:startpos+len(epitope)-1]
+                        final["wt_epitope_seq"] = wt_subseq[startpos:startpos+len(epitope)]
 
                         # search for binidng affinities of wildtype sequence
-                        final["wt_epitope_ic50"] = "NA"
-                        final["wt_epitope_rank"] = "NA"
+                        final["wt_epitope_ic50"] = None
+                        final["wt_epitope_rank"] = None
                         if wt is not None:
                             if final["wt_epitope_seq"] in wt.keys():
                                 final["wt_epitope_ic50"] = wt[final["wt_epitope_seq"]][3]
@@ -214,6 +222,7 @@ class BindingAffinities:
                         final['ranking_score'] = score
                         final['agretopicity'] = BindingAffinities.calc_agretopicity(final["wt_epitope_ic50"],
                                                                                     final["mt_epitope_ic50"])
+
                     
                         BindingAffinities.write_entry(final, outfile)
             outfile.close()
@@ -291,40 +300,49 @@ class BindingAffinities:
         print(f'calculate binding affinities - allele:{allele} epilen:{epilen} group: {group}')
         call = ['python']
         if mhc_class == "mhc-I":
-            call.append('workflow/scripts/mhc_i/src/predict_binding.py')
-        call.append('netmhcpan')
+            call.append("workflow/scripts/mhc_i/src/predict_binding.py")
+            call.append("netmhcpan")
+        elif mhc_class == "mhc-II":
+            call.append("workflow/scripts/mhc_ii/mhc_II_binding.py")
+            call.append("netmhciipan_ba")
         call.append(allele)
         call.append(str(epilen))
         call.append(fa_file)
 
-        result = subprocess.run(call,
-            stdout = subprocess.PIPE,
-            universal_newlines=True)
-        predictions = result.stdout.rstrip().split('\n')[1:]
+        # make sure that there are entries in the file
+        if os.stat(fa_file).st_size != 0:
+            result = subprocess.run(call,
+                stdout = subprocess.PIPE,
+                universal_newlines=True)
+            predictions = result.stdout.rstrip().split('\n')[1:]
 
-        for line in predictions:
-            entries = line.split('\t')
-            if group == 'mt':
-                if float(entries[8]) >= 500:
-                    continue
+            for line in predictions:
+                entries = line.split('\t')
+                if group == 'mt':
+                    if float(entries[8]) >= 500:
+                        continue
 
-            # sequence number in results used as key
-            seqnum = int(entries[1])
-            epitope_seq = entries[5]
-            allele = entries[0]
+                # start and end in sequence (0-based)
+                start = int(entries[2])-1 
+                end = int(entries[3])-1
+                
+                # sequence number in results used as key
+                allele = entries[0]
+                seqnum = int(entries[1])
+                if mhc_class == "mhc-I":
+                    epitope_seq = entries[5]
+                    ic50 = float(entries[8])
+                    rank = float(entries[9])
+                elif mhc_class == "mhc-II":
+                    epitope_seq = entries[6]
+                    ic50 = float(entries[7])
+                    rank = float(entries[8])
 
-            # start and end in sequence (0-based)
-            start = int(entries[2])-1 
-            end = int(entries[3])-1
+                if seqnum not in binding_affinities:
+                    binding_affinities[seqnum] = {}
 
-            ic50 = float(entries[8])
-            rank = float(entries[9])
-
-            if seqnum not in binding_affinities:
-                binding_affinities[seqnum] = {}
-
-            if epitope_seq not in binding_affinities[seqnum]:
-                binding_affinities[seqnum][epitope_seq] = (allele, start, end, ic50, rank)
+                if epitope_seq not in binding_affinities[seqnum]:
+                    binding_affinities[seqnum][epitope_seq] = (allele, start, end, ic50, rank)
 
         return binding_affinities
     
@@ -334,7 +352,7 @@ class BindingAffinities:
             return -1.0
 
         # fold change
-        if wt_ic50 != "NA":
+        if wt_ic50 != None:
             fold_change = float(mt_ic50) / float(wt_ic50)
         else:
             fold_change = float(100000.0) / float(mt_ic50)
@@ -345,10 +363,11 @@ class BindingAffinities:
 
 
     def calc_agretopicity(wt_ic50, mt_ic50):
-        if wt_ic50 == "NA":
-            return "NA"
+        if wt_ic50 == None:
+            return None
         else:
             return float(mt_ic50) / float(wt_ic50)
+
 
     @staticmethod
     def write_header(outputfile):
@@ -362,28 +381,35 @@ class BindingAffinities:
 
     @staticmethod
     def write_entry(row, outputfile):
-        outputfile.write(f'{row["chrom"]}\t')
-        outputfile.write(f'{row["start"]}\t')
-        outputfile.write(f'{row["end"]}\t')
-        outputfile.write(f'{row["allele"]}\t')
-        outputfile.write(f'{row["gene_id"]}\t')
-        outputfile.write(f'{row["gene_name"]}\t')
-        outputfile.write(f'{row["transcript_id"]}\t')
-        outputfile.write(f'{row["source"]}\t')
-        outputfile.write(f'{row["group"]}\t')
-        outputfile.write(f'{row["var_type"]}\t')
-        outputfile.write(f'{row["var_start"]}\t')
-        outputfile.write(f'{row["wt_epitope_seq"]}\t')
-        outputfile.write(f'{row["wt_epitope_ic50"]}\t')
-        outputfile.write(f'{row["wt_epitope_rank"]}\t')
-        outputfile.write(f'{row["mt_epitope_seq"]}\t')
-        outputfile.write(f'{row["mt_epitope_ic50"]}\t')
-        outputfile.write(f'{row["mt_epitope_rank"]}\t')
-        outputfile.write(f'{row["vaf"]}\t')
-        outputfile.write(f'{row["supp"]}\t')
-        outputfile.write(f'{row["TPM"]}\t')
-        outputfile.write(f'{row["NMD"]}\t')
-        outputfile.write(f'{row["PTC_dist_ejc"]}\t')
-        outputfile.write(f'{row["PTC_exon_number"]}\t')
-        outputfile.write(f'{row["NMD_escape_rule"]}\n')
+        outputfile.write(f'{format_output(row["chrom"])}\t')
+        outputfile.write(f'{format_output(row["start"])}\t')
+        outputfile.write(f'{format_output(row["end"])}\t')
+        outputfile.write(f'{format_output(row["allele"])}\t')
+        outputfile.write(f'{format_output(row["gene_id"])}\t')
+        outputfile.write(f'{format_output(row["gene_name"])}\t')
+        outputfile.write(f'{format_output(row["transcript_id"])}\t')
+        outputfile.write(f'{format_output(row["source"])}\t')
+        outputfile.write(f'{format_output(row["group"])}\t')
+        outputfile.write(f'{format_output(row["var_type"])}\t')
+        outputfile.write(f'{format_output(row["var_start"])}\t')
+        outputfile.write(f'{format_output(row["wt_epitope_seq"])}\t')
+        outputfile.write(f'{format_output(row["wt_epitope_ic50"])}\t')
+        outputfile.write(f'{format_output(row["wt_epitope_rank"])}\t')
+        outputfile.write(f'{format_output(row["mt_epitope_seq"])}\t')
+        outputfile.write(f'{format_output(row["mt_epitope_ic50"])}\t')
+        outputfile.write(f'{format_output(row["mt_epitope_rank"])}\t')
+        outputfile.write(f'{format_output(row["vaf"])}\t')
+        outputfile.write(f'{format_output(row["supp"])}\t')
+        outputfile.write(f'{format_output(row["TPM"])}\t')
+        outputfile.write(f'{format_output(row["agretopicity"])}\t')
+        outputfile.write(f'{format_output(row["NMD"])}\t')
+        outputfile.write(f'{format_output(row["PTC_dist_ejc"])}\t')
+        outputfile.write(f'{format_output(row["PTC_exon_number"])}\t')
+        outputfile.write(f'{format_output(row["NMD_escape_rule"])}\n')
         
+    
+def format_output(field):
+    if field == None:
+        return '.'
+    else:
+        return field

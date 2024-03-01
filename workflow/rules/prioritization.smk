@@ -72,7 +72,6 @@ rule prioritization:
     """
       python workflow/scripts/prioritization/compile.py \
           -i "{input.var}" -f "{input.fus}" \
-          --output_dir results/{wildcards.sample}/prioritization/ \
           -p {input.peptide} -a {input.annotation} \
           --confidence medium \
           --mhc_class {params.mhc_class} \
