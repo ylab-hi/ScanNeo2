@@ -709,8 +709,12 @@ def get_variants(wildcards):
 
     # custom variants
     if config["data"]["custom"]["variants"] is not None:
-      custom += expand("results/{sample}/annotation/custom.vcf",
+      variants += expand("results/{sample}/annotation/custom.vcf",
                        sample=config["data"]["name"])
+
+    if len(variants) == 0:
+      print(f"Could not detect any variants. Please check the config file")
+      sys.exit(1)
 
     return variants
 
