@@ -177,11 +177,11 @@ def get_input_hlatyping_PE(wildcards):
     return dict(
         zip(
           ["fwd", "rev"],
-          expand("results/{sample}/{seqtype}/reads/{group}_{readtype}_preproc.fq.gz",
-                  sample = wildcards.sample,
-                  seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
-                  group = wildcards.group,
-                  readtype = wildcards.readtype)
+          expand("results/{sample}/{seqtype}/reads/{group}_{pair}_preproc.fq.gz",
+                 sample=wildcards.sample,
+                 seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
+                 group=wildcards.group,
+                 pair=["R1","R2"])
           )
     )
 

@@ -1,11 +1,9 @@
 channels:
  - anaconda
  - bioconda
- - conda-forge
 dependencies:
-- configargparse
-- pip
-- pip:
-  - spladder==3.0.4
-  - vcfpy==0.13.6
-
+ - python=3.6
+ - pysam
+ - pip
+ - pip:
+   - spladder==3.0.4
