@@ -80,7 +80,6 @@ quantification:
 
 hlatyping:
   class: BOTH # I, II or BOTH
-  mode: BOTH  # DNA, RNA or BOTH
   # specific path for class II hlatyping (only required when class: II, or BOTH)
   MHC-I_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
   MHC-II_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
