@@ -102,6 +102,7 @@ ScanNeo2 provides an accessible, efficient method for predicting neoantigens. It
 
 ## Citation
 
+```bibtex
 @article{Schafer2023Nov,
 	author = {Sch{\ifmmode\ddot{a}\else\"{a}\fi}fer, Richard A. and Guo, Qingxiang and Yang, Rendong},
 	title = {{ScanNeo2: a comprehensive workflow for neoantigen detection and immunogenicity prediction from diverse genomic and transcriptomic alterations}},
@@ -115,6 +116,7 @@ ScanNeo2 provides an accessible, efficient method for predicting neoantigens. It
 	publisher = {Oxford Academic},
 	doi = {10.1093/bioinformatics/btad659}
 }
+```
 
 ## License
 
