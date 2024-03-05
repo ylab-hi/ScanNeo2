@@ -164,12 +164,6 @@ class BindingAffinities:
                     wt_seqnum = int(entry[22:][epilen_idx*2])
                     mt_seqnum = int(entry[22:][epilen_idx*2+1])
 
-                    print(f"epilen_idx:{epilen_idx}")
-                    print(wt_affinities)
-
-
-
-
                     wt = None
                     if wt_seqnum in wt_affinities[epilens[epilen_idx]].keys():
                         wt = wt_affinities[epilens[epilen_idx]][wt_seqnum]
