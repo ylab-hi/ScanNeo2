@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import tempfile
 import subprocess
+import blosum as bl
 
 class Immunogenicity:
     def __init__(self, output_dir, mhc_class):
@@ -10,7 +11,7 @@ class Immunogenicity:
         infile = os.path.join(output_dir, f"{mhc_class}_neoepitopes.txt")  
         df = pd.read_csv(infile, sep="\t")
 
-        if mhc_class is "mhc_I":
+        if mhc_class == "mhc-I":
            
             # mutant immunogenicity scores
             mt_epitope_seq = df["mt_epitope_seq"]
@@ -28,7 +29,7 @@ class Immunogenicity:
 
             df.insert(len(df.keys()), "wt_immunogenicity", wt_immunogenicity)
             df.insert(len(df.keys()), "mt_immunogenicity", mt_immunogenicity)
-        
+
             outfile = os.path.join(output_dir, "mhc-I_neoepitopes.txt")
 
 
@@ -43,7 +44,7 @@ class Immunogenicity:
             if item in scores.keys():
                 immunogenicity.append(scores[item])
             else:
-                immunogenicity.append("NA")
+                immunogenicity.append(".")
 
         return immunogenicity
 
@@ -69,5 +70,66 @@ class Immunogenicity:
                     scores[item.split(',')[0]] = float(item.split(',')[2])
 
             return scores
+
+
+class SequenceSimilarity:
+    def __init__(self, output_dir, mhc_class):
+        self.matrix = bl.BLOSUM("workflow/scripts/prioritization/BLOSUM62-2.txt")
+        
+        infile = os.path.join(output_dir, f"{mhc_class}_neoepitopes.txt")  
+        df = pd.read_csv(infile, sep="\t")
+
+        if mhc_class == "mhc-I":
+
+            mt_epitope_seq = df["mt_epitope_seq"]
+            wt_epitope_seq = df["wt_epitope_seq"]
+
+            # calculate the self similarity 
+            selfsim = self.self_similarity(wt_epitope_seq, mt_epitope_seq)
+            df.insert(len(df.keys()), "self-similarity", selfsim)
+
+        outfile = os.path.join(output_dir, f"{mhc_class}_neoepitopes.txt")
+        df.to_csv(outfile, sep="\t", index=False)
+
+
+    def self_similarity(self, wt_seqs, mt_seqs):
+        selfsim = []
+        # iterate 
+        for i in range(len(wt_seqs)):
+            wt_seq = wt_seqs[i]
+            mt_seq = mt_seqs[i]
+
+            # calculate the similarity
+            if '$' in wt_seq:
+                selfsim.append(-1)
+            else:
+                # calculate the correlation kernel
+                corr_wt_mt = self.corr_kernel(wt_seq, mt_seq)
+                corr_wt_wt = self.corr_kernel(wt_seq, wt_seq)
+                corr_mt_mt = self.corr_kernel(mt_seq, mt_seq)
+
+                corr_kernel = corr_wt_mt / (corr_wt_wt * corr_mt_mt)**0.5
+                selfsim.append(float(corr_kernel))
+
+        return selfsim
+
+    def corr_kernel(self, seq1, seq2):
+        seqlen = len(seq1)
+        simkernel = 0
+
+        for k in range(1, seqlen+1):
+            for i in range(seqlen-k+1):
+                seq1_kmer = seq1[i:i+k]
+                seq2_kmer = seq2[i:i+k]
+                simkernel += self.kmer_similarity(seq1_kmer, seq2_kmer,k)
+
+        return simkernel
+
+
+    def kmer_similarity(self, seq1, seq2, k):
+        similarity = 1
+        for i in range(k):
+            similarity *= self.matrix[seq1[i]][seq2[i]]
+        return similarity
 
 

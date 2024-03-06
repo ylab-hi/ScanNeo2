@@ -44,9 +44,19 @@ def main():
                           options.output_dir,
                           "mhc-I")
 
+            print(f"Calculate Filters")
             # this overwrite the previous outfile (now including immunogenicity)
             immunogenicity = filtering.Immunogenicity(options.output_dir,
                                                       "mhc-I")
+
+            print(f"Done")
+
+            # sequence similarity
+            seqsim = filtering.SequenceSimilarity(options.output_dir, 
+                                                  "mhc-I")
+
+
+
         else:
             print(f"No MHC-I alleles were detected: {options.mhcI} is empty")
             sys.exit(1)
