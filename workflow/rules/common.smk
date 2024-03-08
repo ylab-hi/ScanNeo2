@@ -684,39 +684,82 @@ def get_altsplicing(wildcards):
 
 
 ########### NEOANTIGEN PRIORIZATION ##########
-def get_variants(wildcards):
-    variants = []
-    # indels
-    if config["indel"]["activate"]:
-      if config["indel"]["type"] in ["long", "all"]:
-        variants += expand("results/{sample}/annotation/long.indels.vcf",
-                           sample=config["data"]["name"])
-      if config["indel"]["type"] in ["short", "all"]:
-        variants += expand("results/{sample}/annotation/somatic.short.indels.vcf",
-                           sample=config["data"]["name"])
-        variants += expand("results/{sample}/annotation/somatic.snvs.vcf",
-                           sample=config["data"]["name"])
+def get_snvs(wildcards):
+  snv = []
+  if config["indel"]["activate"]:
+    if config["indel"]["type"] in ["short", "all"]:
+      snv += expand("results/{sample}/annotation/somatic.snvs.vcf",
+                    sample=config["data"]["name"])
 
-    # alternative splicing
-    if config["altsplicing"]["activate"]:
-      variants += expand("results/{sample}/annotation/altsplicing.vcf",
+  if len(snv) == 0:
+    print(f"Could not detect any SNVs. Please check the config file")
+    sys.exit(1)
+  
+  return snv
+
+def get_indels(wildcards):
+  indels = []
+  if config["indel"]["activate"]:
+    if config["indel"]["type"] in ["short", "all"]:
+      variants += expand("results/{sample}/annotation/somatic.short.indels.vcf",
                          sample=config["data"]["name"])
+  
+  if len(indels) == 0:
+    print(f"Could not detect any indels. Please check the config file")
+    sys.exit(1)
+  
+  return indels
 
-    # exitron
-    if config["exitronsplicing"]["activate"]:
-      variants += expand("results/{sample}/annotation/exitrons.vcf",
-                         sample=config["data"]["name"])
+def get_long_indels(wildcards):
+  long_indels = []
+  if config["indel"]["activate"]:
+    if config["indel"]["type"] in ["long", "all"]:
+      long_indels += expand("results/{sample}/annotation/long.indels.vcf",
+                            sample=config["data"]["name"])
 
-    # custom variants
-    if config["data"]["custom"]["variants"] is not None:
-      variants += expand("results/{sample}/annotation/custom.vcf",
+  if len(long_indels) == 0:
+    print(f"Could not detect any long indels. Please check the config file")
+    sys.exit(1)
+
+  return long_indels
+
+def get_exitrons(wildcards):
+  exitrons = []
+  if config["exitronsplicing"]["activate"]:
+    exitrons += expand("results/{sample}/annotation/exitrons.vcf",
                        sample=config["data"]["name"])
+  
+  if len(snv) == 0:
+    print(f"Could not detect any exitrons. Please check the config file")
+    sys.exit(1)
+  
+  return exitrons
 
-    if len(variants) == 0:
-      print(f"Could not detect any variants. Please check the config file")
-      sys.exit(1)
 
-    return variants
+def get_altsplicing(wildcards):
+  altsplicing = []
+  if config["altsplicing"]["activate"]:
+    altsplicing += expand("results/{sample}/annotation/altsplicing.vcf",
+                          sample=config["data"]["name"])
+  
+  if len(altsplicing) == 0:
+    print(f"Could not detect any variants. Please check the config file")
+    sys.exit(1)
+
+  return altsplicing
+
+def get_custom(wildcards):
+  custom = []
+  if config["data"]["custom"]["variants"] is not None:
+    variants += expand("results/{sample}/annotation/custom.vcf",
+                       sample=config["data"]["name"])
+  
+  if len(snv) == 0:
+    print(f"Could not detect any custom events. Please check the config file")
+    sys.exit(1)
+  
+  return custom
+
 
 def get_mhcI(wildcards):
   alleles = []

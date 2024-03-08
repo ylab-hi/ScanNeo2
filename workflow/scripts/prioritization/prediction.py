@@ -3,13 +3,14 @@ import os
 import concurrent.futures
 import subprocess
 from pathlib import Path
+import utility as ut
 
 class BindingAffinities:
     def __init__(self, threads):
         self.threads = threads
         pass
 
-    def start(self, allele_file, epitope_lengths, output_dir, mhc_class):
+    def start(self, allele_file, epitope_lengths, output_dir, mhc_class, vartype):
         # create temorary_directory
         with tempfile.TemporaryDirectory() as tmp_seqs:
             self.get_alleles(allele_file)
@@ -40,11 +41,12 @@ class BindingAffinities:
                 mt_cnt[epilen] = 1
             
             subseqs = []
-
+        
             # iterate through the varianteffectsfile
-            fh = open(Path(output_dir, "variant_effects.tsv"), 'r')
+            fh = open(Path(output_dir, f"{vartype}_variant_effects.tsv"), 'r')
             next(fh)   # skip header
             for line in fh:
+                print(line)
                 entries = line.rstrip().split('\t')
                 for epilen in epilens:
                     aa_var_start = int(entries[12])
@@ -125,9 +127,8 @@ class BindingAffinities:
             print("Done")
             
             outfile = open(os.path.join(output_dir,
-                                        f'{mhc_class}_neoepitopes.txt'),'w')
+                                        f"{vartype}_{mhc_class}_neoepitopes.txt"),"w")
             BindingAffinities.write_header(outfile)
-
 
             for entry in subseqs:
                 final = {}
@@ -217,7 +218,6 @@ class BindingAffinities:
                         final['agretopicity'] = BindingAffinities.calc_agretopicity(final["wt_epitope_ic50"],
                                                                                     final["mt_epitope_ic50"])
 
-                    
                         BindingAffinities.write_entry(final, outfile)
             outfile.close()
 
@@ -375,35 +375,30 @@ class BindingAffinities:
 
     @staticmethod
     def write_entry(row, outputfile):
-        outputfile.write(f'{format_output(row["chrom"])}\t')
-        outputfile.write(f'{format_output(row["start"])}\t')
-        outputfile.write(f'{format_output(row["end"])}\t')
-        outputfile.write(f'{format_output(row["allele"])}\t')
-        outputfile.write(f'{format_output(row["gene_id"])}\t')
-        outputfile.write(f'{format_output(row["gene_name"])}\t')
-        outputfile.write(f'{format_output(row["transcript_id"])}\t')
-        outputfile.write(f'{format_output(row["source"])}\t')
-        outputfile.write(f'{format_output(row["group"])}\t')
-        outputfile.write(f'{format_output(row["var_type"])}\t')
-        outputfile.write(f'{format_output(row["var_start"])}\t')
-        outputfile.write(f'{format_output(row["wt_epitope_seq"])}\t')
-        outputfile.write(f'{format_output(row["wt_epitope_ic50"])}\t')
-        outputfile.write(f'{format_output(row["wt_epitope_rank"])}\t')
-        outputfile.write(f'{format_output(row["mt_epitope_seq"])}\t')
-        outputfile.write(f'{format_output(row["mt_epitope_ic50"])}\t')
-        outputfile.write(f'{format_output(row["mt_epitope_rank"])}\t')
-        outputfile.write(f'{format_output(row["vaf"])}\t')
-        outputfile.write(f'{format_output(row["supp"])}\t')
-        outputfile.write(f'{format_output(row["TPM"])}\t')
-        outputfile.write(f'{format_output(row["agretopicity"])}\t')
-        outputfile.write(f'{format_output(row["NMD"])}\t')
-        outputfile.write(f'{format_output(row["PTC_dist_ejc"])}\t')
-        outputfile.write(f'{format_output(row["PTC_exon_number"])}\t')
-        outputfile.write(f'{format_output(row["NMD_escape_rule"])}\n')
+        outputfile.write(f'{ut.format_output(row["chrom"])}\t')
+        outputfile.write(f'{ut.format_output(row["start"])}\t')
+        outputfile.write(f'{ut.format_output(row["end"])}\t')
+        outputfile.write(f'{ut.format_output(row["allele"])}\t')
+        outputfile.write(f'{ut.format_output(row["gene_id"])}\t')
+        outputfile.write(f'{ut.format_output(row["gene_name"])}\t')
+        outputfile.write(f'{ut.format_output(row["transcript_id"])}\t')
+        outputfile.write(f'{ut.format_output(row["source"])}\t')
+        outputfile.write(f'{ut.format_output(row["group"])}\t')
+        outputfile.write(f'{ut.format_output(row["var_type"])}\t')
+        outputfile.write(f'{ut.format_output(row["var_start"])}\t')
+        outputfile.write(f'{ut.format_output(row["wt_epitope_seq"])}\t')
+        outputfile.write(f'{ut.format_output(row["wt_epitope_ic50"])}\t')
+        outputfile.write(f'{ut.format_output(row["wt_epitope_rank"])}\t')
+        outputfile.write(f'{ut.format_output(row["mt_epitope_seq"])}\t')
+        outputfile.write(f'{ut.format_output(row["mt_epitope_ic50"])}\t')
+        outputfile.write(f'{ut.format_output(row["mt_epitope_rank"])}\t')
+        outputfile.write(f'{ut.format_output(row["vaf"])}\t')
+        outputfile.write(f'{ut.format_output(row["supp"])}\t')
+        outputfile.write(f'{ut.format_output(row["TPM"])}\t')
+        outputfile.write(f'{ut.format_output(row["agretopicity"])}\t')
+        outputfile.write(f'{ut.format_output(row["NMD"])}\t')
+        outputfile.write(f'{ut.format_output(row["PTC_dist_ejc"])}\t')
+        outputfile.write(f'{ut.format_output(row["PTC_exon_number"])}\t')
+        outputfile.write(f'{ut.format_output(row["NMD_escape_rule"])}\n')
         
     
-def format_output(field):
-    if field == None:
-        return '.'
-    else:
-        return field

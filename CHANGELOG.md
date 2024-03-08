@@ -5,14 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2024-03-06
+## [0.3.0] - 2024-03-07
 
 ### Features
 
-- Filtering
-    - self-similarity filter for MHC-I (using kernel similarity)
-
-
+- Added sequence similarity filter for MHC-I
+    - self-similarity (using kernel similarity)
+    - pathogen similarity (BLAST against pathogen-derived epitopes from IEDB)
+    - proteome similarity (BLAST against human proteome)
+- Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
+- NMD information (e.g., escape rule,...) is now also calculated for all variants
 
 ## [0.2.2] - 2024-03-01
 
