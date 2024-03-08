@@ -1,6 +1,0 @@
-channels:
-- bioconda
-dependencies:
-- star=2.7.10b
-- biopython
-- samtools
