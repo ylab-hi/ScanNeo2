@@ -1,0 +1,22 @@
+{
+  "version": "1.2",
+  "dbname": "pathogen-derived_epitopes_MHC-I_blastdb",
+  "dbtype": "Protein",
+  "db-version": 5,
+  "description": "workflow/scripts/filtering/pathogen-derived_epitopes_MHC-I.fasta",
+  "number-of-letters": 38659,
+  "number-of-sequences": 4110,
+  "last-updated": "2024-03-06T19:23:00",
+  "number-of-volumes": 1,
+  "bytes-total": 569075,
+  "bytes-to-cache": 75826,
+  "files": [
+    "pathogen-derived_epitopes_MHC-I_blastdb.pdb",
+    "pathogen-derived_epitopes_MHC-I_blastdb.phr",
+    "pathogen-derived_epitopes_MHC-I_blastdb.pin",
+    "pathogen-derived_epitopes_MHC-I_blastdb.pot",
+    "pathogen-derived_epitopes_MHC-I_blastdb.psq",
+    "pathogen-derived_epitopes_MHC-I_blastdb.ptf",
+    "pathogen-derived_epitopes_MHC-I_blastdb.pto"
+  ]
+}
