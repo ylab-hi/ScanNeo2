@@ -3,7 +3,7 @@ channels:
  - bioconda
 dependencies:
  - python=3.6
- - pysam
- - pip
+ - pysam=3.6.13
+ - pip=21.2.2
  - pip:
    - spladder==3.0.4
