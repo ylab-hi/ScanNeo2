@@ -9,9 +9,9 @@ rule spladder:
     log:
         "logs/{sample}/spladder/{group}_build.log"
     params:
-      confidence = "--confidence {config[altsplicing][confidence]}",
-      iteration = "--iterations {config[altsplicing][iterations]}",
-      edgelimit = "--ase-edge-limit {config[altsplicing][edgelimit]}",
+      confidence=f"""--confidence {config["altsplicing"]["confidence"]}""",
+      iteration=f"""--iterations {config["altsplicing"]["iterations"]}""",
+      edgelimit=f"""--ase-edge-limit {config["altsplicing"]["edgelimit"]}"""
     shell:
         """
           spladder build -b {input.bam} \
@@ -23,7 +23,7 @@ rule spladder:
               {params.edgelimit} \
               --qmode all > {log} 2>&1
         """
-
+        
 rule splicing_to_vcf:
   input:
     "results/{sample}/rnaseq/altsplicing/spladder/{group}"
