@@ -18,6 +18,9 @@ rule spladder:
               -a resources/refs/genome.gtf \
               -o {output} --filter-overlap-exons \
               --no-primary-only --quantify-graph \
+              {params.confidence} \
+              {params.iteration} \
+              {params.edgelimit} \
               --qmode all > {log} 2>&1
         """
 

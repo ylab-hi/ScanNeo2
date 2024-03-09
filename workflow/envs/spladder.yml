@@ -2,8 +2,7 @@ channels:
  - anaconda
  - bioconda
 dependencies:
- - python=3.6
- - pysam=0.17.0
- - pip=21.2.2
+ - python=3.8
+ - pip
  - pip:
    - spladder==3.0.4
