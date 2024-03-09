@@ -45,15 +45,14 @@ rule download_prediction_binding_affinity_tools:
 
 rule prioritization:
   input:
-    snv=get_snvs,
-    indels=get_indels,
-    long_indels=get_long_indels,
-    exitrons=get_exitrons,
-    altsplicing=get_altsplicing,
+    snv=get_prioritization_snvs,
+    indels=get_prioritization_indels,
+    long_indels=get_prioritization_long_indels,
+    altsplicing=get_prioritization_altsplicing,
     fusions=get_fusions,
-    custom=get_custom,
-    mhcI=get_mhcI,
-    mhcII=get_mhcII,
+    custom=get_prioritization_custom,
+    mhcI=get_prioritization_mhcI,
+    mhcII=get_prioritization_mhcII,
     refgenome="resources/refs/genome.fasta",
     peptide="resources/refs/peptide.fasta",
     annotation="resources/refs/genome_tmp.gtf",

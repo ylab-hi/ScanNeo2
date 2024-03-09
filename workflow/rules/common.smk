@@ -684,7 +684,7 @@ def get_altsplicing(wildcards):
 
 
 ########### NEOANTIGEN PRIORIZATION ##########
-def get_snvs(wildcards):
+def get_prioritization_snvs(wildcards):
   snv = []
   if config["indel"]["activate"]:
     if config["indel"]["type"] in ["short", "all"]:
@@ -697,11 +697,11 @@ def get_snvs(wildcards):
   
   return snv
 
-def get_indels(wildcards):
+def get_prioritization_indels(wildcards):
   indels = []
   if config["indel"]["activate"]:
     if config["indel"]["type"] in ["short", "all"]:
-      variants += expand("results/{sample}/annotation/somatic.short.indels.vcf",
+      indels += expand("results/{sample}/annotation/somatic.short.indels.vcf",
                          sample=config["data"]["name"])
   
   if len(indels) == 0:
@@ -710,7 +710,7 @@ def get_indels(wildcards):
   
   return indels
 
-def get_long_indels(wildcards):
+def get_prioritization_long_indels(wildcards):
   long_indels = []
   if config["indel"]["activate"]:
     if config["indel"]["type"] in ["long", "all"]:
@@ -723,20 +723,20 @@ def get_long_indels(wildcards):
 
   return long_indels
 
-def get_exitrons(wildcards):
+def get_prioritization_exitrons(wildcards):
   exitrons = []
   if config["exitronsplicing"]["activate"]:
     exitrons += expand("results/{sample}/annotation/exitrons.vcf",
                        sample=config["data"]["name"])
   
-  if len(snv) == 0:
+  if len(exitrons) == 0:
     print(f"Could not detect any exitrons. Please check the config file")
     sys.exit(1)
   
   return exitrons
 
 
-def get_altsplicing(wildcards):
+def get_prioritization_altsplicing(wildcards):
   altsplicing = []
   if config["altsplicing"]["activate"]:
     altsplicing += expand("results/{sample}/annotation/altsplicing.vcf",
@@ -748,20 +748,16 @@ def get_altsplicing(wildcards):
 
   return altsplicing
 
-def get_custom(wildcards):
+def get_prioritization_custom(wildcards):
   custom = []
   if config["data"]["custom"]["variants"] is not None:
-    variants += expand("results/{sample}/annotation/custom.vcf",
+    custom += expand("results/{sample}/annotation/custom.vcf",
                        sample=config["data"]["name"])
-  
-  if len(snv) == 0:
-    print(f"Could not detect any custom events. Please check the config file")
-    sys.exit(1)
   
   return custom
 
 
-def get_mhcI(wildcards):
+def get_prioritization_mhcI(wildcards):
   alleles = []
   if config['prioritization']['class'] in ['I', 'BOTH']:
     alleles += expand("results/{sample}/hla/mhc-I.tsv",
@@ -769,10 +765,9 @@ def get_mhcI(wildcards):
 
   return alleles
 
-def get_mhcII(wildcards):
+def get_prioritization_mhcII(wildcards):
   alleles = []
   if config['prioritization']['class'] in ['II', 'BOTH']:
     alleles += expand("results/{sample}/hla/mhc-II.tsv",
                       sample=config['data']['name'])
   return alleles
-
