@@ -49,6 +49,7 @@ rule prioritization:
     indels=get_prioritization_indels,
     long_indels=get_prioritization_long_indels,
     altsplicing=get_prioritization_altsplicing,
+    exitrons=get_prioritization_exitrons,
     fusions=get_fusions,
     custom=get_prioritization_custom,
     mhcI=get_prioritization_mhcI,
