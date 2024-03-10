@@ -15,7 +15,7 @@ rule get_genome:
     """
       curl -L -o {output.genome}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz 
       gzip -d {output.genome}.gz
-      curl -L -o {output.annotation}.gz https://ftp.ensembl.org/pub/release-{params.release}/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz 
+      curl -L -o {output.annotation}.gz https://ftp.ensembl.org/pub/release-{params.release}/gtf/homo_sapiens/Homo_sapiens.GRCh38.{params.release}.gtf.gz 
       gzip -d {output.annotation}.gz
       curl -L -o {output.peptide}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz
       gzip -d {output.peptide}.gz
