@@ -691,9 +691,9 @@ def get_prioritization_snvs(wildcards):
       snv += expand("results/{sample}/annotation/somatic.snvs.vcf",
                     sample=config["data"]["name"])
 
-  if len(snv) == 0:
-    print(f"Could not detect any SNVs. Please check the config file")
-    sys.exit(1)
+    if len(snv) == 0:
+      print(f"Could not detect any SNVs. Please check the config file")
+      sys.exit(1)
   
   return snv
 
@@ -704,9 +704,9 @@ def get_prioritization_indels(wildcards):
       indels += expand("results/{sample}/annotation/somatic.short.indels.vcf",
                          sample=config["data"]["name"])
   
-  if len(indels) == 0:
-    print(f"Could not detect any indels. Please check the config file")
-    sys.exit(1)
+    if len(indels) == 0:
+      print(f"Could not detect any indels. Please check the config file")
+      sys.exit(1)
   
   return indels
 
@@ -717,9 +717,9 @@ def get_prioritization_long_indels(wildcards):
       long_indels += expand("results/{sample}/annotation/long.indels.vcf",
                             sample=config["data"]["name"])
 
-  if len(long_indels) == 0:
-    print(f"Could not detect any long indels. Please check the config file")
-    sys.exit(1)
+    if len(long_indels) == 0:
+      print(f"Could not detect any long indels. Please check the config file")
+      sys.exit(1)
 
   return long_indels
 
@@ -729,9 +729,9 @@ def get_prioritization_exitrons(wildcards):
     exitrons += expand("results/{sample}/annotation/exitrons.vcf",
                        sample=config["data"]["name"])
   
-  if len(exitrons) == 0:
-    print(f"Could not detect any exitrons. Please check the config file")
-    sys.exit(1)
+    if len(exitrons) == 0:
+      print(f"Could not detect any exitrons. Please check the config file")
+      sys.exit(1)
   
   return exitrons
 
@@ -742,9 +742,9 @@ def get_prioritization_altsplicing(wildcards):
     altsplicing += expand("results/{sample}/annotation/altsplicing.vcf",
                           sample=config["data"]["name"])
   
-  if len(altsplicing) == 0:
-    print(f"Could not detect any variants. Please check the config file")
-    sys.exit(1)
+    if len(altsplicing) == 0:
+      print(f"Could not detect any variants. Please check the config file")
+      sys.exit(1)
 
   return altsplicing
 
@@ -771,3 +771,4 @@ def get_prioritization_mhcII(wildcards):
     alleles += expand("results/{sample}/hla/mhc-II.tsv",
                       sample=config['data']['name'])
   return alleles
+

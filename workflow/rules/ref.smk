@@ -10,13 +10,14 @@ rule get_genome:
   log:
     "logs/get-genome.log",
   params:
+    release=f"""{config['reference']['release']}"""
   shell:
     """
-      curl -L -o {output.genome}.gz https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz 
+      curl -L -o {output.genome}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz 
       gzip -d {output.genome}.gz
-      curl -L -o {output.annotation}.gz https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz 
+      curl -L -o {output.annotation}.gz https://ftp.ensembl.org/pub/release-{params.release}/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz 
       gzip -d {output.annotation}.gz
-      curl -L -o {output.peptide}.gz https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz
+      curl -L -o {output.peptide}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz
       gzip -d {output.peptide}.gz
     """
 
