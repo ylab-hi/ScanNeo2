@@ -84,7 +84,7 @@ rule prioritization:
           --altsplicing {input.altsplicing} \
           --fusions {input.fusions} \
           --custom {input.custom} \
-          --proteome {input.proteome} \
+          --proteome {input.peptide} \
           --anno {input.annotation} \
           --confidence medium \
           --mhc_class {params.mhc_class} \
