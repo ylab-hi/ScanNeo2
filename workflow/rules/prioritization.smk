@@ -77,13 +77,13 @@ rule prioritization:
   shell:
     """
       python workflow/scripts/prioritization/compile.py \
-          --SNV {input.snv} \
-          --indels {input.indels} \
-          --long_indels {input.long_indels} \
-          --exitrons {input.exitrons} \
-          --altsplicing {input.altsplicing} \
-          --fusions {input.fusions} \
-          --custom {input.custom} \
+          --SNV "{input.snv}" \
+          --indels "{input.indels}" \
+          --long_indels "{input.long_indels}" \
+          --exitrons "{input.exitrons}" \
+          --altsplicing "{input.altsplicing}" \
+          --fusions "{input.fusions}" \
+          --custom "{input.custom}" \
           --proteome {input.peptide} \
           --anno {input.annotation} \
           --confidence medium \
