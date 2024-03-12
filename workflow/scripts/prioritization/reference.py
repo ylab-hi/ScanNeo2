@@ -14,12 +14,34 @@ class Proteome:
                 self.proteome[tid] = str(record)
 
 
-class Annotations:
-    def __init__(self, gtfFile):
-        # parse annotations
-        anno_fh = open(gtfFile, 'r')
-        self.anno = {}
-        for line in anno_fh:
+
+class Annotation:
+    def __init__(self, fastaFile, gtfFile):
+        self.ref = pyfaidx.Fasta(fastaFile)
+        self.transcriptome = self.parse_transcriptome(gtfFile) 
+        self.exome = self.parse_exome(gtfFile)
+
+    # 0-based
+    def parse_transcriptome(self, gtfFile):
+        transcriptome = {}
+        fh = open(gtfFile, "r")
+        for line in fh:
+            # ignore header
+            if not line.startswith("#"):
+                l = line.rstrip().split("\t")
+                if l[2] == "transcript":
+                    transcript_id = re.search(r'transcript_id "([^.\s]+)"', l[8]).group(1)
+                    if transcript_id not in transcriptome:
+                        transcriptome[transcript_id] = [int(l[3])-1, int(l[4])-1]
+
+        fh.close()
+        return transcriptome
+
+
+    def parse_exome(self, gtfFile):
+        exome = {}
+        fh = open(gtfFile, 'r')
+        for line in fh:
             # ignore header
             if not line.startswith('#'):
                 l = line.rstrip().split('\t')
@@ -28,13 +50,14 @@ class Annotations:
                     exon_number = re.search(r'exon_number "([^.\s]+)"', l[8]).group(1)
                     transcript_id = re.search(r'transcript_id "([^.\s]+)"', l[8]).group(1)
 
-                    if transcript_id not in self.anno:
-                        self.anno[transcript_id] = {}
+                    if transcript_id not in exome:
+                        exome[transcript_id] = {}
 
-                    if not exon_number in self.anno[transcript_id]:
-                        self.anno[transcript_id][int(exon_number)] = [l[3],l[4]]
+                    if not exon_number in exome[transcript_id]:
+                        exome[transcript_id][int(exon_number)] = [l[3],l[4]]
 
-        anno_fh.close()
+        fh.close()
+        return exome
 
 class Counts:
     def __init__(self, countFile):

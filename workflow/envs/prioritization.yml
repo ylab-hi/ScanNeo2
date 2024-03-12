@@ -3,11 +3,14 @@ channels:
  - conda-forge
  - anaconda
 dependencies:
- - python>=3.6
- - vcfpy
- - pyfaidx
- - configargparse
- - pandas
- - pip
+ - python=3.7.12
+ - vcfpy=0.13.6
+ - pyfaidx=0.7.0
+ - configargparse=1.7
+ - pandas=1.3.5
+ - blast=2.15.0
+ - zstd=1.5.5
+ - pip=24.0
  - pip:
-   - gffutils
+   - gffutils==0.12
+   - blosum==2.0.2

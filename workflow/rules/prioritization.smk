@@ -45,10 +45,16 @@ rule download_prediction_binding_affinity_tools:
 
 rule prioritization:
   input:
-    var=get_variants,
-    fus=get_fusions,
-    mhcI=get_mhcI,
-    mhcII=get_mhcII,
+    snv=get_prioritization_snvs,
+    indels=get_prioritization_indels,
+    long_indels=get_prioritization_long_indels,
+    altsplicing=get_prioritization_altsplicing,
+    exitrons=get_prioritization_exitrons,
+    fusions=get_fusions,
+    custom=get_prioritization_custom,
+    mhcI=get_prioritization_mhcI,
+    mhcII=get_prioritization_mhcII,
+    refgenome="resources/refs/genome.fasta",
     peptide="resources/refs/peptide.fasta",
     annotation="resources/refs/genome_tmp.gtf",
     counts="results/{sample}/quantification/allcounts.txt",
@@ -71,8 +77,15 @@ rule prioritization:
   shell:
     """
       python workflow/scripts/prioritization/compile.py \
-          -i "{input.var}" -f "{input.fus}" \
-          -p {input.peptide} -a {input.annotation} \
+          --SNV "{input.snv}" \
+          --indels "{input.indels}" \
+          --long_indels "{input.long_indels}" \
+          --exitrons "{input.exitrons}" \
+          --altsplicing "{input.altsplicing}" \
+          --fusions "{input.fusions}" \
+          --custom "{input.custom}" \
+          --proteome {input.peptide} \
+          --anno {input.annotation} \
           --confidence medium \
           --mhc_class {params.mhc_class} \
           --mhcI "{input.mhcI}" \
@@ -81,5 +94,6 @@ rule prioritization:
           --mhcII_len "{params.mhcII_len}" \
           --counts {input.counts} \
           --threads {threads} \
-          --output_dir {output}
+          --output_dir {output} \
+          --reference {input.refgenome} > {log} 2>&1
     """

@@ -1,4 +1,8 @@
-### General
+### Reference
+reference:
+  release: 111
+
+# General settings
 threads: 30
 mapq: 30  # overall required mapping quality
 basequal: 20  # overall required base quality 
@@ -81,8 +85,8 @@ quantification:
 hlatyping:
   class: BOTH # I, II or BOTH
   # specific path for class II hlatyping (only required when class: II, or BOTH)
-  MHC-I_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
-  MHC-II_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
+  MHC-I_mode: DNA, RNA # DNA, RNA, or custom (if empty alleles have to be specified in custom)
+  MHC-II_mode: DNA, RNA # DNA, RNA, or custom (if empty alleles have to be specified in custom)
   
   # specific path for class II hlatyping (only required when class: II, or BOTH)
   freqdata: ./hlahd_files/freq_data/ 

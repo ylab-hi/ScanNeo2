@@ -3,6 +3,6 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - optitype =1.3.5
-  - pysam
-  - samtools
+  - optitype=1.3.5
+  - pysam=0.22.0
+  - samtools=1.19.2

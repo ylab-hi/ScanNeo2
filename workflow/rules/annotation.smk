@@ -7,25 +7,31 @@ rule download_vep_plugins:
     "logs/vep/download_plugins.log"
   conda:
     "../envs/basic.yml"
+  params:
+    release=f"""{config['reference']['release']}"""
   shell:
     """
       mkdir -p resources/vep/plugins/
-      curl -L -o {output}/NMD.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/110/NMD.pm
-      curl -L -o {output}/Downstream.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/110/Downstream.pm
+      curl -L -o {output}/NMD.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/{params.release}/NMD.pm
+      curl -L -o {output}/Downstream.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/{params.release}/Downstream.pm
       curl -L -o {output}/Wildtype.pm https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm
     """
 
 rule download_vep_cache:
   output:
     directory("resources/vep/cache")
-  conda:
-    "../envs/basic.yml"
+  message:
+    "Downloading VEP cache"
   log:
     "logs/vep/cache.log"
+  conda:
+    "../envs/basic.yml"
+  params:
+    release=f"""{config['reference']['release']}"""
   shell:
     """
       mkdir -p {output}
-      curl -L https://g-a8b222.dd271.03c0.data.globus.org/ensemblorg/pub/release-110/variation/indexed_vep_cache/homo_sapiens_vep_110_GRCh38.tar.gz \
+      curl -L https://g-a8b222.dd271.03c0.data.globus.org/ensemblorg/pub/release-{params.release}/variation/indexed_vep_cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz \
       | tar -xz -C resources/vep/cache
     """
 #      curl -L https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_vep_110_GRCh38.tar.gz \

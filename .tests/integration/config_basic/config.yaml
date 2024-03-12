@@ -1,4 +1,8 @@
-### General
+# reference
+reference:
+  release: 111
+
+### General Settings
 threads: 30
 mapq: 30  # overall required mapping quality
 basequal: 20  # overall required base quality 
