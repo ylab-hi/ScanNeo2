@@ -1,5 +1,5 @@
 name: Linting
-run-name: ${{ github.actor }} is testing ScanNeo2
+run-name: ${{ github.actor }} is linting ScanNeo2
 on: [push]
 jobs:
   formatting:
