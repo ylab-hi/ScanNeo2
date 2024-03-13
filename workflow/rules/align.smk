@@ -156,9 +156,10 @@ rule rnaseq_postproc_markdup:
   shell:
     """
       samtools sort -@4 -m4G -O BAM -T tmp/ {input.bam} \
-          -o tmp/sorted.bam > {log} 2>&1
-      samtools markdup -r -@4 tmp/sorted.bam {output} > {log} 2>&1 
-      rm tmp/sorted.bam
+          -o tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam > {log} 2>&1
+      samtools markdup -r -@4 tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam \
+          {output} > {log} 2>&1 
+      rm tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam
     """
 
 rule postproc_bam_index:
