@@ -11,20 +11,34 @@ rule countfeatures_dnaseq:
   conda:
     "../envs/subread.yml"
   params:
-    mapq=f"""{config['mapq']}"""
-
+    mapq=f"""{config['mapq']}""",
+    readtype=f"""{config["data"]["dnaseq_readtype"]}"""
   shell:
     """
-      featureCounts \
-          -F GTF \
-          -a {input.annotation_file} \
-          -t gene \
-          -g gene_id \
-          --fracOverlap 0.2 \
-          -Q {params.mapq} \
-          -T {threads} \
-          -o {output} {input.sample} > {log} 2>&1
+      if [ "{params.readtype}" == "PE" ]; then
+        featureCounts \
+            -p \
+            -F GTF \
+            -a {input.annotation_file} \
+            -t gene \
+            -g gene_id \
+            --fracOverlap 0.2 \
+            -Q {params.mapq} \
+            -T {threads} \
+            -o {output} {input.sample} > {log} 2>&1
+      elif [ "{params.readtype}" == "SE" ]; then
+        featureCounts \
+            -F GTF \
+            -a {input.annotation_file} \
+            -t gene \
+            -g gene_id \
+            --fracOverlap 0.2 \
+            -Q {params.mapq} \
+            -T {threads} \
+            -o {output} {input.sample} > {log} 2>&1
+      fi
     """
+
 
 # TODO: add support for PE reads (BWA stores reads as single-end?)
 
@@ -42,20 +56,32 @@ rule countfeatures_rnaseq:
   conda:
     "../envs/subread.yml"
   params:
-    readtype=f"""{config["data"]["rnaseq_readtype"]}""",
-    mapq=f"""{config['mapq']}"""
+    mapq=f"""{config['mapq']}""",
+    readtype=f"""{config["data"]["rnaseq_readtype"]}"""
   shell:
     """
-      featureCounts \
-          -p \
-          -F GTF \
-          -a {input.annotation_file} \
-          -t gene \
-          -g gene_id \
-          --fracOverlap 0.2 \
-          -Q {params.mapq} \
-          -T {threads} \
-          -o {output.table} {input.sample} > {log} 2>&1
+      if [ "{params.readtype}" == "PE" ]; then
+        featureCounts \
+            -p \
+            -F GTF \
+            -a {input.annotation_file} \
+            -t gene \
+            -g gene_id \
+            --fracOverlap 0.2 \
+            -Q {params.mapq} \
+            -T {threads} \
+            -o {output} {input.sample} > {log} 2>&1
+      elif [ "{params.readtype}" == "SE" ]; then
+        featureCounts \
+            -F GTF \
+            -a {input.annotation_file} \
+            -t gene \
+            -g gene_id \
+            --fracOverlap 0.2 \
+            -Q {params.mapq} \
+            -T {threads} \
+            -o {output} {input.sample} > {log} 2>&1
+      fi
     """
 
 # merges the count tables from all samples into single table (calculates TPM)
