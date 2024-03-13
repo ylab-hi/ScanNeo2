@@ -46,7 +46,6 @@ class BindingAffinities:
             fh = open(Path(output_dir, f"{vartype}_variant_effects.tsv"), 'r')
             next(fh)   # skip header
             for line in fh:
-                print(line)
                 entries = line.rstrip().split('\t')
                 for epilen in epilens:
                     aa_var_start = int(entries[12])
