@@ -214,7 +214,6 @@ rule realign:
     """
 
 
-
 ### workflow when aligning paired-end fastq files for DNAseq
 if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
   rule bwa_align_dnaseq:
@@ -232,7 +231,7 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
     threads: config['threads']
     shell:
       """
-        bwa mem -pt{threads} -C resources/refs/bwa/genome {input.reads} \
+        bwa mem -t{threads} -C resources/refs/bwa/genome {input.reads} \
         | samtools addreplacerg -r ID:{wildcards.group} -r SM:{wildcards.sample} \
         -r LB:{wildcards.sample} -r PL:ILLUMINA -r PU:{wildcards.group} - - \
         | samtools sort -@ 6 -n -m1g - -o {output} > {log} 2>&1
