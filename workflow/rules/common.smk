@@ -466,13 +466,13 @@ def get_align_input_dnaseq(wildcards):
       )
 
 def get_dna_align_input(wildcards):
-  if config['data']['dnaseq_filetype'] in ['.fq', '.fatq']:
+  if config['data']['dnaseq_filetype'] in ['.fq', '.fastq']:
     if config['preproc']['activate']:
       if config['data']['dnaseq_readtype'] == 'SE':
         return expand("results/{sample}/dnaseq/reads/{group}_preproc.fq.gz", **wildcards)
       elif config['data']['dnaseq_readtype'] == 'PE':  # PE
         return expand("results/{sample}/dnaseq/reads/{group}_{readtype}_preproc.fq.gz",
-                      readtype=["r1", "r2"],
+                      readtype=["R1", "R2"],
                       group = wildcards.group,
                       sample = wildcards.sample)
 
