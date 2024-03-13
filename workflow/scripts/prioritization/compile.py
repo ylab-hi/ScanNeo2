@@ -14,7 +14,7 @@ import filtering
 
 class Compile:
     def __init__(self, options):
-        self.combined = ("","") # combined neoepitopes from different types
+        self.combined = ["",""] # combined neoepitopes from different types
         self.options = options
 
         if options.SNVs is not "":

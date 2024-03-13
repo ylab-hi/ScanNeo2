@@ -32,9 +32,9 @@ class Immunogenicity:
             df.insert(len(df.keys()), "wt_immunogenicity", wt_immunogenicity)
             df.insert(len(df.keys()), "mt_immunogenicity", mt_immunogenicity)
 
-            outfile = os.path.join(output_dir, f"{vartype}_{mhc_class}_neoepitopes.txt")
+            self.outfile = os.path.join(output_dir, f"{vartype}_{mhc_class}_neoepitopes.txt")
         
-        df.to_csv(outfile, sep="\t", index=False)
+        df.to_csv(self.outfile, sep="\t", index=False)
 
     
     @staticmethod
@@ -104,9 +104,9 @@ class SequenceSimilarity:
             df.insert(len(df.keys()), "proteome_bitscore", prot_bit)
             df.insert(len(df.keys()), "proteome_organism", prot)
 
-            outfile = os.path.join(output_dir, f"{vartype}_{mhc_class}_neoepitopes.txt")
+            self.outfile = os.path.join(output_dir, f"{vartype}_{mhc_class}_neoepitopes.txt")
         
-        df.to_csv(outfile, sep="\t", index=False)
+        df.to_csv(self.outfile, sep="\t", index=False)
 
 
     def self_similarity(self, wt_seqs, mt_seqs):

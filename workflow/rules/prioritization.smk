@@ -64,7 +64,7 @@ rule prioritization:
   output:
     directory("results/{sample}/prioritization/"),
   message:
-    "Predicting binding affinities on sample:{wildcards.sample}"
+    "Prioritize on sample:{wildcards.sample}"
   conda:
     "../envs/prioritization.yml"
   log:
