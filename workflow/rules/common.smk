@@ -475,9 +475,11 @@ def get_dna_align_input(wildcards):
                       readtype=["R1", "R2"],
                       group = wildcards.group,
                       sample = wildcards.sample)
+    else: # no pre-processing
+      return config['data']['dnaseq'][wildcards.group]
 
   # is bamfile
-  else:   # no pre-processing has been performed
+  else:   # no pre-processing has been performed 
     return config['data']['dnaseq'][wildcards.group]
 
 
