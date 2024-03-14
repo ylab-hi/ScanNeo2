@@ -406,7 +406,7 @@ rule sort_somatic_SNVs_m2:
 
 rule combine_somatic_SNVs_m2:
   input:
-    get_shortindels
+    get_snvs
   output:
     "results/{sample}/variants/somatic.snvs.vcf.gz"
   message:

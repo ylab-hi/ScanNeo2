@@ -641,20 +641,20 @@ def get_shortindels(wildcards):
   return indels
 
 def get_snvs(wildcards):
-  indels=[]
+  snvs=[]
   if config['indel']['mode'] in ['RNA','BOTH']:
-    indels += expand("results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf.gz",
+    snvs += expand("results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf.gz",
       sample=config['data']['name'], 
       seqtype='rnaseq',
       group=list(config['data']['rnaseq'].keys()))
   
   if config['indel']['mode'] in ['DNA','BOTH']:
-    indels += expand("results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf.gz",
+    snvs += expand("results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf.gz",
       sample=config['data']['name'], 
       seqtype='dnaseq',
       group=list(config['data']['dnaseq'].keys()))
 
-  return indels
+  return snvs
 
 
 ########### EXITRON CALLING ##########
