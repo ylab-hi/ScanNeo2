@@ -5,6 +5,46 @@ import subprocess
 from pathlib import Path
 import utility as ut
 
+
+class PredictionResults:
+    def __init__(self, epilens, tmp):
+        self.tmp = tmp
+        self.max_entries = 100
+        self.fnames, self.counter = self.initialize(epilens)
+
+    def add_pepseq(self, pepseq, epilen):
+        if self.counter[epilen][1] < self.max_entries:
+            self.add_fasta_entry(pepseq, epilen)
+            self.counter[epilen][1] += 1 # increase entry counter
+
+        elif self.counter[epilen][1] == self.max_entries: # file is full
+            self.counter[epilen][0] += 1 # go to the next file
+            self.counter[epilen][1] = 1 # reset entry counter
+            tmpfile = os.path.join(self.tmp, f"{self.counter[epilen][0]}_{epilen}.fa")
+            self.fnames[epilen][self.counter[epilen][0]] = tmpfile
+            self.add_fasta_entry(pepseq, epilen)
+
+        return self.counter[epilen][0], self.counter[epilen][1]
+
+    def add_fasta_entry(self, pepseq, epilen):
+        fh = open(self.fnames[epilen][self.counter[epilen][0]], 'a')
+        fh.write(f">{self.counter[epilen][1]}\n{pepseq}\n")
+        fh.close()
+
+    # initalize class variables/files
+    def initialize(self, epilens):
+        fnames = {}
+        counter = {}
+        for epilen in epilens:
+            # counter (file and entry)
+            counter[epilen] = [0,0] # file counter, entry 
+            fnames[epilen] = {}
+            tmpfile = os.path.join(self.tmp, f"{counter[epilen][0]}_{epilen}.fa")
+            fnames[epilen][counter[epilen][0]] = tmpfile
+
+        return fnames, counter
+
+
 class BindingAffinities:
     def __init__(self, threads):
         self.threads = threads
@@ -13,47 +53,30 @@ class BindingAffinities:
     def start(self, allele_file, epitope_lengths, output_dir, mhc_class, vartype):
         # create temorary_directory
         with tempfile.TemporaryDirectory() as tmp_seqs:
-            self.get_alleles(allele_file)
+            alleles = ut.get_alleles(allele_file)
 
-            # initialize filenames
-            wt_fname = {}
-            mt_fname = {}
+            # number of entries in the fasta file (to distribute for prediction)
+            number_entries = 100
 
-            # counters to store number of sequence in fa
-            wt_cnt = {}
-            mt_cnt = {}
+            epilens = ut.extract_epilens(epitope_lengths)
+            wt_pred = PredictionResults(epilens, tmp_seqs)
+            mt_pred = PredictionResults(epilens, tmp_seqs)
 
-            # file handler for wt and mt sequences
-            fh_wt = {}
-            fh_mt = {}
-
-            epilens = self.extract_epilens(epitope_lengths)
-
-            for epilen in epilens:
-                wt_fname[epilen] = os.path.join(tmp_seqs, f'wt_{epilen}.fa')
-                mt_fname[epilen] = os.path.join(tmp_seqs, f'mt_{epilen}.fa')
-
-                fh_wt[epilen] = open(wt_fname[epilen], 'w')
-                fh_mt[epilen] = open(mt_fname[epilen], 'w')
-
-                # initialise counter
-                wt_cnt[epilen] = 1
-                mt_cnt[epilen] = 1
-            
             subseqs = []
-        
+
             # iterate through the varianteffectsfile
             fh = open(Path(output_dir, f"{vartype}_variant_effects.tsv"), 'r')
             next(fh)   # skip header
             for line in fh:
                 entries = line.rstrip().split('\t')
+                    
+                aa_var_start = int(entries[12])
+                aa_var_end = int(entries[13])
+
+                wt_subseq = entries[9]
+                mt_subseq = entries[10]
+
                 for epilen in epilens:
-                    aa_var_start = int(entries[12])
-                    aa_var_end = int(entries[13])
-
-                    wt_subseq = entries[9]
-                    mt_subseq = entries[10]
-
                     # adjust the length of the subsequence according to epilen
                     if aa_var_start >= epilen + 1:
                         left = aa_var_start - (epilen - 1)
@@ -64,66 +87,55 @@ class BindingAffinities:
                         right = aa_var_end + (epilen - 1)
                     else:
                         right = len(mt_subseq) - 1 
-
+                    
                     """ IEDB requires the sequence to be at least the length
                     of the epitope + 1 to function - if this is not satisfied
-                    try to extend it to the left """
+                    try to extend it to the left (while still including the mutation) """
                     while left > 0 and right - left + 1 < epilen + 1:
                         left -= 1
-#                    if right - left + 1 < epilen + 1:
-#                        continue
-
+                    
                     wt_subseq_adj = wt_subseq[left:right+1]
                     mt_subseq_adj = mt_subseq[left:right+1]
-
+                    
                     # determine the epitope sequences
                     if '$' in wt_subseq_adj:
                         wt_epitope_seq = wt_subseq_adj.split('$')[0]
                     else:
                         wt_epitope_seq = wt_subseq_adj
                     mt_epitope_seq = mt_subseq_adj
-
+                    
+#                    print(f"wt_epitope_seq: {wt_epitope_seq}")
+#                    print(f"mt_epitope_seq: {mt_epitope_seq}")
+                    
                     if len(wt_epitope_seq) >= epilen+1:
-                        fh_wt[epilen].write(f'>{wt_cnt[epilen]}\n{wt_epitope_seq}\n')
-                        entries.append(wt_cnt[epilen])
-                        wt_cnt[epilen] += 1
-
+                        fcnt, ecnt = wt_pred.add_pepseq(wt_epitope_seq, epilen)
+                        entries.append(f"{fcnt}_{ecnt}")
                     else:
-                        entries.append(0)
-
+                        entries.append(f"{-1}_{-1}")
+                    
                     if len(mt_epitope_seq) >= epilen+1:
-                        fh_mt[epilen].write(f'>{mt_cnt[epilen]}\n{mt_epitope_seq}\n')
-                        entries.append(mt_cnt[epilen])
-                        mt_cnt[epilen] += 1
-
+                        fcnt, ecnt = mt_pred.add_pepseq(mt_epitope_seq, epilen)
+                        entries.append(f"{fcnt}_{ecnt}")
                     else:
-                        entries.append(0)
-
-                    #print(entries)
+                        entries.append(f"{-1}_{-1}")
 
                 subseqs.append(entries)
-
-            # its necessary to close the files
-            fh.close() # variant_effects
-            for epilen in epilens:
-                fh_wt[epilen].close()
-                fh_mt[epilen].close()
-
+            
             print(f"calculate binding affinities...")
-            wt_affinities = self.collect_binding_affinities(self.alleles, 
-                                                            wt_fname, 
-                                                            epilens, 
+            wt_affinities = self.collect_binding_affinities(alleles, 
+                                                            wt_pred.fnames,
+                                                            epilens,
                                                             'wt',
                                                             mhc_class,
                                                             self.threads)
             
-            mt_affinities = self.collect_binding_affinities(self.alleles,
-                                                            mt_fname,
+            mt_affinities = self.collect_binding_affinities(alleles, 
+                                                            mt_pred.fnames,
                                                             epilens,
                                                             'mt',
                                                             mhc_class,
                                                             self.threads)
-            print("Done")
+            print("...done")
             
             outfile = open(os.path.join(output_dir,
                                         f"{vartype}_{mhc_class}_neoepitopes.txt"),"w")
@@ -158,21 +170,20 @@ class BindingAffinities:
                 mt_subseq = entry[10]
 
                 for epilen_idx in range(0, len(epilens)):
-
                     # the sequence number of each entry corresponds to the 
                     # sequence number of the epitope in the fasta file
-                    wt_seqnum = int(entry[22:][epilen_idx*2])
-                    mt_seqnum = int(entry[22:][epilen_idx*2+1])
+                    wt_nkey = int(entry[22:][epilen_idx*2])
+                    mt_nkey = int(entry[22:][epilen_idx*2+1])
 
                     wt = None
-                    if wt_seqnum in wt_affinities[epilens[epilen_idx]].keys():
-                        wt = wt_affinities[epilens[epilen_idx]][wt_seqnum]
+                    if wt_nkey in wt_affinities[epilens[epilen_idx]].keys():
+                        wt = wt_affinities[epilens[epilen_idx]][wt_nkey]
                     else:
                         final["wt_epitope_ic50"] = None
                         final["wt_epitope_rank"] = None
 
-                    if mt_seqnum in mt_affinities[epilens[epilen_idx]].keys():
-                        mt = mt_affinities[epilens[epilen_idx]][mt_seqnum]
+                    if mt_nkey in mt_affinities[epilens[epilen_idx]].keys():
+                        mt = mt_affinities[epilens[epilen_idx]][mt_nkey]
                     else:
                         continue
 
@@ -220,28 +231,6 @@ class BindingAffinities:
                         BindingAffinities.write_entry(final, outfile)
             outfile.close()
 
-
-
-    def get_alleles(self, allele_file):
-        self.alleles = {}
-        fh_alleles = open(allele_file, 'r')
-        for allele in fh_alleles:
-            line = allele.rstrip().split('\t')
-            self.alleles[line[1]] = line[0]
-
-    @staticmethod
-    def extract_epilens(lengths):
-        """determines the lengths of the epitopes specified of the commandline
-        as these can be specific a single digits (e.g, 8,9,10) or ranges 
-        (e.g., 8-10) this function extracts the single lengths"""
-        epilens = []
-        for lens in lengths.split(','):
-            if '-' in lens:
-                lower, upper = lens.split('-', 1)
-                epilens.extend(range(int(lower), int(upper)+1))
-            else:
-                epilens.append(int(lens))
-        return epilens
     
     @staticmethod
     def collect_binding_affinities(alleles, 
@@ -259,39 +248,41 @@ class BindingAffinities:
             futures = {}
             for allele in alleles:
                 for epilen in epilens:
-                    future = executor.submit(BindingAffinities.calc_binding_affinities, 
-                                             fnames[epilen], 
-                                             allele, 
-                                             epilen, 
-                                             group,
-                                             mhc_class)
-                    futures[future] = epilen
-
-
+                    for fkey in fnames[epilen].keys():
+                        future = executor.submit(BindingAffinities.calc_binding_affinities,
+                                                 fnames[epilen][fkey],
+                                                 fkey,
+                                                 allele,
+                                                 epilen,
+                                                 group,
+                                                 mhc_class)
+                        futures[future] = [fkey, epilen]
+        
         for future in concurrent.futures.as_completed(futures):
-            epilen = futures[future]
+            fkey, epilen = futures[future]
             binding_affinities = future.result()
 
-            # check epilen already present
+            # check if epilen already present
             if epilen not in affinities_results.keys():
                 affinities_results[epilen] = {}
 
             for seqnum in binding_affinities.keys():
-                if seqnum not in affinities_results[epilen].keys():
-                    affinities_results[epilen][seqnum] = binding_affinities[seqnum]
+                nkey = f"{fkey}_{seqnum}"
+                if nkey not in affinities_results[epilen].keys():
+                    affinities_results[epilen][nkey] = binding_affinities[seqnum]
                 else:
                     for seq in binding_affinities[seqnum].keys():
-                        if seq not in affinities_results[epilen][seqnum].keys():
-                            affinities_results[epilen][seqnum][seq] = binding_affinities[seqnum][seq]
+                        if seq not in affinities_results[epilen][nkey].keys():
+                            affinities_results[epilen][nkey][seq] = binding_affinities[seqnum][seq]
 
         return affinities_results
+
     
     @staticmethod
-    def calc_binding_affinities(fa_file, allele, epilen, group, mhc_class):
+    def calc_binding_affinities(fa_file, fkey, allele, epilen, group, mhc_class):
         binding_affinities = {}
-# #    binding_affinities[epilen] = {}
-        print(f'calculate binding affinities - allele:{allele} epilen:{epilen} group: {group}')
-        call = ['python']
+        print(f"Calculate binding affinities - allele: {allele} epilen: {epilen} group: {group} file: {fkey}") 
+        call = ["python"]
         if mhc_class == "mhc-I":
             call.append("workflow/scripts/mhc_i/src/predict_binding.py")
             call.append("netmhcpan")
@@ -338,6 +329,7 @@ class BindingAffinities:
                     binding_affinities[seqnum][epitope_seq] = (allele, start, end, ic50, rank)
 
         return binding_affinities
+
     
     @staticmethod
     def calc_ranking_score(vaf, wt_ic50, mt_ic50):
