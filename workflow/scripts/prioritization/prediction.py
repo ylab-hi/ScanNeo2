@@ -21,9 +21,7 @@ class PredictionResults:
         if self.counter[epilen][1] < self.max_entries:
             self.counter[epilen][1] += 1 # increase entry counter
             self.add_fasta_entry(pepseq, epilen)
-
         elif self.counter[epilen][1] == self.max_entries: # file is full
-
             self.counter[epilen][0] += 1 # go to the next file
             self.counter[epilen][1] = 1 # reset entry counter
             self.fnames[epilen][self.counter[epilen][0]] = self.init_tempfile()
@@ -110,124 +108,115 @@ class BindingAffinities:
 
             subseqs.append(entries)
 
-            # # show content files
-            # for epilen in wt_pred.fnames:
-                # print(f"wt_pred: {epilen}")
-                # for cnt in wt_pred.fnames[epilen]:
-                    # fh = open(wt_pred.fnames[epilen][cnt].name, 'r')
-                    # for line in fh:
-                        # print(line.rstrip())
-                    # fh.close()
-
-            print(f"calculate binding affinities...")
-            wt_affinities = self.collect_binding_affinities(alleles, 
-                                                            wt_pred.fnames,
-                                                            epilens,
-                                                            'wt',
-                                                            mhc_class,
-                                                            self.threads)
+        print(f"calculate binding affinities...")
+        wt_affinities = self.collect_binding_affinities(alleles, 
+                                                        wt_pred.fnames,
+                                                        epilens,
+                                                        'wt',
+                                                        mhc_class,
+                                                        self.threads)
+        
+        mt_affinities = self.collect_binding_affinities(alleles, 
+                                                        mt_pred.fnames,
+                                                        epilens,
+                                                        'mt',
+                                                        mhc_class,
+                                                        self.threads)
+        print("...done")
             
-            mt_affinities = self.collect_binding_affinities(alleles, 
-                                                            mt_pred.fnames,
-                                                            epilens,
-                                                            'mt',
-                                                            mhc_class,
-                                                            self.threads)
-            print("...done")
-            
-            outfile = open(os.path.join(output_dir,
-                                        f"{vartype}_{mhc_class}_neoepitopes.txt"),"w")
-            BindingAffinities.write_header(outfile)
+        outfile = open(os.path.join(output_dir,
+                                    f"{vartype}_{mhc_class}_neoepitopes.txt"),"w")
+        BindingAffinities.write_header(outfile)
 
-            for entry in subseqs:
-                final = {}
-                final["chrom"] = entry[0]
-                final["start"] = entry[1]
-                final["end"] = entry[2]
-                final["gene_id"] = entry[3]
-                final["gene_name"] = entry[4]
-                final["transcript_id"] = entry[5]
-                final["source"] = entry[6]
-                final["group"] = entry[7]
-                final["var_type"] = entry[8]
-                final["var_start"] = entry[11]
-                final["vaf"] = float(entry[14])
-                final["supp"] = entry[15]
-                final["depth"] = entry[16]
-                final["TPM"] = entry[17]
-                final["NMD"] = entry[18]
-                final["PTC_dist_ejc"] = entry[19]
-                final["PTC_exon_number"] = entry[20]
-                final["NMD_escape_rule"] = entry[21]
+        for entry in subseqs:
+            final = {}
+            final["chrom"] = entry[0]
+            final["start"] = entry[1]
+            final["end"] = entry[2]
+            final["gene_id"] = entry[3]
+            final["gene_name"] = entry[4]
+            final["transcript_id"] = entry[5]
+            final["source"] = entry[6]
+            final["group"] = entry[7]
+            final["var_type"] = entry[8]
+            final["var_start"] = entry[11]
+            final["vaf"] = float(entry[14])
+            final["supp"] = entry[15]
+            final["depth"] = entry[16]
+            final["TPM"] = entry[17]
+            final["NMD"] = entry[18]
+            final["PTC_dist_ejc"] = entry[19]
+            final["PTC_exon_number"] = entry[20]
+            final["NMD_escape_rule"] = entry[21]
 
-                aa_var_start = int(entry[12])
-                aa_var_end = int(entry[13])
+            aa_var_start = int(entry[12])
+            aa_var_end = int(entry[13])
 
-                # extract the subsequences (needed to determine the wt epitope)
-                wt_subseq = entry[9]
-                mt_subseq = entry[10]
+            # extract the subsequences (needed to determine the wt epitope)
+            wt_subseq = entry[9]
+            mt_subseq = entry[10]
 
-                for epilen_idx in range(0, len(epilens)):
-                    # the sequence number of each entry corresponds to the 
-                    # sequence number of the epitope in the fasta file
-                    wt_nkey = entry[22:][epilen_idx*2]
-                    mt_nkey = entry[22:][epilen_idx*2+1]
+            for epilen_idx in range(0, len(epilens)):
+                # the sequence number of each entry corresponds to the 
+                # sequence number of the epitope in the fasta file
+                wt_nkey = entry[22:][epilen_idx*2]
+                mt_nkey = entry[22:][epilen_idx*2+1]
 
-                    wt = None
-                    if wt_nkey in wt_affinities[epilens[epilen_idx]].keys():
-                        wt = wt_affinities[epilens[epilen_idx]][wt_nkey]
-                    else:
-                        final["wt_epitope_ic50"] = None
-                        final["wt_epitope_rank"] = None
+                wt = None
+                if wt_nkey in wt_affinities[epilens[epilen_idx]].keys():
+                    wt = wt_affinities[epilens[epilen_idx]][wt_nkey]
+                else:
+                    final["wt_epitope_ic50"] = None
+                    final["wt_epitope_rank"] = None
 
-                    if mt_nkey in mt_affinities[epilens[epilen_idx]].keys():
-                        mt = mt_affinities[epilens[epilen_idx]][mt_nkey]
-                    else:
-                        continue
+                if mt_nkey in mt_affinities[epilens[epilen_idx]].keys():
+                    mt = mt_affinities[epilens[epilen_idx]][mt_nkey]
+                else:
+                    continue
 
-                    for epitope in mt.keys():
-                        # (allele, start, end, ic50, rank)
-                        # determine by mhc_i (as determined by IEDB - 0 based)
-                        start_pos_in_subseq = int(mt[epitope][1])
-                        end_pos_in_subseq = int(mt[epitope][2])
+                for epitope in mt.keys():
+                    # (allele, start, end, ic50, rank)
+                    # determine by mhc_i (as determined by IEDB - 0 based)
+                    start_pos_in_subseq = int(mt[epitope][1])
+                    end_pos_in_subseq = int(mt[epitope][2])
 
-                        # check if the mutation (aa_var_[start|end]) is either 
-                        # part of the epitope or upstream of it - this ensures 
-                        # that the sequence is mutated
-                        # if (aa_var_end < start_pos_in_subseq or
-                            # aa_var_start > end_pos_in_subseq):
-                            # continue
+                    # check if the mutation (aa_var_[start|end]) is either 
+                    # part of the epitope or upstream of it - this ensures 
+                    # that the sequence is mutated
+                    # if (aa_var_end < start_pos_in_subseq or
+                        # aa_var_start > end_pos_in_subseq):
+                        # continue
 
-                        final["mt_epitope_seq"] = epitope
-                        final["allele"] = mt[epitope][0]
-                        final["mt_epitope_ic50"] = mt[epitope][3]
-                        final["mt_epitope_rank"] = mt[epitope][4]
+                    final["mt_epitope_seq"] = epitope
+                    final["allele"] = mt[epitope][0]
+                    final["mt_epitope_ic50"] = mt[epitope][3]
+                    final["mt_epitope_rank"] = mt[epitope][4]
 
-                        """ search for corresponding WT by first searching for 
-                        the epitope in the mt_subseq and using this information
-                        to return the WT epitope sequence"""
-                        startpos_epitope_in_subseq = mt_subseq.find(epitope)
-                        startpos = startpos_epitope_in_subseq
-                        final["wt_epitope_seq"] = wt_subseq[startpos:startpos+len(epitope)]
+                    """ search for corresponding WT by first searching for 
+                    the epitope in the mt_subseq and using this information
+                    to return the WT epitope sequence"""
+                    startpos_epitope_in_subseq = mt_subseq.find(epitope)
+                    startpos = startpos_epitope_in_subseq
+                    final["wt_epitope_seq"] = wt_subseq[startpos:startpos+len(epitope)]
 
-                        # search for binidng affinities of wildtype sequence
-                        final["wt_epitope_ic50"] = None
-                        final["wt_epitope_rank"] = None
-                        if wt is not None:
-                            if final["wt_epitope_seq"] in wt.keys():
-                                final["wt_epitope_ic50"] = wt[final["wt_epitope_seq"]][3]
-                                final["wt_epitope_rank"] = wt[final["wt_epitope_seq"]][4]
+                    # search for binidng affinities of wildtype sequence
+                    final["wt_epitope_ic50"] = None
+                    final["wt_epitope_rank"] = None
+                    if wt is not None:
+                        if final["wt_epitope_seq"] in wt.keys():
+                            final["wt_epitope_ic50"] = wt[final["wt_epitope_seq"]][3]
+                            final["wt_epitope_rank"] = wt[final["wt_epitope_seq"]][4]
 
-                        # calculate ranking calc_ranking_score 
-                        score = BindingAffinities.calc_ranking_score(final['vaf'], 
-                                                                     final['wt_epitope_ic50'], 
-                                                                     final['mt_epitope_ic50'])
-                        final['ranking_score'] = score
-                        final['agretopicity'] = BindingAffinities.calc_agretopicity(final["wt_epitope_ic50"],
-                                                                                    final["mt_epitope_ic50"])
+                    # calculate ranking calc_ranking_score 
+                    score = BindingAffinities.calc_ranking_score(final['vaf'], 
+                                                                 final['wt_epitope_ic50'], 
+                                                                 final['mt_epitope_ic50'])
+                    final['ranking_score'] = score
+                    final['agretopicity'] = BindingAffinities.calc_agretopicity(final["wt_epitope_ic50"],
+                                                                                final["mt_epitope_ic50"])
 
-                        BindingAffinities.write_entry(final, outfile)
-            outfile.close()
+                    BindingAffinities.write_entry(final, outfile)
+        outfile.close()
 
     
     @staticmethod
