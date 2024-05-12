@@ -48,8 +48,7 @@ rule countfeatures_rnaseq:
     sample = "results/{sample}/rnaseq/align/{group}_final_STAR.bam",
     annotation_file = "resources/refs/genome.gtf"
   output:
-    table = "results/{sample}/rnaseq/quantification/{group}_counts.txt",
-    summary = "results/{sample}/rnaseq/quantification/{group}_counts.txt.summary",
+    "results/{sample}/rnaseq/quantification/{group}_counts.txt"
   log:
     "logs/{sample}/featurecounts/rnaseq_{group}.log",
   threads: 2

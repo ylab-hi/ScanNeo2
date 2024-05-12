@@ -30,6 +30,7 @@ rule index_hla_panel:
     "../envs/yara.yml"
   shell:
     """
+      mkdir -p resources/hla/yara_index/
       yara_indexer \
           -o resources/hla/yara_index/{wildcards.nartype} \
           {input.fa} > {log}

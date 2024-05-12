@@ -377,7 +377,14 @@ def get_star_input(wildcards):
   elif config['data']['rnaseq_filetype'] == '.fq' or config['data']['rnaseq_filetype'] == '.fastq':
     if config['preproc']['activate']:
       if config['data']['rnaseq_readtype'] == 'SE':
-        return expand("results/{sample}/rnaseq/preproc/reads.fq.gz", **wildcards)
+        return dict(
+            zip(
+              ["fq1"],
+              expand("results/{sample}/rnaseq/reads/{group}_preproc.fq.gz",
+                      sample=wildcards.sample,
+                      group=wildcards.group)
+            )
+        )
       elif config['data']['rnaseq_readtype'] == 'PE':  # PE
         return dict(
             zip(
@@ -390,7 +397,7 @@ def get_star_input(wildcards):
         )
       else: # no pre-processing
         return config['data']['rnaseq'][wildcards.group]
-
+    
 # collect the individual alignments from splitted bamfiles
 def aggregate_aligned_rg(wildcards):
     # make sure that all samples are processed in checkpoint - split fastq file
