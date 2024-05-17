@@ -7,7 +7,9 @@ from Bio import SeqIO
 This scripts modifies the header from the ENSEMBL and changes the chromosome names by adding chrs'
 
 Usage:
-    python3 modify_ensembl_header.py <fasta_file> <fasta_file_modified> <gff_file> <gff_file_modified>
+    python3 modify_ensembl_header.py <fasta_file> <fasta_file_modified> <gff_file> <gff_file_modified> <nonchr>
+
+    <nonchr> determines if non-chromosomal sequences are included as well, e.g., =0 (No) or =1 (Yes)
 """
 
 def main():
@@ -25,8 +27,8 @@ def main():
                 record.id = header_mappings[record.id]
                 SeqIO.write(record, out_fa, 'fasta')
             else:
-                SeqIO.write(record, out_fa, 'fasta')
-
+                if sys.argv[5] == "1":
+                    SeqIO.write(record, out_fa, 'fasta')
 
     with open(sys.argv[3], 'r') as in_gff, open(sys.argv[4], 'w') as out_gff:
         for line in in_gff:

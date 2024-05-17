@@ -34,9 +34,11 @@ rule mod_genome:
     "../envs/basic.yml"
   log:
     "logs/mod-genome.log"
+  params:
+    nonchr=f"""{int(config['reference']['nonchr'])}"""
   shell:
     """
-      python3 workflow/scripts/reference/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation}
+        python3 workflow/scripts/reference/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation} {params.nonchr}
     """
 
 # this forces to redownload the reference on each execution
