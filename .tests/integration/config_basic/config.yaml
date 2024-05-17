@@ -1,0 +1,103 @@
+# reference
+reference:
+  release: 111
+
+### General Settings
+threads: 30
+mapq: 30  # overall required mapping quality
+basequal: 20  # overall required base quality 
+
+### data
+data:
+  name:  basic_sample
+  dnaseq: 
+    dna_normal: TESLA_testdata/patient2/WES/TESLA_9_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_9_2.fastq.gz
+    dna_tumor: TESLA_testdata/patient2/WES/TESLA_10_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_10_2.fastq.gz
+  rnaseq:
+    rna_tumor: TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz
+  normal: dna_normal
+  
+  custom:
+    variants:
+    hlatyping:
+      MHC-I:
+      MHC-II:
+
+### pre-processing (only applied on fastq reads)
+preproc: 
+  activate: true  # whether (=true) or not (=false) to include pre-processing
+  minlen: 10
+  qual: 20
+  slidingwindow:
+    activate: true
+    wsize: 3
+    wqual: 20
+
+### alingment
+align:
+  minovlps: 10
+  chimsegmin: 20
+  chimoverhang: 10
+  chimmax: 50
+  chimmaxdrop: 30
+
+### variant calling
+# alternative splicing
+altsplicing:
+  activate: true # whether (=true) or not (=false) to include alternative splicing events
+  confidence: 3  # confidence level (1,2 or 3) - filtering of input alignments
+  iterations: 5 # number of iteratios (when adding intro edges) - increases sensitivity
+  edgelimit: 250  # limit max number of edges in graph - affects the runtime
+
+# exitron splicing
+exitronsplicing:
+  activate: true # whether (=true) or not (=false) to include exitron-splicing events
+  ao: 3  # allele observation
+  pso: 0.05  # percent spliced out
+
+# gene fusion
+genefusion:
+  activate: true # whether (=true) or not (=false) to include gene fusion events
+  maxevalue: 0.3
+  suppreads: 2  # all fusions with less than suppreads are discarded
+  maxsuppreads: 1000
+  maxidentity: 0.3  # genes with fraction of identity are discarded (homologs)
+  hpolymerlen: 6  # removes breakpoints adjacent to homopolymers of length
+  readthroughdist: 10000  # distance between breakpoints with less than distance
+  minanchorlen: 20  # removes fusions whose segments are less than minchimlen
+  splicedevents: 4  # fusions between genes need at least this many spliced breakpoints
+  maxkmer: 0.6  # remove reads with repetitive 3-mer that make up more than maxkmer
+  fraglen: 200 # mean fragment length
+  maxmismatch: 0.01
+
+### indel
+indel:
+  activate: true # whether (=true) or not (=false) to include indels
+  type: all # long, short, all
+  mode: BOTH  # DNA, RNA or BOTH - 
+  # strategy for optimizing posterior probability threshold
+  strategy: OPTIMAL_F_SCORE # OPTIMAL_F_SCORE, FALSE_DISCOVERY_RATE, CONSTANT 
+  fscorebeta: 1.0  # rel. weight of recall to precision (when OPTIMAL_F_SCORE is selected)
+  fdr: 0.05  # false discovery rate (when FALSE_DISCOVERY_RATE is selected)
+  sliplen: 8  # min number of reference bases to suspect slippage event
+  sliprate: 0.1  # frequency of slippage when it is supsected
+
+quantification:
+  mode: BOTH # RNA, RNA or BOTH
+
+hlatyping:
+  class: I # I, II or BOTH
+  # specific path for class II hlatyping (only required when class: II, or BOTH)
+  MHC-I_mode: DNA, RNA # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
+  MHC-II_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
+
+  freqdata: ./hlahd_files/freq_data/ 
+  split: ./hlahd_files/HLA_gene.split.txt
+  dict: ./hlahd_files/dictionary/
+
+prioritization:
+  class: I # I, II or BOTH
+  lengths:
+    MHC-I: 8,9,10,11
+    MHC-II: 13,14,15
+
