@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.2.3] - 2024-03-02
+
+### Features (somewhat)
+
+- Added paramter nonchr in reference attribute to exclude non-chromosomal contigs from the reference genome
+
+### Fix
+
+- Fixed wrong path in quality control for single-end reads
+
 ## [0.2.2] - 2024-03-01
 
 ### Fix 

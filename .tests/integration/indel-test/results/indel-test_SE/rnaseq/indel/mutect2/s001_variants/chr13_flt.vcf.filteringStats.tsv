@@ -1,0 +1,27 @@
+#<METADATA>Ln prior of deletion of length 10=-16.11809565095832
+#<METADATA>Ln prior of deletion of length 9=-16.11809565095832
+#<METADATA>Ln prior of deletion of length 8=-16.11809565095832
+#<METADATA>Ln prior of deletion of length 7=-16.11809565095832
+#<METADATA>Ln prior of deletion of length 6=-16.11809565095832
+#<METADATA>Ln prior of deletion of length 5=-16.11809565095832
+#<METADATA>Ln prior of deletion of length 4=-16.11809565095832
+#<METADATA>Ln prior of deletion of length 3=-16.11809565095832
+#<METADATA>Ln prior of deletion of length 2=-16.11809565095832
+#<METADATA>Ln prior of deletion of length 1=-16.11809565095832
+#<METADATA>Ln prior of SNV=-13.815510557964275
+#<METADATA>Ln prior of insertion of length 1=-16.11809565095832
+#<METADATA>Ln prior of insertion of length 2=-16.11809565095832
+#<METADATA>Ln prior of insertion of length 3=-16.11809565095832
+#<METADATA>Ln prior of insertion of length 4=-16.11809565095832
+#<METADATA>Ln prior of insertion of length 5=-16.11809565095832
+#<METADATA>Ln prior of insertion of length 6=-16.11809565095832
+#<METADATA>Ln prior of insertion of length 7=-16.11809565095832
+#<METADATA>Ln prior of insertion of length 8=-16.11809565095832
+#<METADATA>Ln prior of insertion of length 9=-16.11809565095832
+#<METADATA>Ln prior of insertion of length 10=-16.11809565095832
+#<METADATA>Background beta-binomial cluster=weight = 0.5000, alpha = 1.00, beta = 1.00
+#<METADATA>High-AF beta-binomial cluster=weight = 0.5000, alpha = 10.00, beta = 1.00
+#<METADATA>threshold=0.0
+#<METADATA>fdr=0.0
+#<METADATA>sensitivity=0.0
+filter	FP	FDR	FN	FNR

@@ -14,8 +14,10 @@ def data_structure(data):
 
   # abort if no data could be found
   if len(config['data']['dnaseq']) == 0 and len(config['data']['rnaseq']) == 0:
-    print('No valid sequence files found')
-    sys.exit(1)
+    # if no data could be found - check if variants are provided (e.g., custom)
+    if config['data']['custom']['variants'] is None:
+      print("No valid sequence files found and no custom variants provided")
+      sys.exit(1)
 
   return config['data']
 
@@ -701,10 +703,6 @@ def get_prioritization_snvs(wildcards):
       snv += expand("results/{sample}/annotation/somatic.snvs.vcf",
                     sample=config["data"]["name"])
 
-    if len(snv) == 0:
-      print(f"Could not detect any SNVs. Please check the config file")
-      sys.exit(1)
-  
   return snv
 
 def get_prioritization_indels(wildcards):
@@ -713,10 +711,6 @@ def get_prioritization_indels(wildcards):
     if config["indel"]["type"] in ["short", "all"]:
       indels += expand("results/{sample}/annotation/somatic.short.indels.vcf",
                          sample=config["data"]["name"])
-  
-    if len(indels) == 0:
-      print(f"Could not detect any indels. Please check the config file")
-      sys.exit(1)
   
   return indels
 
@@ -727,10 +721,6 @@ def get_prioritization_long_indels(wildcards):
       long_indels += expand("results/{sample}/annotation/long.indels.vcf",
                             sample=config["data"]["name"])
 
-    if len(long_indels) == 0:
-      print(f"Could not detect any long indels. Please check the config file")
-      sys.exit(1)
-
   return long_indels
 
 def get_prioritization_exitrons(wildcards):
@@ -738,10 +728,6 @@ def get_prioritization_exitrons(wildcards):
   if config["exitronsplicing"]["activate"]:
     exitrons += expand("results/{sample}/annotation/exitrons.vcf",
                        sample=config["data"]["name"])
-  
-    if len(exitrons) == 0:
-      print(f"Could not detect any exitrons. Please check the config file")
-      sys.exit(1)
   
   return exitrons
 
@@ -752,10 +738,6 @@ def get_prioritization_altsplicing(wildcards):
     altsplicing += expand("results/{sample}/annotation/altsplicing.vcf",
                           sample=config["data"]["name"])
   
-    if len(altsplicing) == 0:
-      print(f"Could not detect any variants. Please check the config file")
-      sys.exit(1)
-
   return altsplicing
 
 def get_prioritization_custom(wildcards):
@@ -782,3 +764,12 @@ def get_prioritization_mhcII(wildcards):
                       sample=config['data']['name'])
   return alleles
 
+def get_prioritization_counts(wildcards):
+  counts = []
+  # counts can only be generated if either RNAseq or DNAseq data is provided
+  if(len(config["data"]["rnaseq"]) != 0 or
+     len(config["data"]["dnaseq"]) != 0):
+
+    counts += expand("results/{sample}/quantification/allcounts.txt",
+                     sample=config["data"]["name"])
+  return counts

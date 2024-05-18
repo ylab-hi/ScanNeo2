@@ -1,0 +1,153 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=FAIL,Description="Fail the site if all alleles fail but for different reasons.">
+##FILTER=<ID=PASS,Description="All filters passed">
+##FILTER=<ID=base_qual,Description="alt median base quality">
+##FILTER=<ID=clustered_events,Description="Clustered events observed in the tumor">
+##FILTER=<ID=contamination,Description="contamination">
+##FILTER=<ID=duplicate,Description="evidence for alt allele is overrepresented by apparent duplicates">
+##FILTER=<ID=fragment,Description="abs(ref - alt) median fragment length">
+##FILTER=<ID=germline,Description="Evidence indicates this site is germline, not somatic">
+##FILTER=<ID=haplotype,Description="Variant near filtered variant on same haplotype.">
+##FILTER=<ID=low_allele_frac,Description="Allele fraction is below specified threshold">
+##FILTER=<ID=map_qual,Description="ref - alt median mapping quality">
+##FILTER=<ID=multiallelic,Description="Site filtered because too many alt alleles pass tumor LOD">
+##FILTER=<ID=n_ratio,Description="Ratio of N to alt exceeds specified ratio">
+##FILTER=<ID=normal_artifact,Description="artifact_in_normal">
+##FILTER=<ID=orientation,Description="orientation bias detected by the orientation bias mixture model">
+##FILTER=<ID=panel_of_normals,Description="Blacklisted site in panel of normals">
+##FILTER=<ID=position,Description="median distance of alt variants from end of reads">
+##FILTER=<ID=possible_numt,Description="Allele depth is below expected coverage of NuMT in autosome">
+##FILTER=<ID=slippage,Description="Site filtered due to contraction of short tandem repeat region">
+##FILTER=<ID=strand_bias,Description="Evidence for alt allele comes from one read direction only">
+##FILTER=<ID=strict_strand,Description="Evidence for alt allele is not represented in both directions">
+##FILTER=<ID=weak_evidence,Description="Mutation does not meet likelihood threshold">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=AF,Number=A,Type=Float,Description="Allele fractions of alternate alleles in the tumor">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
+##FORMAT=<ID=F1R2,Number=R,Type=Integer,Description="Count of reads in F1R2 pair orientation supporting each allele">
+##FORMAT=<ID=F2R1,Number=R,Type=Integer,Description="Count of reads in F2R1 pair orientation supporting each allele">
+##FORMAT=<ID=FAD,Number=R,Type=Integer,Description="Count of fragments supporting each allele.">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=PGT,Number=1,Type=String,Description="Physical phasing haplotype information, describing how the alternate alleles are phased in relation to one another; will always be heterozygous and is not intended to describe called alleles">
+##FORMAT=<ID=PID,Number=1,Type=String,Description="Physical phasing ID information, where each unique ID within a given sample (but not across samples) connects records within a phasing group">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=PS,Number=1,Type=Integer,Description="Phasing set (typically the position of the first variant in the set)">
+##FORMAT=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">
+##GATKCommandLine=<ID=FilterMutectCalls,CommandLine="FilterMutectCalls --output results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr21_flt.vcf --threshold-strategy OPTIMAL_F_SCORE --f-score-beta 1.0 --false-discovery-rate 0.05 --max-alt-allele-count 3 --min-median-mapping-quality 30 --min-median-base-quality 20 --min-slippage-length 8 --pcr-slippage-rate 0.1 --variant results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr21.vcf --reference resources/refs/genome.fasta --tmp-dir /tmp/tmphng7l2ss --initial-threshold 0.1 --mitochondria-mode false --microbial-mode false --max-events-in-region 2 --unique-alt-read-count 0 --max-median-fragment-length-difference 10000 --min-median-read-position 1 --max-n-ratio Infinity --min-reads-per-strand 0 --min-allele-fraction 0.0 --contamination-estimate 0.0 --log-snv-prior -13.815510557964275 --log-indel-prior -16.11809565095832 --log-artifact-prior -2.302585092994046 --normal-p-value-threshold 0.001 --distance-on-haplotype 100 --long-indel-length 5 --interval-set-rule UNION --interval-padding 0 --interval-exclusion-padding 0 --interval-merging-rule ALL --read-validation-stringency SILENT --seconds-between-progress-updates 10.0 --disable-sequence-dictionary-validation false --create-output-bam-index true --create-output-bam-md5 false --create-output-variant-index true --create-output-variant-md5 false --max-variants-per-shard 0 --lenient false --add-output-sam-program-record true --add-output-vcf-command-line true --cloud-prefetch-buffer 40 --cloud-index-prefetch-buffer -1 --disable-bam-index-caching false --sites-only-vcf-output false --help false --version false --showHidden false --verbosity INFO --QUIET false --use-jdk-deflater false --use-jdk-inflater false --gcs-max-retries 20 --gcs-project-for-requester-pays  --disable-tool-default-read-filters false",Version="4.4.0.0",Date="May 18, 2024 at 4:20:50 AM CDT">
+##GATKCommandLine=<ID=SelectVariants,CommandLine="SelectVariants --output results/indel-test_SE/rnaseq/indel/mutect2/s001_somatic.short.indels.vcf --select-type-to-include INDEL --variant results/indel-test_SE/rnaseq/indel/mutect2/s001_variants.vcf.gz --reference resources/refs/genome.fasta --tmp-dir /tmp/tmpyrxc3whc --invertSelect false --exclude-non-variants false --exclude-filtered false --preserve-alleles false --remove-unused-alternates false --restrict-alleles-to ALL --keep-original-ac false --keep-original-dp false --mendelian-violation false --invert-mendelian-violation false --mendelian-violation-qual-threshold 0.0 --select-random-fraction 0.0 --remove-fraction-genotypes 0.0 --fully-decode false --max-indel-size 2147483647 --min-indel-size 0 --max-filtered-genotypes 2147483647 --min-filtered-genotypes 0 --max-fraction-filtered-genotypes 1.0 --min-fraction-filtered-genotypes 0.0 --max-nocall-number 2147483647 --max-nocall-fraction 1.0 --set-filtered-gt-to-nocall false --allow-nonoverlapping-command-line-samples false --suppress-reference-path false --fail-on-unsorted-genotype false --genomicsdb-max-alternate-alleles 50 --call-genotypes false --genomicsdb-use-bcf-codec false --genomicsdb-shared-posixfs-optimizations false --genomicsdb-use-gcs-hdfs-connector false --interval-set-rule UNION --interval-padding 0 --interval-exclusion-padding 0 --interval-merging-rule ALL --read-validation-stringency SILENT --seconds-between-progress-updates 10.0 --disable-sequence-dictionary-validation false --create-output-bam-index true --create-output-bam-md5 false --create-output-variant-index true --create-output-variant-md5 false --max-variants-per-shard 0 --lenient false --add-output-sam-program-record true --add-output-vcf-command-line true --cloud-prefetch-buffer 40 --cloud-index-prefetch-buffer -1 --disable-bam-index-caching false --sites-only-vcf-output false --help false --version false --showHidden false --verbosity INFO --QUIET false --use-jdk-deflater false --use-jdk-inflater false --gcs-max-retries 20 --gcs-project-for-requester-pays  --disable-tool-default-read-filters false",Version="4.3.0.0",Date="May 18, 2024 at 4:41:24 AM CDT">
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+##INFO=<ID=AS_FilterStatus,Number=A,Type=String,Description="Filter status for each allele, as assessed by ApplyVQSR. Note that the VCF filter field will reflect the most lenient/sensitive status across all alleles.">
+##INFO=<ID=AS_SB_TABLE,Number=1,Type=String,Description="Allele-specific forward/reverse read counts for strand bias tests. Includes the reference and alleles separated by |.">
+##INFO=<ID=AS_UNIQ_ALT_READ_COUNT,Number=A,Type=Integer,Description="Number of reads with unique start and mate end positions for each alt at a variant site">
+##INFO=<ID=CONTQ,Number=1,Type=Float,Description="Phred-scaled qualities that alt allele are not due to contamination">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth; some reads may have been filtered">
+##INFO=<ID=ECNT,Number=1,Type=Integer,Description="Number of events in this haplotype">
+##INFO=<ID=GERMQ,Number=1,Type=Integer,Description="Phred-scaled quality that alt alleles are not germline variants">
+##INFO=<ID=MBQ,Number=R,Type=Integer,Description="median base quality by allele">
+##INFO=<ID=MFRL,Number=R,Type=Integer,Description="median fragment length by allele">
+##INFO=<ID=MMQ,Number=R,Type=Integer,Description="median mapping quality by allele">
+##INFO=<ID=MPOS,Number=A,Type=Integer,Description="median distance from end of read">
+##INFO=<ID=NALOD,Number=A,Type=Float,Description="Negative log 10 odds of artifact in normal with same allele fraction as tumor">
+##INFO=<ID=NCount,Number=1,Type=Integer,Description="Count of N bases in the pileup">
+##INFO=<ID=NLOD,Number=A,Type=Float,Description="Normal log 10 likelihood ratio of diploid het or hom alt genotypes">
+##INFO=<ID=OCM,Number=1,Type=Integer,Description="Number of alt reads whose original alignment doesn't match the current contig.">
+##INFO=<ID=PON,Number=0,Type=Flag,Description="site found in panel of normals">
+##INFO=<ID=POPAF,Number=A,Type=Float,Description="negative log 10 population allele frequencies of alt alleles">
+##INFO=<ID=ROQ,Number=1,Type=Float,Description="Phred-scaled qualities that alt allele are not due to read orientation artifact">
+##INFO=<ID=RPA,Number=R,Type=Integer,Description="Number of times tandem repeat unit is repeated, for each allele (including reference)">
+##INFO=<ID=RU,Number=1,Type=String,Description="Tandem repeat unit (bases)">
+##INFO=<ID=SEQQ,Number=1,Type=Integer,Description="Phred-scaled quality that alt alleles are not sequencing errors">
+##INFO=<ID=STR,Number=0,Type=Flag,Description="Variant is a short tandem repeat">
+##INFO=<ID=STRANDQ,Number=1,Type=Integer,Description="Phred-scaled quality of strand bias artifact">
+##INFO=<ID=STRQ,Number=1,Type=Integer,Description="Phred-scaled quality that alt alleles in STRs are not polymerase slippage errors">
+##INFO=<ID=TLOD,Number=A,Type=Float,Description="Log 10 likelihood ratio score of variant existing versus not existing">
+##MutectVersion=2.2
+##bcftools_concatCommand=concat -O z -a -o results/indel-test_SE/rnaseq/indel/mutect2/s001_variants.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr21_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr11_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr9_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr6_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr3_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr12_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr10_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chrMT_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr13_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr8_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr14_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr5_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr2_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr22_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr19_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr20_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr17_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr18_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr16_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr7_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr4_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chrX_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr1_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chrY_flt.vcf.gz results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr15_flt.vcf.gz; Date=Sat May 18 04:41:18 2024
+##bcftools_concatVersion=1.9+htslib-1.9
+##bcftools_viewCommand=view -O z -o results/indel-test_SE/rnaseq/indel/mutect2/s001_variants/chr21_flt.vcf.gz; Date=Sat May 18 04:20:51 2024
+##bcftools_viewVersion=1.9+htslib-1.9
+##contig=<ID=chr1,length=248956422,assembly=genome.fasta>
+##contig=<ID=chr10,length=133797422,assembly=genome.fasta>
+##contig=<ID=chr11,length=135086622,assembly=genome.fasta>
+##contig=<ID=chr12,length=133275309,assembly=genome.fasta>
+##contig=<ID=chr13,length=114364328,assembly=genome.fasta>
+##contig=<ID=chr14,length=107043718,assembly=genome.fasta>
+##contig=<ID=chr15,length=101991189,assembly=genome.fasta>
+##contig=<ID=chr16,length=90338345,assembly=genome.fasta>
+##contig=<ID=chr17,length=83257441,assembly=genome.fasta>
+##contig=<ID=chr18,length=80373285,assembly=genome.fasta>
+##contig=<ID=chr19,length=58617616,assembly=genome.fasta>
+##contig=<ID=chr2,length=242193529,assembly=genome.fasta>
+##contig=<ID=chr20,length=64444167,assembly=genome.fasta>
+##contig=<ID=chr21,length=46709983,assembly=genome.fasta>
+##contig=<ID=chr22,length=50818468,assembly=genome.fasta>
+##contig=<ID=chr3,length=198295559,assembly=genome.fasta>
+##contig=<ID=chr4,length=190214555,assembly=genome.fasta>
+##contig=<ID=chr5,length=181538259,assembly=genome.fasta>
+##contig=<ID=chr6,length=170805979,assembly=genome.fasta>
+##contig=<ID=chr7,length=159345973,assembly=genome.fasta>
+##contig=<ID=chr8,length=145138636,assembly=genome.fasta>
+##contig=<ID=chr9,length=138394717,assembly=genome.fasta>
+##contig=<ID=chrMT,length=16569,assembly=genome.fasta>
+##contig=<ID=chrX,length=156040895,assembly=genome.fasta>
+##contig=<ID=chrY,length=57227415,assembly=genome.fasta>
+##filtering_status=These calls have been filtered by FilterMutectCalls to label false positives with a list of failed filters and true positives with PASS.
+##reference=file:///projects/b1171/sej9799/ScanNeo2_test/ScanNeo2/resources/refs/genome.fasta
+##source=FilterMutectCalls
+##source=SelectVariants
+##tumor_sample=unknown
+##INFO=<ID=GRP,Number=1,Type=String,Description="Name of the group">
+##INFO=<ID=SRC,Number=1,Type=String,Description="Source of the variant">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	unknown
+chr1	778034	.	GAA	G	.	clustered_events	AS_FilterStatus=SITE;AS_SB_TABLE=1%2C1|1%2C1;DP=5;ECNT=3;GERMQ=25;MBQ=34,34;MFRL=0,0;MMQ=56,60;MPOS=31;POPAF=7.3;RPA=7,5;RU=A;STR;STRQ=93;TLOD=7.55;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:2,2:0.501:4:0,0:1,1:1,1:1,1,1,1
+chr1	817233	.	CA	C	.	clustered_events	AS_FilterStatus=SITE;AS_SB_TABLE=3%2C5|1%2C1;DP=11;ECNT=4;GERMQ=35;MBQ=34,35;MFRL=0,0;MMQ=60,30;MPOS=76;POPAF=7.3;RPA=3,2;RU=A;STR;STRQ=93;TLOD=5.39;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:8,2:0.222:10:0,0:3,1:6,1:3,5,1,1
+chr1	839183	.	GA	G	.	map_qual	AS_FilterStatus=map_qual;AS_SB_TABLE=3%2C1|1%2C1;DP=6;ECNT=1;GERMQ=29;MBQ=33,33;MFRL=0,0;MMQ=22,21;MPOS=72;POPAF=7.3;RPA=7,6;RU=A;STR;STRQ=93;TLOD=4.93;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:4,2:0.333:6:0,0:3,1:3,1:3,1,1,1
+chr1	842922	.	C	CCT	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|4%2C4;DP=11;ECNT=1;GERMQ=49;MBQ=0,33;MFRL=0,0;MMQ=60,31;MPOS=104;POPAF=7.3;RPA=2,3;RU=CT;STR;STRQ=93;TLOD=33.78;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,8:0.884:8:0,1:0,4:0,6:0,0,4,4
+chr1	845626	.	GT	G	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=7%2C7|1%2C1;DP=19;ECNT=1;GERMQ=47;MBQ=34,34;MFRL=0,0;MMQ=44,60;MPOS=79;POPAF=7.3;RPA=3,2;RU=T;STR;STRQ=93;TLOD=5.17;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:14,2:0.18:16:0,0:7,1:8,1:7,7,1,1
+chr1	855378	.	GTA	G	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|2%2C1;DP=4;ECNT=1;GERMQ=37;MBQ=0,34;MFRL=0,0;MMQ=60,60;MPOS=58;POPAF=7.3;TLOD=12.98;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,3:0.765:3:0,0:0,2:0,2:0,0,2,1
+chr1	858135	.	C	CT	.	map_qual	AS_FilterStatus=map_qual;AS_SB_TABLE=3%2C3|1%2C1;DP=8;ECNT=1;GERMQ=29;MBQ=32,34;MFRL=0,0;MMQ=28,27;MPOS=45;POPAF=7.3;RPA=7,8;RU=T;STR;STRQ=93;TLOD=4.78;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:6,2:0.333:8:1,0:2,1:3,1:3,3,1,1
+chr1	859166	.	CTTA	C	.	map_qual;slippage;weak_evidence	AS_FilterStatus=weak_evidence,map_qual;AS_SB_TABLE=3%2C3|0%2C1;DP=7;ECNT=1;GERMQ=26;MBQ=34,34;MFRL=0,0;MMQ=29,22;MPOS=53;POPAF=7.3;RPA=3,2;RU=TTA;STR;STRQ=1;TLOD=3.03;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:6,1:0.286:7:0,0:3,0:4,1:3,3,0,1
+chr1	902949	.	G	GC	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|0%2C0;DP=2;ECNT=2;GERMQ=33;MBQ=0,33;MFRL=0,0;MMQ=60,60;MPOS=110;POPAF=7.3;RPA=4,5;RU=C;STR;STRQ=93;TLOD=6.22;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,2:0.667:2:0,0:0,1:0,1:0,0,1,1
+chr1	906014	.	GC	G	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=4%2C6|1%2C1;DP=13;ECNT=1;GERMQ=39;MBQ=33,30;MFRL=0,0;MMQ=60,60;MPOS=89;POPAF=7.3;RPA=3,2;RU=C;STR;STRQ=93;TLOD=4.61;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:10,2:0.2:12:0,0:3,1:7,1:4,6,1,1
+chr1	907236	.	TAAA	T	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|0%2C0;DP=4;ECNT=1;GERMQ=26;MBQ=0,23;MFRL=0,0;MMQ=60,60;MPOS=71;POPAF=7.3;RPA=14,11;RU=A;STR;STRQ=93;TLOD=7.69;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,2:0.686:2:0,0:0,1:0,1:0,0,1,1
+chr1	910940	.	C	CT	.	clustered_events	AS_FilterStatus=SITE;AS_SB_TABLE=6%2C2|1%2C1;DP=10;ECNT=5;GERMQ=32;MBQ=33,34;MFRL=0,0;MMQ=60,60;MPOS=93;POPAF=7.3;RPA=4,5;RU=T;STR;STRQ=93;TLOD=4.82;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:8,2:0.222:10:0,0:6,1:6,1:6,2,1,1
+chr1	911220	.	CT	C	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|6%2C6;DP=12;ECNT=2;GERMQ=65;MBQ=0,33;MFRL=0,0;MMQ=60,60;MPOS=26;POPAF=7.3;RPA=2,1;RU=T;STR;STRQ=93;TLOD=45.63;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:PGT:PID:PS:SB	0|1:0,12:0.875:12:0,0:0,6:0,6:0|1:911219_T_G:911219:0,0,6,6
+chr1	913274	.	TG	T	.	clustered_events	AS_FilterStatus=SITE;AS_SB_TABLE=4%2C2|3%2C3;DP=12;ECNT=3;GERMQ=26;MBQ=31,33;MFRL=0,0;MMQ=60,60;MPOS=77;POPAF=7.3;RPA=3,2;RU=G;STR;STRQ=93;TLOD=18.97;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:6,6:0.444:12:0,0:3,3:4,3:4,2,3,3
+chr1	913870	.	CCG	C	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=4%2C4|1%2C1;DP=13;ECNT=1;GERMQ=33;MBQ=35,35;MFRL=0,0;MMQ=60,60;MPOS=82;POPAF=7.3;RPA=2,1;RU=CG;STR;STRQ=93;TLOD=7.33;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:8,2:0.245:10:0,0:4,1:5,1:4,4,1,1
+chr1	921056	.	TG	T	.	weak_evidence	AS_FilterStatus=weak_evidence;AS_SB_TABLE=3%2C2|1%2C1;DP=7;ECNT=2;GERMQ=30;MBQ=33,32;MFRL=0,0;MMQ=60,60;MPOS=82;POPAF=7.3;RPA=4,3;RU=G;STR;STRQ=93;TLOD=3.77;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:5,2:0.335:7:0,0:2,1:3,1:3,2,1,1
+chr1	932613	.	GTTTC	G	.	slippage	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|0%2C0;DP=4;ECNT=1;GERMQ=27;MBQ=0,32;MFRL=0,0;MMQ=60,60;MPOS=38;POPAF=7.3;RPA=2,1;RU=TTTC;STR;STRQ=1;TLOD=6.74;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,2:0.687:2:0,0:0,1:0,1:0,0,1,1
+chr1	933548	.	A	AG	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|0%2C0;DP=2;ECNT=2;GERMQ=33;MBQ=0,32;MFRL=0,0;MMQ=60,60;MPOS=110;POPAF=7.3;RPA=6,7;RU=G;STR;STRQ=93;TLOD=5.92;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,2:0.667:2:0,0:0,1:0,1:0,0,1,1
+chr1	937396	.	GCC	G	.	weak_evidence	AS_FilterStatus=weak_evidence;AS_SB_TABLE=0%2C0|0%2C0;DP=1;ECNT=1;GERMQ=32;MBQ=0,35;MFRL=0,0;MMQ=60,60;MPOS=125;POPAF=7.3;RPA=11,9;RU=C;STR;STRQ=93;TLOD=3.25;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,1:0.667:1:0,0:0,0:0,1:0,0,0,1
+chr1	942701	.	GGC	G	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=17%2C18|1%2C1;DP=37;ECNT=1;GERMQ=93;MBQ=32,33;MFRL=0,0;MMQ=60,60;MPOS=69;POPAF=7.3;RPA=2,1;RU=GC;STR;STRQ=93;TLOD=6.27;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:35,2:0.091:37:1,0:17,1:19,1:17,18,1,1
+chr1	944259	.	CAA	C	.	clustered_events	AS_FilterStatus=SITE;AS_SB_TABLE=42%2C42|1%2C1;DP=87;ECNT=3;GERMQ=93;MBQ=34,34;MFRL=0,0;MMQ=60,60;MPOS=100;POPAF=7.3;RPA=6,4;RU=A;STR;STRQ=93;TLOD=5.41;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:84,2:0.039:86:0,0:43,1:48,1:42,42,1,1
+chr1	945259	.	TC	T	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=2%2C1|0%2C2;DP=5;ECNT=1;GERMQ=28;MBQ=34,31;MFRL=0,0;MMQ=60,60;MPOS=53;POPAF=7.3;RPA=2,1;RU=C;STR;STRQ=93;TLOD=6.0;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:3,2:0.5:5:0,0:2,0:2,2:2,1,0,2
+chr1	949171	.	GAGAA	G	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=1%2C1|2%2C1;DP=7;ECNT=1;GERMQ=17;MBQ=34,33;MFRL=0,0;MMQ=60,60;MPOS=26;POPAF=7.3;TLOD=12.4;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:2,3:0.606:5:0,0:1,2:1,2:1,1,2,1
+chr1	954827	.	GA	G	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|2%2C1;DP=6;ECNT=1;GERMQ=39;MBQ=0,29;MFRL=0,0;MMQ=60,60;MPOS=29;POPAF=7.3;RPA=11,10;RU=A;STR;STRQ=3;TLOD=6.07;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,3:0.764:3:0,0:0,1:0,2:0,0,2,1
+chr1	958810	.	T	TG	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=5%2C7|1%2C1;DP=17;ECNT=1;GERMQ=40;MBQ=33,31;MFRL=0,0;MMQ=60,60;MPOS=95;POPAF=7.3;RPA=6,7;RU=G;STR;STRQ=93;TLOD=4.3;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:12,2:0.192:14:0,0:5,1:7,1:5,7,1,1
+chr1	965337	.	CTTAT	C	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=4%2C4|7%2C8;DP=24;ECNT=2;GERMQ=17;MBQ=33,33;MFRL=0,0;MMQ=60,60;MPOS=63;POPAF=7.3;RPA=2,1;RU=TTAT;STR;STRQ=40;TLOD=63.05;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:PGT:PID:PS:SB	0|1:8,15:0.625:23:0,0:3,8:5,9:0|1:965337_CTTAT_C:965337:4,4,7,8
+chr1	965666	.	ACC	A	.	clustered_events	AS_FilterStatus=SITE;AS_SB_TABLE=6%2C6|3%2C4;DP=20;ECNT=4;GERMQ=26;MBQ=32,32;MFRL=0,0;MMQ=60,60;MPOS=83;POPAF=7.3;RPA=4,2;RU=C;STR;STRQ=93;TLOD=28.13;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:12,7:0.416:19:0,0:6,3:6,4:6,6,3,4
+chr1	967376	.	AC	A	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|3%2C1;DP=4;ECNT=2;GERMQ=42;MBQ=0,31;MFRL=0,0;MMQ=60,60;MPOS=46;POPAF=7.3;RPA=10,9;RU=C;STR;STRQ=10;TLOD=17.4;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:PGT:PID:PS:SB	0|1:0,4:0.8:4:0,0:0,3:0,3:0|1:967376_AC_A:967376:0,0,3,1
+chr1	969377	.	A	ATG	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|2%2C3;DP=5;ECNT=1;GERMQ=40;MBQ=0,31;MFRL=0,0;MMQ=60,60;MPOS=52;POPAF=7.3;RPA=3,4;RU=TG;STR;STRQ=93;TLOD=17.13;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,5:0.8:5:0,1:0,2:0,3:0,0,2,3
+chr1	969663	.	CAT	C	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|0%2C0;DP=2;ECNT=1;GERMQ=34;MBQ=0,33;MFRL=0,0;MMQ=60,60;MPOS=67;POPAF=7.3;RPA=2,1;RU=AT;STR;STRQ=93;TLOD=8.7;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,2:0.667:2:0,0:0,1:0,1:0,0,1,1
+chr1	975492	.	GCT	G	.	clustered_events	AS_FilterStatus=SITE;AS_SB_TABLE=3%2C4|1%2C1;DP=9;ECNT=3;GERMQ=31;MBQ=35,33;MFRL=0,0;MMQ=60,60;MPOS=57;POPAF=7.3;RPA=2,1;RU=CT;STR;STRQ=93;TLOD=7.52;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:7,2:0.286:9:0,0:3,1:4,1:3,4,1,1
+chr1	998935	.	CA	C	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=1%2C2|1%2C1;DP=6;ECNT=2;GERMQ=28;MBQ=34,34;MFRL=0,0;MMQ=60,60;MPOS=113;POPAF=7.3;RPA=3,2;RU=A;STR;STRQ=93;TLOD=5.07;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:3,2:0.4:5:0,0:2,1:2,1:1,2,1,1
+chr1	1013041	.	A	AAAC	.	germline;slippage;weak_evidence	AS_FilterStatus=weak_evidence;AS_SB_TABLE=0%2C0|0%2C0;DP=1;ECNT=1;GERMQ=1;MBQ=0,32;MFRL=0,0;MMQ=60,60;MPOS=131;POPAF=7.3;RPA=3,4;RU=AAC;STR;STRQ=1;TLOD=4.19;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,1:0.667:1:0,0:0,1:0,1:0,0,1,0
+chr1	1013466	.	T	TA	.	clustered_events;haplotype	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|3%2C1;DP=4;ECNT=3;GERMQ=39;MBQ=0,34;MFRL=0,0;MMQ=60,60;MPOS=80;POPAF=7.3;RPA=1,2;RU=A;STR;STRQ=93;TLOD=17.4;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:PGT:PID:PS:SB	0|1:0,4:0.8:4:0,0:0,3:0,3:0|1:1013466_T_TA:1013466:0,0,3,1
+chr1	1014733	.	GAAGT	G	.	base_qual;weak_evidence	AS_FilterStatus=weak_evidence,base_qual;AS_SB_TABLE=0%2C0|0%2C0;DP=2;ECNT=1;GERMQ=19;MBQ=31,14;MFRL=0,0;MMQ=60,60;MPOS=79;POPAF=7.3;TLOD=3.72;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:1,1:0.5:2:0,0:0,0:1,1:0,1,0,1
+chr1	1039411	.	T	TG,TGG	.	PASS	AS_FilterStatus=SITE|SITE;AS_SB_TABLE=0%2C0|2%2C2|2%2C2;DP=8;ECNT=1;GERMQ=22;MBQ=0,30,32;MFRL=0,0,0;MMQ=60,60,60;MPOS=55,84;POPAF=7.3,7.3;RPA=8,9,10;RU=G;STR;STRQ=7;TLOD=10.1,10.18;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1/2:0,4,4:0.429,0.429:8:0,0,0:0,2,2:0,2,2:0,0,4,4
+chr1	1042767	.	AG	A	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=4%2C2|2%2C1;DP=9;ECNT=1;GERMQ=29;MBQ=31,33;MFRL=0,0;MMQ=60,60;MPOS=45;POPAF=7.3;RPA=7,6;RU=G;STR;STRQ=93;TLOD=7.33;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:6,3:0.375:9:0,0:4,2:4,2:4,2,2,1
+chr1	1052857	.	ATG	A	.	slippage	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|0%2C0;DP=2;ECNT=1;GERMQ=34;MBQ=0,33;MFRL=0,0;MMQ=60,60;MPOS=71;POPAF=7.3;RPA=4,3;RU=TG;STR;STRQ=1;TLOD=7.99;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,2:0.667:2:0,0:0,1:0,1:0,0,1,1
+chr1	1066505	.	TG	T	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=6%2C5|1%2C1;DP=13;ECNT=1;GERMQ=41;MBQ=33,33;MFRL=0,0;MMQ=60,60;MPOS=58;POPAF=7.3;RPA=5,4;RU=G;STR;STRQ=93;TLOD=4.58;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:11,2:0.182:13:0,0:5,1:8,1:6,5,1,1
+chr1	1071750	.	GC	G	.	clustered_events	AS_FilterStatus=SITE;AS_SB_TABLE=4%2C8|1%2C2;DP=15;ECNT=4;GERMQ=39;MBQ=35,35;MFRL=0,0;MMQ=60,60;MPOS=98;POPAF=7.3;RPA=6,5;RU=C;STR;STRQ=93;TLOD=6.74;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:12,3:0.231:15:0,0:3,1:9,2:4,8,1,2
+chr1	1071872	.	C	CG	.	clustered_events	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|2%2C1;DP=4;ECNT=4;GERMQ=36;MBQ=0,29;MFRL=0,0;MMQ=60,60;MPOS=62;POPAF=7.3;RPA=7,8;RU=G;STR;STRQ=93;TLOD=7.2;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,3:0.764:3:0,0:0,2:0,2:0,0,2,1
+chr1	1085543	.	A	AG	.	weak_evidence	AS_FilterStatus=weak_evidence;AS_SB_TABLE=0%2C0|0%2C0;DP=2;ECNT=1;GERMQ=26;MBQ=32,33;MFRL=0,0;MMQ=60,60;MPOS=40;POPAF=7.3;TLOD=3.26;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:1,1:0.5:2:1,0:0,0:1,1:0,1,0,1
+chr1	1095242	.	C	CA	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=1%2C1|0%2C2;DP=5;ECNT=2;GERMQ=25;MBQ=31,33;MFRL=0,0;MMQ=60,60;MPOS=59;POPAF=7.3;RPA=6,7;RU=A;STR;STRQ=93;TLOD=5.14;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:2,2:0.6:4:0,0:1,1:1,2:1,1,0,2
+chr1	1097893	.	C	CT	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|0%2C0;DP=2;ECNT=1;GERMQ=33;MBQ=0,34;MFRL=0,0;MMQ=60,60;MPOS=78;POPAF=7.3;RPA=6,7;RU=T;STR;STRQ=93;TLOD=5.92;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,2:0.667:2:0,0:0,1:0,1:0,0,1,1
+chr1	1104818	.	GAA	G	.	weak_evidence	AS_FilterStatus=weak_evidence;AS_SB_TABLE=0%2C0|0%2C0;DP=2;ECNT=1;GERMQ=34;MBQ=0,30;MFRL=0,0;MMQ=60,60;MPOS=113;POPAF=7.3;RPA=11,9;RU=A;STR;STRQ=93;TLOD=3.56;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,2:0.667:2:0,0:0,1:0,1:0,0,1,1
+chr1	1114927	.	CG	C	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=0%2C0|0%2C0;DP=3;ECNT=1;GERMQ=37;MBQ=0,33;MFRL=0,0;MMQ=60,60;MPOS=53;POPAF=7.3;RPA=3,2;RU=G;STR;STRQ=93;TLOD=6.77;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:0,2:0.684:2:0,0:0,1:0,1:0,0,1,1
+chr1	1163440	.	TCC	T,TC	.	PASS	AS_FilterStatus=SITE|SITE;AS_SB_TABLE=0%2C0|2%2C2|2%2C1;DP=8;ECNT=1;GERMQ=24;MBQ=0,34,33;MFRL=0,0,0;MMQ=60,60,60;MPOS=40,12;POPAF=7.3,7.3;RPA=9,7,8;RU=C;STR;STRQ=93;TLOD=10.68,7.41;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1/2:0,4,3:0.375,0.5:7:0,0,0:0,2,3:0,2,3:0,0,4,3
+chr1	1168310	.	T	TCA	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=1%2C0|5%2C3;DP=10;ECNT=1;GERMQ=34;MBQ=15,33;MFRL=0,0;MMQ=60,60;MPOS=61;POPAF=7.3;TLOD=34.1;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:1,8:0.88:9:0,0:0,4:0,6:1,0,5,3
+chr1	1233710	.	GT	G	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=99%2C106|2%2C2;DP=211;ECNT=1;GERMQ=93;MBQ=34,34;MFRL=0,0;MMQ=60,60;MPOS=19;POPAF=7.3;RPA=3,2;RU=T;STR;STRQ=93;TLOD=8.3;SRC=short_indel;GRP=s001	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:205,4:0.024:209:9,0:100,2:122,2:99,106,2,2

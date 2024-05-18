@@ -1,0 +1,55 @@
+##fileformat=VCFv4.1
+##FILTER=<ID=PASS,Description="All filters passed">
+##source=transIndel v2.0
+##ALT=<ID=DEL,Description="Deletion">
+##ALT=<ID=INS,Description="Insertion">
+##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of samples with data">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total read depth at the locus">
+##INFO=<ID=AO,Number=1,Type=Integer,Description="Alternate allele observations, with partial observations recorded fractionally">
+##INFO=<ID=AB,Number=1,Type=Float,Description="Estimated allele frequency in the range (0,1], representing the ratio of reads showing the alternative allele to all reads">
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="The type of event, INS, DEL">
+##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Difference in length between REF and ALT alleles">
+##INFO=<ID=CHR2,Number=1,Type=String,Description="Chromosome for END coordinate in case of a translocation (under development)">
+##INFO=<ID=END,Number=1,Type=Integer,Description="end position of the indel">
+##INFO=<ID=SVMETHOD,Number=1,Type=String,Description="Type of approach used to detect indel (under development)">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##INFO=<ID=GRP,Number=1,Type=String,Description="Name of the group">
+##INFO=<ID=SRC,Number=1,Type=String,Description="Source of the variant">
+##contig=<ID=chr1,length=248956422>
+##contig=<ID=chr10,length=133797422>
+##contig=<ID=chr11,length=135086622>
+##contig=<ID=chr12,length=133275309>
+##contig=<ID=chr13,length=114364328>
+##contig=<ID=chr14,length=107043718>
+##contig=<ID=chr15,length=101991189>
+##contig=<ID=chr16,length=90338345>
+##contig=<ID=chr17,length=83257441>
+##contig=<ID=chr18,length=80373285>
+##contig=<ID=chr19,length=58617616>
+##contig=<ID=chr2,length=242193529>
+##contig=<ID=chr20,length=64444167>
+##contig=<ID=chr21,length=46709983>
+##contig=<ID=chr22,length=50818468>
+##contig=<ID=chr3,length=198295559>
+##contig=<ID=chr4,length=190214555>
+##contig=<ID=chr5,length=181538259>
+##contig=<ID=chr6,length=170805979>
+##contig=<ID=chr7,length=159345973>
+##contig=<ID=chr8,length=145138636>
+##contig=<ID=chr9,length=138394717>
+##contig=<ID=chrMT,length=16569>
+##contig=<ID=chrX,length=156040895>
+##contig=<ID=chrY,length=57227415>
+##bcftools_viewVersion=1.9+htslib-1.9
+##bcftools_viewCommand=view -O z -o results/indel-test_SE/rnaseq/indel/transindel/s001_long.indels.vcf.gz; Date=Sat May 18 03:30:14 2024
+##bcftools_viewVersion=1.16+htslib-1.20
+##bcftools_viewCommand=view results/indel-test_SE/variants/long.indels.vcf.gz; Date=Sat May 18 03:35:41 2024
+##VEP="v109" time="2024-05-18 03:35:46" cache="resources/vep/cache/homo_sapiens/111_GRCh38" ensembl-funcgen=109.cba2db8 ensembl=109.10baaec ensembl-io=109.4946a86 ensembl-variation=109.18a12b6 1000genomes="phase3" COSMIC="98" ClinVar="202306" HGMD-PUBLIC="20204" assembly="GRCh38.p14" dbSNP="156" gencode="GENCODE 45" genebuild="2014-07" gnomADe="r2.1.1" gnomADg="v3.1.2" polyphen="2.2.3" regbuild="1.0" sift="6.2.1"
+##INFO=<ID=CSQ,Number=.,Type=String,Description="Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|DISTANCE|STRAND|FLAGS|VARIANT_CLASS|SYMBOL_SOURCE|HGNC_ID|CANONICAL|MANE_SELECT|MANE_PLUS_CLINICAL|TSL|APPRIS|CCDS|ENSP|SWISSPROT|TREMBL|UNIPARC|UNIPROT_ISOFORM|GENE_PHENO|SIFT|PolyPhen|DOMAINS|miRNA|HGVS_OFFSET|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomADe_AF|gnomADe_AFR_AF|gnomADe_AMR_AF|gnomADe_ASJ_AF|gnomADe_EAS_AF|gnomADe_FIN_AF|gnomADe_NFE_AF|gnomADe_OTH_AF|gnomADe_SAS_AF|gnomADg_AF|gnomADg_AFR_AF|gnomADg_AMI_AF|gnomADg_AMR_AF|gnomADg_ASJ_AF|gnomADg_EAS_AF|gnomADg_FIN_AF|gnomADg_MID_AF|gnomADg_NFE_AF|gnomADg_OTH_AF|gnomADg_SAS_AF|MAX_AF|MAX_AF_POPS|CLIN_SIG|SOMATIC|PHENO|PUBMED|MOTIF_NAME|MOTIF_POS|HIGH_INF_POS|MOTIF_SCORE_CHANGE|TRANSCRIPTION_FACTORS|NMD|WildtypeProtein|DownstreamProtein|ProteinLengthChange">
+##NMD=Nonsense-mediated mRNA decay escaping variants prediction
+##WildtypeProtein=The normal, non-mutated protein sequence
+##DownstreamProtein=Predicted downstream translation for frameshift mutations
+##ProteinLengthChange=Predicted change in protein product length
+##VEP-command-line='vep --assembly GRCh38 --cache --cache_version 111 --database 0 --dir_cache [PATH]/cache --dir_plugins [PATH]/plugins --everything --fasta [PATH]/genome.fasta --fork 4 --format vcf --offline --output_file STDOUT --plugin NMD, --plugin Wildtype, --plugin Downstream, --vcf'
+##bcftools_viewCommand=view -Ov; Date=Sat May 18 03:35:46 2024
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	results/indel-test_SE/rnaseq/indel/transindel/s001_call

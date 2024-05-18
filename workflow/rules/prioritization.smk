@@ -57,7 +57,7 @@ rule prioritization:
     refgenome="resources/refs/genome.fasta",
     peptide="resources/refs/peptide.fasta",
     annotation="resources/refs/genome_tmp.gtf",
-    counts="results/{sample}/quantification/allcounts.txt",
+    counts=get_prioritization_counts,
     mhcI_ba="workflow/scripts/mhc_i/",
     mhcI_im="workflow/scripts/immunogenicity/",
     mhcII_ba="workflow/scripts/mhc_ii/"
@@ -92,7 +92,7 @@ rule prioritization:
           --mhcI_len "{params.mhcI_len}" \
           --mhcII "{input.mhcII}" \
           --mhcII_len "{params.mhcII_len}" \
-          --counts {input.counts} \
+          --counts "{input.counts}" \
           --threads {threads} \
           --output_dir {output} \
           --reference {input.refgenome} > {log} 2>&1
