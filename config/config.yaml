@@ -1,8 +1,9 @@
 ### Reference
-reference:
-  release: 111
 
 # General settings
+reference:
+  release: 111
+  nonchr: false
 threads: 30
 mapq: 30  # overall required mapping quality
 basequal: 20  # overall required base quality 
