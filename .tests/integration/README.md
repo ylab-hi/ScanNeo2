@@ -7,12 +7,12 @@ ScanNeo2.
 
 Here, we provide folders for a set of different test cases.
 
-In `custom` we call ScanNeo2 using a set of pre-calculated
+In `custom-test` we call ScanNeo2 using a set of pre-calculated
 SNVs (`data/variants/snvs.vcf`) using provided mhc-I alleles
 (`data/hla/mhc-I.tsv`). In addition, the expected output is
 stored in `results`.
 
-In `indel` we call ScanNeo2 to detect indel-derived neoantigens
+In `indel-test` we call ScanNeo2 to detect indel-derived neoantigens
 using provided mhc-I alleles (`data/hla/mhc-I.tsv`). The exptected
 output is stored in `results`.
 
