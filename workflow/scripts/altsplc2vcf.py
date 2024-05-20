@@ -73,7 +73,6 @@ def main():
                 # determine type of splicing from file
                 pattern = re.compile(r'merge_graphs_(\w+)_C[1-3].confirmed.txt.gz')
                 match = pattern.search(file)
-                # print(file)
                 if match:
                     event_type = match.group(1)
 
@@ -81,7 +80,6 @@ def main():
                     next(fh)
                     for line in fh:
                         column = line.decode().rstrip().split('\t')
-                        print(column)
 
                         if (event_type == "alt_5prime" or
                             event_type == "alt_3prime" or
