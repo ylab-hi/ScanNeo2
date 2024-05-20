@@ -14,15 +14,22 @@ class VariantEffects:
         self.counts = reference.Counts(options.counts).counts
         self.data = {}
 
+        # create output dir if it doesn't exist
         output_dir_path =  Path(options.output_dir)
         if not output_dir_path.exists():
             output_dir_path.mkdir()
 
-        self.variantEffectsFile = Path(output_dir_path, f"{vartype}_variant_effects.tsv")
-        # create dir if it not exists
+        self.effects = Path(output_dir_path, 
+                                 f"{vartype}_variant_effects.tsv")
+        self.effects_nmd = Path(output_dir_path, 
+                                     f"{vartype}_variant_effects_NMD.tsv")
 
-        self.fh = open(self.variantEffectsFile, 'w')
-        self.write_header()
+        self.fh_effects = open(self.effects, 'w')
+        self.fh_effects_nmd = open(self.effects_nmd, 'w')
+
+        # write header
+        self.write_header(self.fh_effects)
+        self.write_header(self.fh_effects_nmd)
 
 
     def change_entry(self, chrom, start, end, gene_id, gene_name, 
@@ -57,7 +64,6 @@ class VariantEffects:
 
         # determine TPM
         self.get_counts()
-
 
 
     @staticmethod
@@ -119,8 +125,8 @@ class VariantEffects:
         else:
             self.data["NMD"] = None
 
-        self.data["PTC_exon_number"] = None
         self.data["PTC_dist_ejc"] = None
+        self.data["PTC_exon"] = None
         self.data["NMD_escape_rule"] = None
 
         transcript = self.data["transcript"]
@@ -131,61 +137,73 @@ class VariantEffects:
                 transcript_bp = int(self.data["transcript_bp"])
                 start = self.data["start"]
 
+
+
+
                 """ determine the coding sequence and adjust the breakpoint 
                 (considering the adjusted startpos, e.g., start codon)"""
-                cds, cds_bp = self.determine_cds(transcript,
-                                                 transcript_bp)
+#                cds, cds_bp = self.determine_cds(transcript, transcript_bp)
 
-                if cds is not None: # when the start codon could be found
-                    """determine the genomic coordinate of the breakpoint -
-                    consider start of segment 2 in fusion transcripts"""
-                    """determine the genomic coordinate of the cds breakpoint 
-                    - note: in fusion events this the start of the segment 2. 
-                    We can use this since self.data["transcript_bp"] corresponds 
-                    to seg2 in start"""
-                    if self.data["source"] == "fusion":
-                        bp_coord = int(start.split('|')[1])
-                    else:
-                        bp_coord = int(start) + transcript_bp + 1
+                """determine the genomic coordinate of the breakpoint -
+                consider start of segment 2 in fusion transcripts"""
+                """determine the genomic coordinate of the cds breakpoint 
+                - note: in fusion events this the start of the segment 2. 
+                We can use this since self.data["transcript_bp"] corresponds 
+                to seg2 in start"""
+                if self.data["source"] == "fusion":
+                    bp_coord = int(start.split('|')[1])
+                else:
+                    bp_coord = int(start) + transcript_bp + 1
+                
+                # search for stop_codon
+                stop_pos, stop_coord = self.find_stop_codon(transcript,
+                                                            transcript_bp,
+                                                            bp_coord)
+                
 
-                    # search for stop_codon
-                    stop_pos, stop_coord = self.find_stop_codon(cds,
-                                                                cds_bp,
-                                                                bp_coord)
+                # check if stop_codon is PTC
+                if stop_pos != -1:
+                    # required to retrieve exon information
+                    if self.data["transcript_id"] is not None:
+                        if self.data["source"] == "fusion":
+                            """ needs to be tid in 2nd transcript - mainly
+                            because this is where the PTC is supposed to be"""
+                            tid = self.data["transcript_id"].split('|')[1]
+                            if tid == '.':
+                                return
+                        else:
+                            tid = self.data["transcript_id"]
 
-                    # check of stop_codon is PTC
-                    if stop_pos != -1:
-                        if self.data["transcript_id"] is not None:
-                            if self.data["source"] == "fusion":
-                                """ needs to be tid in 2nd transcript - mainly
-                                because this is where the PTC is supposed to be"""
-                                tid = self.data["transcript_id"].split('|')[1]
-                                if tid == '.':
-                                    return
+                        exoninfo = self.exome[tid]
+                        exons = list(exoninfo.keys())
+                        exon_num, dist_ejc = self.annotate_stop_codon(exoninfo,
+                                                                      stop_coord)
+
+                        if self.data["NMD"] == "NMD_escaping_variant":
+                            print(f"stop_coord: {stop_coord}")
+                            print(f"exoninfo: {exoninfo}")
+                            print(f"transcript_bp: {transcript_bp}")
+                            print(exon_num)
+                            print(dist_ejc)
+
+
+
+                        # check if stop_codon is in exon
+                        if exon_num != -1: # exon information found
+                            self.data["PTC_exon"] = f"{exon_num}/{max(exons)}"
+                            if max(exons) > 1:
+                                self.data["PTC_dist_ejc"] = dist_ejc
+
+                            nmd_escape = self.check_escape(exoninfo,
+                                                           stop_coord,
+                                                           exon_num,
+                                                           dist_ejc)
+
+                            if nmd_escape != -1:
+                                self.data["NMD"] = "NMD_escaping_variant"
+                                self.data["NMD_escape_rule"] = nmd_escape
                             else:
-                                tid = self.data["transcript_id"]
-
-                            exoninfo = self.exome[tid]
-                            exons = list(exoninfo.keys())
-
-                            exon_num, dist_ejc = self.annotate_stop_codon(exoninfo,
-                                                                          stop_coord)
-
-                            if exon_num != -1:
-                                self.data["PTC_exon_number"] = f'{exon_num}'
-                                if max(exons) > 1:
-                                    self.data["PTC_dist_ejc"] = dist_ejc
-
-                                nmd_escape = self.check_escape(exoninfo,
-                                                               stop_coord,
-                                                               exon_num,
-                                                               dist_ejc)
-
-                                if nmd_escape != -1:
-                                    self.data["NMD"] = "NMD_escaping_variant"
-                                    self.data["NMD_escape_rule"] = nmd_escape
-                                else:
-                                    self.data["NMD"] = "NMD_variant"
+                                self.data["NMD"] = "NMD_variant"
 
 
     
@@ -222,28 +240,30 @@ class VariantEffects:
 
 
     @staticmethod
-    def find_stop_codon(cds, bp, bp_coord):
+    def find_stop_codon(transcript, bp, bp_coord):
         """search for stop codon in coding sequence returns 0-based index
 
         the stop codon and 
         genomic coordinate of the end of the second segment
         """
         stop_pos = -1
-        for i in range(0, len(cds), 3):
-            codon = cds[i:i+3]
+        for i in range(0, len(transcript)-2):
+            codon = transcript[i:i+3]
             if codon == "TAA" or codon == "TAG" or codon == "TGA":
-                stop_pos = i # stop codon has been found
-                break
+                if i >= bp:
+                    stop_pos = i # stop codon has been found
+                    break
+
+        return stop_pos, bp_coord + (stop_pos - bp)
 
         # stop codon shouldn't be found before the actual mutant in transcript
-        if stop_pos <= bp:
-            return -1, -1
-        else:
-            return stop_pos, bp_coord + (stop_pos - bp)  
+        # if stop_pos <= bp:
+            # return -1, -1
+        # else:
+            # return stop_pos, bp_coord + (stop_pos - bp)  
 
 
     def annotate_stop_codon(self, exoninfo, stop_coord):
-        stop_exon = -1
         for exon_number in exoninfo:
             exon_start = int(exoninfo[exon_number][0])
             exon_end = int(exoninfo[exon_number][1])
@@ -335,36 +355,46 @@ class VariantEffects:
 
 
     # TODO: no hard coding of output
-    def write_header(self):
-        self.fh.write("chrom\tstart\tend\tgene_id\tgene_name\ttranscript_id\t")
-        self.fh.write("source\tgroup\tvar_type\twt_subseq\tmt_subseq\t")
-        self.fh.write("var_start\taa_var_start\taa_var_end\t")
-        self.fh.write("vaf\tao\tdp\tTPM\tNMD\tPTC_dist_ejc\tPTC_exon_number\t")
-        self.fh.write("NMD_escape_rule\n")
+    def write_header(self, fh):
+        fh.write("chrom\tstart\tend\tgene_id\tgene_name\ttranscript_id\t")
+        fh.write("source\tgroup\tvar_type\twt_subseq\tmt_subseq\t")
+        fh.write("var_start\taa_var_start\taa_var_end\t")
+        fh.write("vaf\tao\tdp\tTPM\tNMD\tPTC_dist_ejc\tPTC_exon\t")
+        fh.write("NMD_escape_rule\n")
+
+    def write_variant_effect(self):
+        if self.data["NMD"] == "NMD_variant":
+            # write to variant NMD file
+            self.write_entry(self.fh_effects_nmd)
+        else:
+            self.write_entry(self.fh_effects)
+
         
-    def write_entry(self):
-        self.fh.write(f'{ut.format_output(self.data["chrom"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["start"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["end"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["gene_id"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["gene_name"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["transcript_id"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["source"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["group"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["var_type"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["wt_subseq"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["mt_subseq"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["var_start"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["aa_var_start"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["aa_var_end"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["vaf"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["ao"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["dp"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["TPM"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["NMD"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["PTC_dist_ejc"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["PTC_exon_number"])}\t')
-        self.fh.write(f'{ut.format_output(self.data["NMD_escape_rule"])}\n')
+    def write_entry(self, fh):
+        fh.write(f'{ut.format_output(self.data["chrom"])}\t')
+        fh.write(f'{ut.format_output(self.data["start"])}\t')
+        fh.write(f'{ut.format_output(self.data["end"])}\t')
+        fh.write(f'{ut.format_output(self.data["gene_id"])}\t')
+        fh.write(f'{ut.format_output(self.data["gene_name"])}\t')
+        fh.write(f'{ut.format_output(self.data["transcript_id"])}\t')
+        fh.write(f'{ut.format_output(self.data["source"])}\t')
+        fh.write(f'{ut.format_output(self.data["group"])}\t')
+        fh.write(f'{ut.format_output(self.data["var_type"])}\t')
+        fh.write(f'{ut.format_output(self.data["wt_subseq"])}\t')
+        fh.write(f'{ut.format_output(self.data["mt_subseq"])}\t')
+        fh.write(f'{ut.format_output(self.data["var_start"])}\t')
+        fh.write(f'{ut.format_output(self.data["aa_var_start"])}\t')
+        fh.write(f'{ut.format_output(self.data["aa_var_end"])}\t')
+        fh.write(f'{ut.format_output(self.data["vaf"])}\t')
+        fh.write(f'{ut.format_output(self.data["ao"])}\t')
+        fh.write(f'{ut.format_output(self.data["dp"])}\t')
+        fh.write(f'{ut.format_output(self.data["TPM"])}\t')
+        fh.write(f'{ut.format_output(self.data["NMD"])}\t')
+        fh.write(f'{ut.format_output(self.data["PTC_dist_ejc"])}\t')
+        fh.write(f'{ut.format_output(self.data["PTC_exon"])}\t')
+        fh.write(f'{ut.format_output(self.data["NMD_escape_rule"])}\n')
         
     def close_file(self):
-        self.fh.close()
+        self.fh_effects.close()
+        self.fh_effects_nmd.close()
+

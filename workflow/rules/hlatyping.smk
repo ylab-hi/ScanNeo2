@@ -33,7 +33,7 @@ rule index_hla_panel:
       mkdir -p resources/hla/yara_index/
       yara_indexer \
           -o resources/hla/yara_index/{wildcards.nartype} \
-          {input.fa} > {log}
+          {input.fa} >> {log} 2>&1
       """
 
 ######### get input reads ########
@@ -95,10 +95,10 @@ rule filter_reads_mhcI_SE:
     """
       if [ "{wildcards.nartype}" == "DNA" ]; then
         yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
-          {input.reads} | samtools view -h -F 4 -b1 - | samtools sort - -o {output} > {log}
+          {input.reads} | samtools view -h -F 4 -b1 - | samtools sort - -o {output} >> {log} 2>&1
       elif [ "{wildcards.nartype}" == "RNA" ]; then
         yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
-            {input.reads} | samtools view -h -F 4 -b1 - | samtools sort - -o {output} > {log}
+            {input.reads} | samtools view -h -F 4 -b1 - | samtools sort - -o {output} >> {log} 2>&1
       fi
     """
 
@@ -135,7 +135,7 @@ checkpoint split_reads_mhcI_SE:
           -I {input.reads} \
           --OUTPUT {output} \
           --OUT_PREFIX R \
-          --SPLIT_TO_N_READS 100000
+          --SPLIT_TO_N_READS 100000 >> {log} 2>&1
     """
 
 rule hlatyping_mhcI_SE:  
@@ -157,11 +157,11 @@ rule hlatyping_mhcI_SE:
       if [ "{wildcards.nartype}" == "DNA" ]; then
         OptiTypePipeline.py --input {input.reads} \
             --outdir results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_SE/ \
-            --prefix {wildcards.no} --dna -v > {log}
+            --prefix {wildcards.no} --dna -v >> {log} 2>&1
       elif [ "{wildcards.nartype}" == "RNA" ]; then
         OptiTypePipeline.py --input {input.reads} \
             --outdir results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_SE/ \
-            --prefix {wildcards.no} --rna -v > {log}
+            --prefix {wildcards.no} --rna -v > {log} 2>&1
       fi
     """
 
@@ -178,7 +178,7 @@ rule combine_mhcI_SE:
   shell:
     """
       python3 workflow/scripts/combine_optitype_results.py \
-          '{input}' {output}
+          '{input}' {output} >> {log} 2>&1
     """
 
 ############# paired-end reads ###########
@@ -202,7 +202,7 @@ rule filter_reads_mhcI_PE:
   shell:
     """
       yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
-          {input.reads} | samtools view -h -F 4 -b1 - | samtools sort -O bam - -o {output.reads} > {log}
+          {input.reads} | samtools view -h -F 4 -b1 - | samtools sort -O bam - -o {output.reads} >> {log} 2>&1
     """
 
 rule index_reads_mhcI_PE:
@@ -240,13 +240,13 @@ checkpoint split_reads_mhcI_PE:
           -I {input.fwd} \
           --OUTPUT {output} \
           --OUT_PREFIX R1 \
-          --SPLIT_TO_N_READS 100000
+          --SPLIT_TO_N_READS 100000 >> {log} 2>&1
       
       gatk SplitSamByNumberOfReads \
           -I {input.rev} \
           --OUTPUT {output} \
           --OUT_PREFIX R2 \
-          --SPLIT_TO_N_READS 100000
+          --SPLIT_TO_N_READS 100000 >> {log} 2>&1
     """
 
 rule hlatyping_mhcI_PE:  
@@ -270,11 +270,11 @@ rule hlatyping_mhcI_PE:
       if [ "{wildcards.nartype}" == "DNA" ]; then
         OptiTypePipeline.py --input {input.fwd} {input.rev} \
             --outdir results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_PE/ \
-            --prefix {wildcards.no} --dna -v > {log}
+            --prefix {wildcards.no} --dna -v >> {log} 2>&1
       elif [ "{wildcards.nartype}" == "RNA" ]; then
         OptiTypePipeline.py --input {input.fwd} {input.rev} \
             --outdir results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_PE/ \
-            --prefix {wildcards.no} --rna -v > {log}
+            --prefix {wildcards.no} --rna -v >> {log} 2>&1
       fi
     """
 
@@ -291,7 +291,7 @@ rule combine_mhcI_PE:
   shell:
     """
       python3 workflow/scripts/combine_optitype_results.py \
-          '{input}' {output}
+          '{input}' {output} >> {log} 2>&1
     """
 
 rule merge_predicted_mhcI_alleles:
@@ -309,7 +309,7 @@ rule merge_predicted_mhcI_alleles:
   shell:
     """
       python workflow/scripts/genotyping/merge_predicted_mhcI.py \
-          '{input}' {output}
+          '{input}' {output} >> {log} 2>&1
     """
 
 rule combine_all_mhcI_alleles:
@@ -327,7 +327,7 @@ rule combine_all_mhcI_alleles:
   shell:
     """
       python workflow/scripts/genotyping/combine_all_alleles.py \
-          '{input}' mhc-I {output} > {log} 2>&1\
+          '{input}' mhc-I {output} >> {log} 2>&1
     """
 
     
@@ -409,7 +409,7 @@ rule finalize_reads_mhcII:
       python workflow/scripts/finalize_mhcII_input.py \
           {input} \
           {output.fwd} \
-          {output.rev}
+          {output.rev} >> {log} 2>&1
     """
 
 
@@ -438,7 +438,7 @@ rule hlatyping_mhcII:
           {input.fwd} {input.rev} \
           {params.split} {params.dic} \
           {wildcards.group}_{wildcards.nartype} \
-          results/{wildcards.sample}/hla/mhc-II/genotyping/
+          results/{wildcards.sample}/hla/mhc-II/genotyping/ >> {log} 2>&1
     """
 
 rule merge_predicted_mhcII_allels:
@@ -456,7 +456,7 @@ rule merge_predicted_mhcII_allels:
   shell:
     """
       python workflow/scripts/genotyping/merge_predicted_mhcII.py \
-          '{input}' {output} > {log} 2>&1
+          '{input}' {output} >> {log} 2>&1
     """
 
 
@@ -476,5 +476,5 @@ rule combine_all_mhcII_alleles:
   shell:
     """
       python workflow/scripts/genotyping/combine_all_alleles.py \
-          '{input}' mhc-II {output} > {log} 2>&1
+          '{input}' mhc-II {output} >> {log} 2>&1
     """

@@ -15,7 +15,7 @@ rule augment_custom_variants:
           {input} \
           custom \
           custom \
-          {output} > {log} 2>&1
+          {output} >> {log} 2>&1
     """
 
 rule sort_custom_variants:
@@ -31,5 +31,5 @@ rule sort_custom_variants:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      bcftools sort {input} -o - | bcftools view -O z -o {output} >> {log} 2>&1
     """

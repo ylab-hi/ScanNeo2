@@ -50,7 +50,7 @@ checkpoint split_bam_htc_first_round:
   shell:
     """
       python workflow/scripts/split_bam_by_chr.py \
-          {input.bam} {output}
+          {input.bam} {output} >> {log} 2>&1
     """
 
 rule index_split_bam_htc_first_round:
@@ -66,7 +66,7 @@ rule index_split_bam_htc_first_round:
     "../envs/samtools.yml"
   shell:
     """
-      samtools index {input.bam} > {log} 2>&1
+      samtools index {input.bam} >> {log} 2>&1
     """
 
 rule detect_variants_htc_first_round:
@@ -99,7 +99,7 @@ rule sort_variants_htc_first_round:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      bcftools sort {input} -o - | bcftools view -O z -o {output} >> {log} 2>&1
     """
 
 rule index_variants_htc_first_round:
@@ -115,7 +115,7 @@ rule index_variants_htc_first_round:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools index -t {input} > {log} 2>&1
+      bcftools index -t {input} >> {log} 2>&1
     """
 
 rule merge_variants_htc_first_round:
@@ -132,7 +132,7 @@ rule merge_variants_htc_first_round:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools concat -O z -a {input.vcf} -o {output} > {log} 2>&1
+      bcftools concat -O z -a {input.vcf} -o {output} >> {log} 2>&1
     """
 
 rule index_merged_variants_htc_first_round:
@@ -148,7 +148,7 @@ rule index_merged_variants_htc_first_round:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools index -t {input} > {log} 2>&1
+      bcftools index -t {input} >> {log} 2>&1
     """
 
       
@@ -299,7 +299,7 @@ checkpoint split_bam_htc_final_round:
   shell:
     """
       python workflow/scripts/split_bam_by_chr.py \
-          {input.bam} {output}
+          {input.bam} {output} >> {log} 2>&1
     """
 
 rule index_split_bam_htc_final_round:
@@ -315,7 +315,7 @@ rule index_split_bam_htc_final_round:
     "../envs/samtools.yml"
   shell:
     """
-      samtools index {input.bam} > {log} 2>&1
+      samtools index {input.bam} >> {log} 2>&1
     """
 
 rule detect_variants_htc_final_round:
@@ -348,7 +348,7 @@ rule sort_variants_htc_final_round:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      bcftools sort {input} -o - | bcftools view -O z -o {output} >> {log} 2>&1
     """
 
 rule index_variants_htc_final_round:
@@ -364,7 +364,7 @@ rule index_variants_htc_final_round:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools index -t {input} > {log} 2>&1
+      bcftools index -t {input} >> {log} 2>&1
     """
 
 rule merge_variants_htc_final_round:
@@ -381,7 +381,7 @@ rule merge_variants_htc_final_round:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools concat -O z -a {input.vcf} -o {output} > {log} 2>&1
+      bcftools concat -O z -a {input.vcf} -o {output} >> {log} 2>&1
     """
 
 rule index_merged_variants_htc_final_round:
@@ -397,7 +397,7 @@ rule index_merged_variants_htc_final_round:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools index -t {input} > {log} 2>&1
+      bcftools index -t {input} >> {log} 2>&1
     """
 
 

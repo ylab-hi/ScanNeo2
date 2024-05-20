@@ -1,3 +1,5 @@
+from datetime import datetime
+
 def format_output(field):
     if field == None:
         return '.'
@@ -33,4 +35,59 @@ def extract_epilens(lengths):
         else:
             epilens.append(int(lens))
     return epilens
+
+
+# determines local exon boundaries (within the transcript) - 0-based
+def get_local_exon_bnds(transcript_start, exons):
+    local_exons = {}
+    for exon in exons.keys():
+        local_exon_start = exons[exon][0] - transcript_start
+        local_exon_end = exons[exon][1] - transcript_start
+        local_exons[exon] = [local_exon_start, local_exon_end]
+    return local_exons
+
+# def exon_overlap(start, exons):
+    # """determines if the variant overlaps with an exon"""
+    # for exon in exons.keys():
+        # if start >= exons[exon][0] and start <= exons[exon][0]:
+
+
+
+def det_strand_vep(vep_strand):
+    """determines the strand of the variant from the VEP annotation"""
+    strand = None
+    if vep_strand == '1':
+        strand = "+"
+    elif vep_strand == "-1":
+        strand = "-"
+
+    return strand
+
+def transcribe(seq):
+    """transcribes DNA sequence to RNA"""
+    return seq.replace('T', 'U')
+
+def revcomp(seq):
+    """reverse complement a sequence"""
+    comp = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+    return "".join([comp[base] for base in reversed(seq)])
+
+def det_overlap(query_start, query_end, target_start, target_end):
+    """determines if two regions overlap"""
+    if (query_start >= target_start and query_start <= target_end or 
+        query_end >= target_start and query_end <= target_end):
+        return True
+    else:
+        return False
+
+
+
+def get_time():
+    """return the currrent time"""
+    now = datetime.now()
+    timestring = now.strftime("%Y-%m-%d %H:%M:%S")
+    return f"[{timestring}]"
+
+
+
 

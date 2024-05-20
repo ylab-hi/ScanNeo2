@@ -108,6 +108,7 @@ class BindingAffinities:
 
             subseqs.append(entries)
 
+        fh.close()
         print(f"calculate binding affinities...")
         wt_affinities = self.collect_binding_affinities(alleles, 
                                                         wt_pred.fnames,
@@ -146,7 +147,7 @@ class BindingAffinities:
             final["TPM"] = entry[17]
             final["NMD"] = entry[18]
             final["PTC_dist_ejc"] = entry[19]
-            final["PTC_exon_number"] = entry[20]
+            final["PTC_exon"] = entry[20]
             final["NMD_escape_rule"] = entry[21]
 
             aa_var_start = int(entry[12])
@@ -375,7 +376,7 @@ class BindingAffinities:
         outputfile.write(f'{ut.format_output(row["agretopicity"])}\t')
         outputfile.write(f'{ut.format_output(row["NMD"])}\t')
         outputfile.write(f'{ut.format_output(row["PTC_dist_ejc"])}\t')
-        outputfile.write(f'{ut.format_output(row["PTC_exon_number"])}\t')
+        outputfile.write(f'{ut.format_output(row["PTC_exon"])}\t')
         outputfile.write(f'{ut.format_output(row["NMD_escape_rule"])}\n')
         
     

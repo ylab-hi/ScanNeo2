@@ -158,7 +158,7 @@ rule rnaseq_postproc_markdup:
       samtools sort -@4 -m4G -O BAM -T tmp/ {input.bam} \
           -o tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam > {log} 2>&1
       samtools markdup -r -@4 tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam \
-          {output} > {log} 2>&1 
+          {output} >> {log} 2>&1 
       rm tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam
     """
 
@@ -173,7 +173,7 @@ rule postproc_bam_index:
     "logs/{sample}/postproc/index/rnaseq_{group}.log"
   shell:
     """
-      samtools index {input} > {log} 2>&1
+      samtools index {input} >> {log} 2>&1
     """
 
 ## retrieve readgroups from bam file
@@ -189,7 +189,7 @@ rule get_readgroups:
   shell:
     """
           python workflow/scripts/get_readgroups.py '{input}' \
-          {output} > {log} 2>&1
+          {output} >> {log} 2>&1
       """
 
 # realign RNAseq and align DNAseq 
@@ -234,7 +234,7 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
         bwa mem -t{threads} -C resources/refs/bwa/genome {input.reads} \
         | samtools addreplacerg -r ID:{wildcards.group} -r SM:{wildcards.sample} \
         -r LB:{wildcards.sample} -r PL:ILLUMINA -r PU:{wildcards.group} - - \
-        | samtools sort -@ 6 -n -m1g - -o {output} > {log} 2>&1
+        | samtools sort -@ 6 -n -m1g - -o {output} >> {log} 2>&1
       """
 
   rule dnaseq_postproc:
@@ -254,7 +254,7 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
       """
         samtools fixmate -pcmu -O bam -@ 6 {input.aln} - \
             | samtools sort -m1g -O bam -T tmp/ - -o - \
-            | samtools markdup -r -@ 6 - {output.bam} > {log} 2>&1
+            | samtools markdup -r -@ 6 - {output.bam} >> {log} 2>&1
       """
     
 rule samtools_index_BWA_final:

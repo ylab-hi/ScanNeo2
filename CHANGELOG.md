@@ -14,7 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - pathogen similarity (BLAST against pathogen-derived epitopes from IEDB)
     - proteome similarity (BLAST against human proteome)
 - Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
+- Prioritization of neoantigens is in chunks (rather than per allele and epitope length)
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
+- Retention of introns is no longer ignored for the variant effects (INFO tag intret)
 
 ## [0.2.4] - 2024-05-19
 

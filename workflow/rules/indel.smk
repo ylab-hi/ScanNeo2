@@ -63,7 +63,7 @@ rule detect_long_indel_ti_call:
           -i {input.bam} \
           -l 10 \
           -o results/{wildcards.sample}/{wildcards.seqtype}/indel/transindel/{wildcards.group}_call \
-          -m {params} > {log} 2>&1
+          -m {params} >> {log} 2>&1
         """
 
 # resove alleles and remove PCR slippage
@@ -84,7 +84,7 @@ rule long_indel_augment:
             {input} \
             long_indel \
             {wildcards.group} \
-            {output}_infos > {log} 2>&1
+            {output}_infos >> {log} 2>&1
             
             python3 workflow/scripts/add_contigs_to_vcf.py \
             {output}_infos \
@@ -113,7 +113,7 @@ rule longindel_sort_and_compress:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      bcftools sort {input} -o - | bcftools view -O z -o {output} >> {log} 2>&1
     """
 
 rule combine_longindels:
@@ -129,7 +129,7 @@ rule combine_longindels:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} >> {log} 2>&1
     """
 
 ####### MUTECT2 ######
@@ -149,7 +149,7 @@ checkpoint split_bam_detect_short_indels_m2:
   shell:
     """
       python workflow/scripts/split_bam_by_chr.py \
-          {input.bam} {output}
+          {input.bam} {output} >> {log} 2>&1
     """
 
 rule index_split_bam_detect_short_indels_m2:
@@ -165,7 +165,7 @@ rule index_split_bam_detect_short_indels_m2:
     "../envs/samtools.yml"
   shell:
     """
-      samtools index {input.bam} > {log} 2>&1
+      samtools index {input.bam} >> {log} 2>&1
     """
 
 rule detect_short_indels_m2:
@@ -225,7 +225,7 @@ rule sort_short_indels_m2:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      bcftools sort {input} -o - | bcftools view -O z -o {output} >> {log} 2>&1
     """
 
 rule index_short_indels_m2:
@@ -241,7 +241,7 @@ rule index_short_indels_m2:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools index -t {input} > {log} 2>&1
+      bcftools index -t {input} >> {log} 2>&1
     """
 
 rule merge_short_indels_m2:
@@ -258,7 +258,7 @@ rule merge_short_indels_m2:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools concat -O z -a {input.vcf} -o {output} > {log} 2>&1
+      bcftools concat -O z -a {input.vcf} -o {output} >> {log} 2>&1
     """
 
 ######### POST-PROCESSING ########
@@ -276,7 +276,7 @@ rule index_merged_short_indels_m2:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools index -t {input} > {log} 2>&1
+      bcftools index -t {input} >> {log} 2>&1
     """
  
 rule select_short_indels_m2:
@@ -315,7 +315,7 @@ rule augment_short_indels_m2:
           {input} \
           short_indel \
           {wildcards.group} \
-          {output} > {log} 2>&1
+          {output} >> {log} 2>&1
     """
 
 rule sort_aug_short_indels_m2:
@@ -331,7 +331,7 @@ rule sort_aug_short_indels_m2:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      bcftools sort {input} -o - | bcftools view -O z -o {output} >> {log} 2>&1
     """
 
 rule combine_aug_short_indels_m2:
@@ -347,7 +347,7 @@ rule combine_aug_short_indels_m2:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} >> {log} 2>&1
     """
             
 rule select_SNVs_m2:
@@ -385,7 +385,7 @@ rule augment_somatic_SNVs_m2:
           {input} \
           snv \
           {wildcards.group} \
-          {output} > {log} 2>&1
+          {output} >> {log} 2>&1
     """
 
 rule sort_somatic_SNVs_m2:
@@ -401,7 +401,7 @@ rule sort_somatic_SNVs_m2:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      bcftools sort {input} -o - | bcftools view -O z -o {output} >> {log} 2>&1
     """
 
 rule combine_somatic_SNVs_m2:
@@ -417,6 +417,6 @@ rule combine_somatic_SNVs_m2:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} >> {log} 2>&1
     """
 
