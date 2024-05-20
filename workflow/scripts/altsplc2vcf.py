@@ -69,6 +69,7 @@ def main():
     for root, dirs, files in os.walk(options.input):
         for file in files:
             if file.endswith(".txt.gz"):
+                print(file)
                 # determine type of splicing from file
                 pattern = re.compile(r'merge_graphs_(\w+)_C[1-3].confirmed.txt.gz')
                 match = pattern.search(file)
@@ -80,24 +81,31 @@ def main():
                     next(fh)
                     for line in fh:
                         column = line.decode().rstrip().split('\t')
+                        print(column)
 
                         if (event_type == "alt_5prime" or
                             event_type == "alt_3prime" or
                             event_type == "exon_skip" or 
                             event_type == "intron_retention" or
                             event_type == "mutex_exon"):
-                        
-                            chrom = column[0]
-                            strand = column[1]
-                            event_id = column[2]
 
-                            # https://github.com/ratschlab/spladder/issues/168
-                            annotated = column[3]
+                            try:
+                                chrom = column[0]
+                                strand = column[1]
+                                event_id = column[2]
 
-                            gene_name = column[4]
+                                # https://github.com/ratschlab/spladder/issues/168
+                                annotated = column[3]
 
-                            start = int(column[7])
-                            end = int(column[8])
+                                gene_name = column[4]
+
+                                start = int(column[7])
+                                end = int(column[8])
+                            
+                            # in some cases lines are incomplete (faulty spladder output)
+                            except IndexError:
+                                print("IndexError - skipping event")
+                                continue
 
                             if (event_type == "alt_5prime" or
                                 event_type == "alt_3prime" or
@@ -237,6 +245,7 @@ def main():
                                             calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
                                     )
                                     writer.write_record(rec)
+    writer.close()
 
 
 
