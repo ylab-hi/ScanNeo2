@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.2.4] - 2024-05-19
+
+### Fix
+
+- Added concurrency to splAdder call
+- Added routines that lets ScanNeo2 finish (even when splAdder results are empty or faulty)
+
 ## [0.2.3] - 2024-03-02
 
 ### Features (somewhat)
