@@ -150,7 +150,7 @@ rule hlatyping_mhcI_SE:
     "logs/{sample}/optitype/{group}_{nartype}_{no}_call.log"
   conda:
     "../envs/optitype.yml"
-  threads: config['threads']
+  threads: 64
   shell:
     """
       samtools index {input.reads}
@@ -262,7 +262,7 @@ rule hlatyping_mhcI_PE:
     "logs/{sample}/optitype/{group}_{nartype}_{no}_call.log"
   conda:
     "../envs/optitype.yml"
-  threads: config['threads']
+  threads: 64
   shell:
     """
       samtools index {input.fwd}
