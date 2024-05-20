@@ -9,20 +9,32 @@ rule spladder:
     log:
         "logs/{sample}/spladder/{group}_build.log"
     params:
-      confidence=f"""--confidence {config["altsplicing"]["confidence"]}""",
-      iteration=f"""--iterations {config["altsplicing"]["iterations"]}""",
-      edgelimit=f"""--ase-edge-limit {config["altsplicing"]["edgelimit"]}"""
+      confidence=f"""{config["altsplicing"]["confidence"]}""",
+      iteration=f"""{config["altsplicing"]["iterations"]}""",
+      edgelimit=f"""{config["altsplicing"]["edgelimit"]}"""
+    threads: config['threads']
     shell:
-        """
-          spladder build -b {input.bam} \
-              -a resources/refs/genome.gtf \
-              -o {output} --filter-overlap-exons \
-              --no-primary-only --quantify-graph \
-              {params.confidence} \
-              {params.iteration} \
-              {params.edgelimit} \
-              --qmode all > {log} 2>&1
-        """
+      """
+        bash workflow/scripts/run_spladder.sh \
+            {input.bam} \
+            {threads} \
+            resources/refs/genome.gtf \
+            {output} \
+            {params.confidence} \
+            {params.iteration} \
+            {params.edgelimit} \
+            {log}
+      """
+          #spladder build -b {input.bam} \
+              #--parallel {threads} \
+              #-a resources/refs/genome.gtf \
+              #-o {output} --filter-overlap-exons \
+              #--no-primary-only --quantify-graph \
+              #{params.confidence} \
+              #{params.iteration} \
+              #{params.edgelimit} \
+              #--qmode all > {log} 2>&1
+        #"""
         
 rule splicing_to_vcf:
   input:
@@ -39,9 +51,10 @@ rule splicing_to_vcf:
     """
       python workflow/scripts/altsplc2vcf.py \
           -i {input} -r resources/refs/genome.fasta \
-          -g {wildcards.group} -o {output} > {log} 2>&1
+          -g {wildcards.group} -o {output} 
     """
 
+          #> {log} 2>&1
 rule sort_altsplicing:
   input:
     "results/{sample}/rnaseq/altsplicing/spladder/{group}_altsplicing.vcf"
