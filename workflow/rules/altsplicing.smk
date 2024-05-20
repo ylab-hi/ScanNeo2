@@ -23,19 +23,9 @@ rule spladder:
             {params.confidence} \
             {params.iteration} \
             {params.edgelimit} \
-            {log}
+            {log} > 2>&1
       """
-          #spladder build -b {input.bam} \
-              #--parallel {threads} \
-              #-a resources/refs/genome.gtf \
-              #-o {output} --filter-overlap-exons \
-              #--no-primary-only --quantify-graph \
-              #{params.confidence} \
-              #{params.iteration} \
-              #{params.edgelimit} \
-              #--qmode all > {log} 2>&1
-        #"""
-        
+
 rule splicing_to_vcf:
   input:
     "results/{sample}/rnaseq/altsplicing/spladder/{group}"
@@ -51,10 +41,9 @@ rule splicing_to_vcf:
     """
       python workflow/scripts/altsplc2vcf.py \
           -i {input} -r resources/refs/genome.fasta \
-          -g {wildcards.group} -o {output} 
+          -g {wildcards.group} -o {output} > {log} 2>&1
     """
 
-          #> {log} 2>&1
 rule sort_altsplicing:
   input:
     "results/{sample}/rnaseq/altsplicing/spladder/{group}_altsplicing.vcf"
