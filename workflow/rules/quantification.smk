@@ -25,7 +25,7 @@ rule countfeatures_dnaseq:
             --fracOverlap 0.2 \
             -Q {params.mapq} \
             -T {threads} \
-            -o {output} {input.sample} > {log} 2>&1
+            -o {output} {input.sample} >> {log} 2>&1
       elif [ "{params.readtype}" == "SE" ]; then
         featureCounts \
             -F GTF \
@@ -35,7 +35,7 @@ rule countfeatures_dnaseq:
             --fracOverlap 0.2 \
             -Q {params.mapq} \
             -T {threads} \
-            -o {output} {input.sample} > {log} 2>&1
+            -o {output} {input.sample} >> {log} 2>&1
       fi
     """
 
@@ -70,7 +70,7 @@ rule countfeatures_rnaseq:
             --fracOverlap 0.2 \
             -Q {params.mapq} \
             -T {threads} \
-            -o {output} {input.sample} > {log} 2>&1
+            -o {output} {input.sample} >> {log} 2>&1
       elif [ "{params.readtype}" == "SE" ]; then
         featureCounts \
             -F GTF \
@@ -80,7 +80,7 @@ rule countfeatures_rnaseq:
             --fracOverlap 0.2 \
             -Q {params.mapq} \
             -T {threads} \
-            -o {output} {input.sample} > {log} 2>&1
+            -o {output} {input.sample} >> {log} 2>&1
       fi
     """
 
@@ -99,6 +99,6 @@ rule merge_countfeatures:
       python workflow/scripts/quantification/merge_counttables.py \
           -i '{input}' \
           -n TPM \
-          -o {output} > {log} 2>&1
+          -o {output} >> {log} 2>&1
     """
 

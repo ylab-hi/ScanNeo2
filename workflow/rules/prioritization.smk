@@ -95,5 +95,5 @@ rule prioritization:
           --counts {input.counts} \
           --threads {threads} \
           --output_dir {output} \
-          --reference {input.refgenome} > {log} 2>&1
+          --reference {input.refgenome} >> {log} 2>&1
     """

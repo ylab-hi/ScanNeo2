@@ -47,7 +47,7 @@ rule index_variants:
     "../envs/samtools.yml"
   shell:
     """
-      tabix {input}
+      tabix {input} >> {log} 2>&1
     """
 
 rule annotate_variants:

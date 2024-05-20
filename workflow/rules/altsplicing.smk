@@ -21,7 +21,7 @@ rule spladder:
               {params.confidence} \
               {params.iteration} \
               {params.edgelimit} \
-              --qmode all > {log} 2>&1
+              --qmode all >> {log} 2>&1
         """
         
 rule splicing_to_vcf:
@@ -39,7 +39,7 @@ rule splicing_to_vcf:
     """
       python workflow/scripts/altsplc2vcf.py \
           -i {input} -r resources/refs/genome.fasta \
-          -g {wildcards.group} -o {output} > {log} 2>&1
+          -g {wildcards.group} -o {output} >> {log} 2>&1
     """
 
 rule sort_altsplicing:
@@ -55,7 +55,7 @@ rule sort_altsplicing:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      bcftools sort {input} -o - | bcftools view -O z -o {output} >> {log} 2>&1
     """
 
 rule combine_altsplicing:
@@ -71,5 +71,5 @@ rule combine_altsplicing:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o  - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive -O z {input} -o  - | bcftools sort -O z -o {output} >> {log} 2>&1
     """

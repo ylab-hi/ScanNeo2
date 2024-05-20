@@ -31,7 +31,7 @@ rule prepare_scanexitron_config:
           {input.genome} \
           {input.annotation} \
           {input.cds} \
-          {output} > {log}
+          {output} >> {log} 2>&1
     """
       
 rule scanexitron:
@@ -65,7 +65,7 @@ rule scanexitron:
           --pso {params.pso} \
           -c ../../../{input.config} \
           -i {input.bam} \
-          -r hg38
+          -r hg38 >> {log} 2>&1
         mv {wildcards.group}_final_STAR.exitron {output}
         mv {wildcards.group}_final_STAR* results/{wildcards.sample}/rnaseq/exitron/
       """
@@ -83,7 +83,7 @@ rule exitron_to_vcf:
     """
       python workflow/scripts/exitron2vcf.py \
         {input} {output} \
-        resources/refs/genome.fasta > {log}
+        resources/refs/genome.fasta >> {log} 2>&1
     """
 
 rule exitron_augment:
@@ -103,7 +103,7 @@ rule exitron_augment:
           {input} \
           exitron \
           {wildcards.group} \
-          {output} > {log} 2>&1
+          {output} >> {log} 2>&1
     """
 
 rule sort_exitron:
@@ -119,7 +119,7 @@ rule sort_exitron:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      bcftools sort {input} -o - | bcftools view -O z -o {output} >> {log} 2>&1
     """
 
 rule combine_exitrons:
@@ -135,6 +135,6 @@ rule combine_exitrons:
     "../envs/samtools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o  - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive -O z {input} -o  - | bcftools sort -O z -o {output} >> {log} 2>&1
     """
 
