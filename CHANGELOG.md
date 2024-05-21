@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prioritization of neoantigens is in chunks (rather than per allele and epitope length)
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 - Retention of introns is no longer ignored for the variant effects (INFO tag intret)
+<<<<<<< HEAD
 
 ## [0.2.4] - 2024-05-19
 
@@ -34,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - Fixed wrong path in quality control for single-end reads
+=======
+>>>>>>> 8da4f9553da65ac4a5678977c792c109d818cb53
 
 ## [0.2.2] - 2024-03-01
 
