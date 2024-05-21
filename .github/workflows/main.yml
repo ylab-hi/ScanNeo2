@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+    branches: [ prioritize_speedup ]
+  pull_request:
+    branches: [ prioritize_speedup ]
+  workflow_dispatch:
+
+jobs:
+  Formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Formatting
+        uses: github/super-linter@v4
+        env:
+          VALIDATE_ALL_CODEBASE: false
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_SNAKEMAKE_SNAKEFMT: true
+
+  Testing:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Test workflow
+      uses: snakemake/snakemake-github-action@v1.24.0
+      with:
+        directory: .tests
+        snakefile: workflow/Snakefile
+        args: "--use-conda --show-failed-logs --cores 3 --conda-cleanup-pkgs cache --configfile .tests/integration/custom-test/config/config.yml"
+
+
