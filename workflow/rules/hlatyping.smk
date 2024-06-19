@@ -56,7 +56,8 @@ rule get_reads_hlatyping_SE:
 
 rule get_reads_hlatyping_PE:
   input:
-    unpack(get_input_hlatyping_PE)
+    unpack(get_input_hlatyping_PE),
+    tmp="tmp/"
   output:
     fwd="results/{sample}/hla/reads/{group}_{nartype}_PE_R1.fq",
     rev="results/{sample}/hla/reads/{group}_{nartype}_PE_R2.fq"
