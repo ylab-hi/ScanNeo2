@@ -214,17 +214,18 @@ def get_predicted_mhcI_alleles(wildcards):
   if "DNA" in config['hlatyping']['MHC-I_mode']:
     if config['data']['dnaseq'] is not None:
       for key in config['data']['dnaseq'].keys():
-        
+       
+        # exclude normal samples (if specified)
         if config['data']['normal'] is not None:
-          if key in config['data']['normal']:
+          normal = config['data']['normal'].split(' ')
+          if key in normal:
             continue
 
-        if key not in config['data']['normal']:
-          values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_{readtype}.tsv",
-                           sample = wildcards.sample,
-                           group = key,
-                           nartype = "DNA",
-                           readtype = config['data']['dnaseq_readtype']) # add either SE or PE
+        values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_{readtype}.tsv",
+                         sample = wildcards.sample,
+                         group = key,
+                         nartype = "DNA",
+                         readtype = config['data']['dnaseq_readtype']) # add either SE or PE
     else: # if no dnaseq data is specified, but mode is DNA or BOTH, then ignore
       print('dnaseq data has not been specified in the config file, but specified mode for hla genotyping in config file is DNA or BOTH -- will be ignored')
 
