@@ -187,6 +187,13 @@ def get_input_hlatyping_PE(wildcards):
                  pair=["R1","R2"])
           )
     )
+  else:
+    return dict(
+        zip(
+          ["fwd", "rev"],
+          config["data"][f"{wildcards.seqtype}"][wildcards.group]
+        )
+    )
 
 
 def aggregate_mhcI_SE(wildcards):
