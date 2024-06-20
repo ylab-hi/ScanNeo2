@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.2.5] - 2024-06-19
+
+### Fix 
+
+- Wrong indentation in HLAtyping caused error when providing no normal sample (NoneType was being iterated)
+- Fixed missing input in get_reads_hlatyping_PE rule (tmp folder) that caused error when using paired-end reads
+- Added else case in get_input_hlatyping function (rule get_reads_hlatyping_PE) for input reads when preproc is deactivated
+
 ## [0.2.4] - 2024-05-19
 
 ### Fix
