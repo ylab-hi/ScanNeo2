@@ -231,10 +231,9 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
     threads: config['threads']
     shell:
       """
-        bwa mem -t{threads} -C resources/refs/bwa/genome {input.reads} \
-        | samtools addreplacerg -r ID:{wildcards.group} -r SM:{wildcards.sample} \
-        -r LB:{wildcards.sample} -r PL:ILLUMINA -r PU:{wildcards.group} - - \
-        | samtools sort -@ 6 -n -m1g - -o {output} > {log} 2>&1
+        bwa mem -t{threads} resources/refs/bwa/genome \
+            -R '@RG\\tID:{wildcards.group}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:ILLUMINA' \
+            {input.reads} | samtools sort -@ 6 -n -m1g - -o {output} > {log} 2>&1
       """
 
   rule dnaseq_postproc:

@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.2.6] - 2024-06-20
+
+### Fix 
+
+- Added routines to catch errors when rnaseq data is not provided but exitron/alternative splicing calling is activated
+- Added reference genome index as input to germline indel calling (necessary when only indel calling is activated)
+- removed -C from BWA mem call (on DNAseq data) to avoid error on Illumina identifiers
+
 ## [0.2.5] - 2024-06-19
 
 ### Fix 
