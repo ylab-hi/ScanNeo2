@@ -124,7 +124,6 @@ def all_identical(l):
 
 # load up the config
 config['data'] = data_structure(config['data'])
-print(config)
 
 ########### PREPROCESSING ##########
 def get_raw_reads(wildcards):
