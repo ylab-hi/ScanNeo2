@@ -124,6 +124,7 @@ def all_identical(l):
 
 # load up the config
 config['data'] = data_structure(config['data'])
+print(config)
 
 ########### PREPROCESSING ##########
 def get_raw_reads(wildcards):
@@ -734,18 +735,22 @@ def get_prioritization_long_indels(wildcards):
 def get_prioritization_exitrons(wildcards):
   exitrons = []
   if config["exitronsplicing"]["activate"]:
-    exitrons += expand("results/{sample}/annotation/exitrons.vcf",
-                       sample=config["data"]["name"])
-  
+    if len(config["data"]["rnaseq"]) != 0:
+      exitrons += expand("results/{sample}/annotation/exitrons.vcf",
+                         sample=config["data"]["name"])
+    else:
+      print('rnaseq data has not been specified in the config file, but exitron calling is activated - skipping...')
   return exitrons
 
 
 def get_prioritization_altsplicing(wildcards):
   altsplicing = []
   if config["altsplicing"]["activate"]:
-    altsplicing += expand("results/{sample}/annotation/altsplicing.vcf",
-                          sample=config["data"]["name"])
-  
+    if len(config["data"]["rnaseq"]) != 0:
+      altsplicing += expand("results/{sample}/annotation/altsplicing.vcf",
+                            sample=config["data"]["name"])
+    else:
+      print('rnaseq data has not been specified in the config file, but alternative splicing calling is activated - skipping...')
   return altsplicing
 
 def get_prioritization_custom(wildcards):

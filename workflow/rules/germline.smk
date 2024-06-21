@@ -73,7 +73,8 @@ rule detect_variants_htc_first_round:
   input:
     bam="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam",
     idx="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam.bai",
-    ref="resources/refs/genome.fasta"
+    ref="resources/refs/genome.fasta",
+    ref_idx="resources/refs/genome.fasta.fai"
   output:
     vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf"
   message:
