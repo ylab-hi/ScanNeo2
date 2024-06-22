@@ -3,4 +3,4 @@
 	url = https://github.com/cauyrd/transIndel.git
 [submodule "workflow/scripts/scanexitron"]
 	path = workflow/scripts/scanexitron
-	url = https://github.com/ylab-hi/ScanExitron.git
+	url = https://github.com/riasc/ScanExitron.git
