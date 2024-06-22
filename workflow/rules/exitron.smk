@@ -116,7 +116,7 @@ rule sort_exitron:
   log:
     "logs/exitron_sort_{sample}_{group}.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
@@ -132,7 +132,7 @@ rule combine_exitrons:
   log:
     "logs/{sample}/exitrons/combine_exitrons.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools concat --naive -O z {input} -o  - | bcftools sort -O z -o {output} > {log} 2>&1

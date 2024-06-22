@@ -201,7 +201,7 @@ rule realign:
   output:
     bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
   conda:
-    "../envs/basic.yml"
+    "../envs/realign.yml"
   log:
     "logs/{sample}/realign/{seqtype}_{group}.log"
   threads: config['threads']
@@ -225,7 +225,7 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
     log:
       "logs/{sample}/bwa_align/dnaseq_{group}.log"
     conda:
-      "../envs/basic.yml"
+      "../envs/realign.yml"
     params:
       extra=""
     threads: config['threads']

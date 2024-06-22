@@ -97,7 +97,7 @@ rule sort_variants_htc_first_round:
   log:
     "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_{chr}_sort.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
@@ -113,7 +113,7 @@ rule index_variants_htc_first_round:
   log:
      "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_{chr}_index.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools index -t {input} > {log} 2>&1
@@ -130,7 +130,7 @@ rule merge_variants_htc_first_round:
   log:
     "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_merge.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools concat -O z -a {input.vcf} -o {output} > {log} 2>&1
@@ -146,7 +146,7 @@ rule index_merged_variants_htc_first_round:
   log:
     "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_index.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools index -t {input} > {log} 2>&1
@@ -346,7 +346,7 @@ rule sort_variants_htc_final_round:
   log:
     "logs/{sample}/indel/gatk/haplotypecaller/sort_final_{seqtype}_{group}_{chr}.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
@@ -362,7 +362,7 @@ rule index_variants_htc_final_round:
   log:
      "logs/{sample}/indel/gatk/haplotypecaller/index_final_{seqtype}_{group}_{chr}.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools index -t {input} > {log} 2>&1
@@ -379,7 +379,7 @@ rule merge_variants_htc_final_round:
   log:
     "logs/{sample}/indel/gatk/haplotypecaller/merge_final_{seqtype}_{group}.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools concat -O z -a {input.vcf} -o {output} > {log} 2>&1
@@ -395,7 +395,7 @@ rule index_merged_variants_htc_final_round:
   log:
     "logs/{sample}/indel/gatk/haplotypecaller/index_final_{seqtype}_{group}.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools index -t {input} > {log} 2>&1
