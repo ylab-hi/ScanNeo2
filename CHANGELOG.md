@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix 
 
 - Separated samtools, bcftools and realign environments to avoid conflicts
+- Updated splAdder to v3.0.5
 
 ## [0.2.6] - 2024-06-20
 

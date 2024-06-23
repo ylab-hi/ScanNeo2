@@ -23,7 +23,7 @@ rule spladder:
             {params.confidence} \
             {params.iteration} \
             {params.edgelimit} \
-            {log} > 2>&1
+            {log} 
       """
 
 rule splicing_to_vcf:
