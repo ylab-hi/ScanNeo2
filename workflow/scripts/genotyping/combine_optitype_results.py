@@ -9,7 +9,10 @@ def main():
 
     for alfile in sys.argv[1].split(' '):
         with open(alfile, 'r') as f:
-            next(f)
+            try:
+                next(f)
+            except StopIteration:
+                continue # empty file
             for line in f:
 
                 line_list = line.rstrip().split('\t')

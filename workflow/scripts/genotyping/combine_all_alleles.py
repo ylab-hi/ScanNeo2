@@ -49,4 +49,9 @@ def main():
         fh_out.write(f'{alleles[allele]}\t{allele}\n')
     fh_out.close()
 
+    if len(alleles) == 0:
+        print("No valid alleles found in the input files!")
+        print("Please check the input files (e.g., dnaseq, rnaseq, user-provided alleles) and try again")
+        sys.exit(1)
+
 main()

@@ -28,4 +28,3 @@ if [ ! -d $output ]; then
     echo "Spladder did not generate output. Creating empty folder."
     mkdir -p $output
 fi
-

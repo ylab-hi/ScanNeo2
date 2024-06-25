@@ -110,7 +110,7 @@ rule longindel_sort_and_compress:
   log:
     "logs/{sample}/transindel/{seqtype}_{group}_longindel_sort.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
@@ -126,10 +126,10 @@ rule combine_longindels:
   log:
     "logs/{sample}/transindel/combine_longindels.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
 
 ####### MUTECT2 ######
@@ -222,7 +222,7 @@ rule sort_short_indels_m2:
   log:
     "logs/{sample}/gatk/mutect2/sort_{seqtype}_{group}_{chr}.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
@@ -238,7 +238,7 @@ rule index_short_indels_m2:
   log:
      "logs/{sample}/gatk/mutect2/index_{seqtype}_{group}_{chr}.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools index -t {input} > {log} 2>&1
@@ -255,7 +255,7 @@ rule merge_short_indels_m2:
   log:
     "logs/{sample}/gatk/mutect2/merge_{seqtype}_{group}.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools concat -O z -a {input.vcf} -o {output} > {log} 2>&1
@@ -273,7 +273,7 @@ rule index_merged_short_indels_m2:
   log:
      "logs/{sample}/gatk/mutect2/index_merged_{seqtype}_{group}.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools index -t {input} > {log} 2>&1
@@ -328,7 +328,7 @@ rule sort_aug_short_indels_m2:
   log:
     "logs/{sample}/transindel/{seqtype}_{group}_shortindel_sort.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
@@ -344,7 +344,7 @@ rule combine_aug_short_indels_m2:
   log:
     "logs/{sample}/transindel/combine_longindels.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
@@ -398,7 +398,7 @@ rule sort_somatic_SNVs_m2:
   log:
     "logs/{sample}/transindel/{seqtype}_{group}_SNVs_sort.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
@@ -414,9 +414,9 @@ rule combine_somatic_SNVs_m2:
   log:
     "logs/{sample}/transindel/combine_somatic_SNVs.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
 

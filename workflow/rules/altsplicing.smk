@@ -23,7 +23,7 @@ rule spladder:
             {params.confidence} \
             {params.iteration} \
             {params.edgelimit} \
-            {log} > 2>&1
+            {log} 
       """
 
 rule splicing_to_vcf:
@@ -54,7 +54,7 @@ rule sort_altsplicing:
   log:
     "logs/{sample}/spladder/{group}_sort.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
@@ -70,8 +70,8 @@ rule combine_altsplicing:
   log:
     "logs/{sample}/exitrons/combine_exitrons.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o  - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive-force -O z {input} -o  - | bcftools sort -O z -o {output} > {log} 2>&1
     """

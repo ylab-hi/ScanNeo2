@@ -28,7 +28,7 @@ rule sort_custom_variants:
   log:
     "logs/{sample}/custom/sort_custom_variants.log"
   conda:
-    "../envs/samtools.yml"
+    "../envs/bcftools.yml"
   shell:
     """
       bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
