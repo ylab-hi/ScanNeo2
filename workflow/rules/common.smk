@@ -313,7 +313,6 @@ def get_all_mhcI_alleles(wildcards):
   return values
 
 
-
 ##### MHC CLASS II #####
 def get_input_hlatyping_mhcII(wildcards):
 

@@ -15,7 +15,7 @@ rule get_gatk_vqsr_training_sets:
   message:
     "Downloading training sets for calling high confidence variants"
   log:
-    "logs/gatk_get_training)_sets.log"
+    "logs/gatk_get_training_sets.log"
   conda:
     "../envs/basic.yml"
   shell:
@@ -133,9 +133,9 @@ rule merge_variants_htc_first_round:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat -O z -a {input.vcf} -o {output} > {log} 2>&1
+      bcftools concat --naive-force -O z {input.vcf} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
-
+      
 rule index_merged_variants_htc_first_round:
   input:
     "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf.gz"
