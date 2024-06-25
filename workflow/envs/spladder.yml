@@ -5,4 +5,4 @@ dependencies:
  - python=3.8
  - pip
  - pip:
-   - spladder==3.0.5
+   - spladder==3.0.4

@@ -94,13 +94,8 @@ rule filter_reads_mhcI_SE:
     "../envs/yara.yml"
   shell:
     """
-      if [ "{wildcards.nartype}" == "DNA" ]; then
-        yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
+      yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
           {input.reads} | samtools view -h -F 4 -b1 - | samtools sort - -o {output} > {log}
-      elif [ "{wildcards.nartype}" == "RNA" ]; then
-        yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
-            {input.reads} | samtools view -h -F 4 -b1 - | samtools sort - -o {output} > {log}
-      fi
     """
 
 rule index_reads_mhcI_SE:
@@ -116,22 +111,42 @@ rule index_reads_mhcI_SE:
   wrapper:
     "v2.3.0/bio/samtools/index"
 
+rule merge_reads_mhcI_SE:
+  input:
+    unpack(get_filtered_reads_hlatyping_SE),
+  output:
+    bam="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_SE.bam",
+    idx="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_SE.bam.bai"
+  message:
+    "Merge the filtered {wildcards.nartype}seq reads for hlatyping of sample: {wildcards.sample}"
+  log:
+    "logs/{sample}/hla/merge_reads_mhcI_{nartype}_SE.log"
+  conda:
+    "../envs/samtools.yml"
+  threads: 4
+  shell:
+    """
+      samtools merge -@ {threads} {output.bam} {input.bam} > {log} 2>&1
+      samtools index {output.bam} >> {log} 2>&1
+    """
+
+
 checkpoint split_reads_mhcI_SE:
   input:
-    reads="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE.bam",
-    index="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE.bam.bai"
+    reads="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_SE.bam",
+    index="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_SE.bam.bai"
   output:
-    directory("results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE/")
+    directory("results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_SE/")
   message:
     "Splitting filtered BAM files for HLA typing"
   log:
-    "logs/{sample}/hla/split_bam_{group}_{nartype}.log"
+    "logs/{sample}/hla/split_bam_{nartype}.log"
   conda:
     "../envs/gatk.yml"
   threads: 1
   shell:
     """
-      mkdir -p results/{wildcards.sample}/hla/mhc-I/reads/{wildcards.group}_{wildcards.nartype}_flt_SE/
+      mkdir -p results/{wildcards.sample}/hla/mhc-I/reads/{wildcards.nartype}_flt_merged_SE/
       gatk SplitSamByNumberOfReads \
           -I {input.reads} \
           --OUTPUT {output} \
@@ -141,44 +156,37 @@ checkpoint split_reads_mhcI_SE:
 
 rule hlatyping_mhcI_SE:  
   input:
-    reads="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE/R_{no}.bam",
+    reads="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_SE/R_{no}.bam",
   output:
-    pdf="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE/{no}_coverage_plot.pdf",
-    tsv="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE/{no}_result.tsv"
+    pdf="results/{sample}/hla/mhc-I/genotyping/{nartype}_flt_merged_SE/{no}_coverage_plot.pdf",
+    tsv="results/{sample}/hla/mhc-I/genotyping/{nartype}_flt_merged_SE/{no}_result.tsv"
   message:
     "HLA typing from splitted BAM files"
   log:
-    "logs/{sample}/optitype/{group}_{nartype}_{no}_call.log"
+    "logs/{sample}/optitype/merged_{nartype}_{no}_call.log"
   conda:
     "../envs/optitype.yml"
   threads: 64
   shell:
     """
-      samtools index {input.reads}
-      if [ "{wildcards.nartype}" == "DNA" ]; then
-        OptiTypePipeline.py --input {input.reads} \
-            --outdir results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_SE/ \
-            --prefix {wildcards.no} --dna -v > {log}
-      elif [ "{wildcards.nartype}" == "RNA" ]; then
-        OptiTypePipeline.py --input {input.reads} \
-            --outdir results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_SE/ \
-            --prefix {wildcards.no} --rna -v > {log}
-      fi
+      python3 workflow/scripts/genotyping/optitype_wrapper.py \
+          '{input.reads}' {wildcards.nartype} {wildcards.no} \
+          results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.nartype}_flt_merged_SE/ > {log}
     """
 
 rule combine_mhcI_SE:
   input:
     aggregate_mhcI_SE
   output:
-    "results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_SE.tsv"
+    "results/{sample}/hla/mhc-I/genotyping/{nartype}_SE.tsv"
   log:
-    "logs/{sample}/optitype/{group}_{nartype}_call.log"
+    "logs/{sample}/genotyping/combine_optitype_mhcI_{nartype}_call.log"
   conda:
     "../envs/basic.yml"
   threads: 1
   shell:
     """
-      python3 workflow/scripts/combine_optitype_results.py \
+      python3 workflow/scripts/genotyping/combine_optitype_results.py \
           '{input}' {output}
     """
 
@@ -219,24 +227,43 @@ rule index_reads_mhcI_PE:
   wrapper:
     "v2.3.0/bio/samtools/index"
 
+rule merge_reads_mhcI_PE:
+  input:
+    unpack(get_filtered_reads_hlatyping_PE),
+  output:
+    bam="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_PE_{readpair}.bam",
+    idx="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_PE_{readpair}.bam.bai"
+  message:
+    "Merge the filtered {wildcards.nartype}seq reads for hlatyping of sample: {wildcards.sample} with readpair: {wildcards.readpair}"
+  log:
+    "logs/{sample}/hla/merge_reads_mhcI_{nartype}_PE_{readpair}.log",
+  conda:
+    "../envs/samtools.yml"
+  threads: 4
+  shell:
+    """
+      samtools merge -@ {threads} {output.bam} {input.bam} > {log} 2>&1
+      samtools index {output.bam} >> {log} 2>&1
+    """
+
 checkpoint split_reads_mhcI_PE:
   input:
-    fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R1.bam",
-    fwd_idx="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R1.bam.bai",
-    rev="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R2.bam",
-    rev_idx="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R2.bam.bai"
+    fwd="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_PE_R1.bam",
+    fwd_idx="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_PE_R1.bam.bai",
+    rev="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_PE_R2.bam",
+    rev_idx="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_PE_R2.bam.bai"
   output:
-    directory("results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE/")
+    directory("results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_PE/")
   message:
     "Splitting filtered BAM files for HLA typing"
   log:
-    "logs/{sample}/hla/split_bam_{group}_{nartype}.log"
+    "logs/{sample}/hla/split_bam_{nartype}.log"
   conda:
     "../envs/gatk.yml"
   threads: 1
   shell:
     """
-      mkdir -p results/{wildcards.sample}/hla/mhc-I/reads/{wildcards.group}_{wildcards.nartype}_flt_PE/
+      mkdir -p results/{wildcards.sample}/hla/mhc-I/reads/{wildcards.nartype}_flt_merged_PE/
       gatk SplitSamByNumberOfReads \
           -I {input.fwd} \
           --OUTPUT {output} \
@@ -252,64 +279,41 @@ checkpoint split_reads_mhcI_PE:
 
 rule hlatyping_mhcI_PE:  
   input:
-    fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE/R1_{no}.bam",
-    rev="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE/R2_{no}.bam",
+    fwd="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_PE/R1_{no}.bam",
+    rev="results/{sample}/hla/mhc-I/reads/{nartype}_flt_merged_PE/R2_{no}.bam",
   output:
-    pdf="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE/{no}_coverage_plot.pdf",
-    tsv="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE/{no}_result.tsv"
+    pdf="results/{sample}/hla/mhc-I/genotyping/{nartype}_flt_merged_PE/{no}_coverage_plot.pdf",
+    tsv="results/{sample}/hla/mhc-I/genotyping/{nartype}_flt_merged_PE/{no}_result.tsv"
   message:
     "HLA typing from splitted BAM files"
   log:
-    "logs/{sample}/optitype/{group}_{nartype}_{no}_call.log"
+    "logs/{sample}/optitype/merged_{nartype}_{no}_call.log"
   conda:
     "../envs/optitype.yml"
   threads: 64
   shell:
     """
-      samtools index {input.fwd}
-      samtools index {input.rev}
-      if [ "{wildcards.nartype}" == "DNA" ]; then
-        OptiTypePipeline.py --input {input.fwd} {input.rev} \
-            --outdir results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_PE/ \
-            --prefix {wildcards.no} --dna -v > {log}
-      elif [ "{wildcards.nartype}" == "RNA" ]; then
-        OptiTypePipeline.py --input {input.fwd} {input.rev} \
-            --outdir results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_PE/ \
-            --prefix {wildcards.no} --rna -v > {log}
-      fi
+      python3 workflow/scripts/genotyping/optitype_wrapper.py \
+          '{input.fwd} {input.rev}' {wildcards.nartype} {wildcards.no} \
+          results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.nartype}_flt_merged_PE/ > {log}
+
     """
 
-rule combine_mhcI_PE:
+rule combine_hlatyping_mhcI_PE:
   input:
-    aggregate_mhcI_PE
+    aggregate_mhcI_PE,
   output:
-    "results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_PE.tsv"
-  log:
-    "logs/{sample}/optitype/{group}_{nartype}_call.log"
-  conda:
-    "../envs/basic.yml"
-  threads: 1
-  shell:
-    """
-      python3 workflow/scripts/combine_optitype_results.py \
-          '{input}' {output}
-    """
-
-rule merge_predicted_mhcI_alleles:
-  input:
-    get_predicted_mhcI_alleles
-  output:
-    "results/{sample}/hla/mhc-I/genotyping/mhc-I.tsv",
+    "results/{sample}/hla/mhc-I/genotyping/{nartype}_flt_merged_PE.tsv",
   message:
-    "Merging HLA alleles from different sources"
+    "Combining HLA alleles from predicted optitype results"
   log:
-    "logs/{sample}/optitype/merge_predicted_mhc-I.log"
+    "logs/{sample}/genotyping/combine_optitype_mhcI_{nartype}_PE.log"
   conda:
     "../envs/basic.yml"
   threads: 1
   shell:
     """
-      python workflow/scripts/genotyping/merge_predicted_mhcI.py \
+      python3 workflow/scripts/genotyping/combine_optitype_results.py \
           '{input}' {output}
     """
 
@@ -319,7 +323,7 @@ rule combine_all_mhcI_alleles:
   output:
     "results/{sample}/hla/mhc-I.tsv"
   message:
-    "Combining HLA alleles from different sources"
+    "Combining HLA alleles from different sources (e.g., predicted and user-defined alleles)"
   log:
     "logs/{sample}/genotyping/combine_all_mhc-I.log"
   conda:
@@ -328,7 +332,7 @@ rule combine_all_mhcI_alleles:
   shell:
     """
       python workflow/scripts/genotyping/combine_all_alleles.py \
-          '{input}' mhc-I {output} > {log} 2>&1\
+          '{input}' mhc-I {output}
     """
 
     

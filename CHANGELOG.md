@@ -21,7 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix 
 
 - Separated samtools, bcftools and realign environments to avoid conflicts
-- Updated splAdder to v3.0.5
+- Changed order of genotyping rules to catch errors when no alleles can be found
+    - Alleles are merged according to nartype (e.g., DNA, RNA) and then combined
+- Force concat of VCF files in genotyping to avoid errors when no variants are found
+- Added optitype wrapper to avoid errors when empty BAM files are provided / no HLA reads
 
 ## [0.2.6] - 2024-06-20
 

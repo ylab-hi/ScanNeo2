@@ -73,5 +73,5 @@ rule combine_altsplicing:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o  - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive-force -O z {input} -o  - | bcftools sort -O z -o {output} > {log} 2>&1
     """

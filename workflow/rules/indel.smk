@@ -129,7 +129,7 @@ rule combine_longindels:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
 
 ####### MUTECT2 ######
@@ -417,6 +417,6 @@ rule combine_somatic_SNVs_m2:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
 
