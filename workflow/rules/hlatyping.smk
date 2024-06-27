@@ -65,12 +65,15 @@ rule get_reads_hlatyping_PE:
     "Retrieve paired-end reads ({wildcards.nartype}) for HLA genotyping - sample:{wildcards.sample} group:{wildcards.group}"
   log:
     "logs/{sample}/hla/get_reads_hlatyping_PE_{group}_{nartype}.log"
+  threads: 4
+  resources: 
+    mem_mb=20000
   conda:
     "../envs/samtools.yml"
   shell:
     """
-      samtools sort -n {input.fwd} -T tmp/ | samtools fastq > {output.fwd} 
-      samtools sort -n {input.rev} -T tmp/ | samtools fastq > {output.rev}
+      samtools sort -@4 -m4g -n {input.fwd} -T tmp/ | samtools fastq -@4 > {output.fwd} 
+      samtools sort -@4 -m4g -n {input.rev} -T tmp/ | samtools fastq -@4 > {output.rev}
     """
 
 ######### single-end reads #########

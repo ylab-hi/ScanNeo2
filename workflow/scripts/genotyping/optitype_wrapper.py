@@ -32,7 +32,7 @@ def main():
             tsv = subprocess.Popen("touch " + outpath + prefix + "_result.tsv", shell=True)
         else:
             # call optitype 
-            optitype = subprocess.Popen("optitype --input " + inbams + 
+            optitype = subprocess.Popen("OptiTypePipeline.py --input " + inbams + 
                                         " --prefix " + prefix + " --" + nartype + "-v", shell=True)
 
 

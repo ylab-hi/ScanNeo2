@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.2.8] - 2024-06-26
+
+### Fix 
+
+- Added threads option to samtools sort calls to speed up the process
+- Fixed wrong call to optitype within the wrapper script
+
 ## [0.2.7] - 2024-06-23 
 
 ### Fix 

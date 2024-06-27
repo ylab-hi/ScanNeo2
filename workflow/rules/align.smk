@@ -248,11 +248,13 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
       "../envs/samtools.yml"
     params:
       extra=""
-    threads: config['threads']
+    threads: 6
+    resources:
+      mem_mb=20000
     shell:
       """
         samtools fixmate -pcmu -O bam -@ 6 {input.aln} - \
-            | samtools sort -m1g -O bam -T tmp/ - -o - \
+            | samtools sort -@ 4 -m1g -O bam -T tmp/ - -o - \
             | samtools markdup -r -@ 6 - {output.bam} > {log} 2>&1
       """
     
