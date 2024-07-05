@@ -10,7 +10,6 @@ import subprocess
 def main():
     inbams = sys.argv[1]
     nartype = "dna" if sys.argv[2] == "DNA" else "rna"
-    nartype = sys.argv[2]
     prefix = sys.argv[3]
     outpath = sys.argv[4]
 
@@ -32,8 +31,10 @@ def main():
             tsv = subprocess.Popen("touch " + outpath + prefix + "_result.tsv", shell=True)
         else:
             # call optitype 
-            optitype = subprocess.Popen("OptiTypePipeline.py --input " + inbams + 
-                                        " --prefix " + prefix + " --" + nartype + "-v", shell=True)
+            optitype_call = "OptiTypePipeline.py --input " + inbams + " --outdir " + outpath + " --prefix " + prefix + " --" + nartype + " -v"
+            print(optitype_call)
+            os.system(optitype_call)
+#            optitype = subprocess.Popen(optitype_call, shell=True)
 
 
     except subprocess.CalledProcessError as e:

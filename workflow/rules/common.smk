@@ -161,123 +161,53 @@ def get_preproc_input(wildcards):
 
 
 ########### HLA GENOTYPING ##########
-def get_input_hlatyping_SE(wildcards):
-  # special case: filetype is BAM (single-end) - just return (raw) BAM file
+def get_input_reads_hlatyping_BAM(wildcards):
+  seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
+  return config["data"][seqtype][wildcards.group]
+
+def get_input_filtering_hlatyping_SE(wildcards):
   seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
   if config["data"][f"{seqtype}_filetype"] == ".bam":
-    return config["data"][seqtype][wildcards.group]
-
-  if config["preproc"]["activate"]:
-    return expand("results/{sample}/{seqtype}/reads/{group}_preproc.fq.gz",
-                  sample = wildcards.sample,
-                  seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
-                  group = wildcards.group)
+    return expand("results/{sample}/{seqtype}/reads/{group}_flt_BAM.fq",
+                  sample=wildcards.sample,
+                  seqtype=seqtype,
+                  group=wildcards.group)
   else:
-    return config["data"][f"{seqtype}"][wildcards.group]
+    if config["preproc"]["activate"]:
+      return expand("results/{sample}/{seqtype}/reads/{group}_preproc.fq.gz",
+                    sample=wildcards.sample,
+                    seqtype=seqtype,
+                    group=wildcards.group)
+    else:
+      return config["data"][seqtype][wildcards.group]
 
-def get_input_hlatyping_PE(wildcards):
+def get_input_filtering_hlatyping_PE(wildcards):
   if config["preproc"]["activate"]:
-    return dict(
-        zip(
-          ["fwd", "rev"],
-          expand("results/{sample}/{seqtype}/reads/{group}_{pair}_preproc.fq.gz",
-                 sample=wildcards.sample,
-                 seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
-                 group=wildcards.group,
-                 pair=["R1","R2"])
-          )
-    )
+    return expand("results/{sample}/{seqtype}/reads/{group}_{readpair}_preproc.fq.gz",
+                  sample=wildcards.sample,
+                  seqtype="dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
+                  group=wildcards.group,
+                  nartype=wildcards.nartype,
+                  readpair=wildcards.readpair)
   else:
-    return dict(
-        zip(
-          ["fwd", "rev"],
-          config["data"][f"{wildcards.seqtype}"][wildcards.group]
-        )
-    )
-
-
-def get_filtered_reads_hlatyping_SE(wildcards):
-  bam = []
-  idx = []
-
-  if wildcards.nartype == "DNA":
-    if len(config["data"]["dnaseq"]) != 0:
-      for key in config["data"]["dnaseq"].keys():
-        bam += expand("results/{sample}/hla/mhc-I/reads/{group}_DNA_flt_SE.bam",
-                      sample=wildcards.sample,
-                      group=key)
-        idx += expand("results/{sample}/hla/mhc-I/reads/{group}_DNA_flt_SE.bam.bai",
-                      sample=wildcards.sample,
-                      group=key)
-
-
-  if wildcards.nartype == "RNA":
-    if len(config["data"]["rnaseq"]) != 0:
-      for key in config["data"]["rnaseq"].keys():
-        bam += expand("results/{sample}/hla/mhc-I/reads/{group}_RNA_flt_SE.bam",
-                      sample=wildcards.sample,
-                      group=key)
-        idx += expand("results/{sample}/hla/mhc-I/reads/{group}_RNA_flt_SE.bam.bai",
-                      sample=wildcards.sample,
-                      group=key)
-
-  return dict(
-      zip(
-        ["bam", "idx"],
-        [bam, idx]
-    )
-  )
-
-
-def get_filtered_reads_hlatyping_PE(wildcards):
-  bam = []
-  idx = []
-
-  if wildcards.nartype == "DNA":
-    if len(config["data"]["dnaseq"]) != 0:
-      for key in config["data"]["dnaseq"].keys():
-        bam += expand("results/{sample}/hla/mhc-I/reads/{group}_DNA_flt_PE_{readpair}.bam",
-                      sample=wildcards.sample,
-                      group=key,
-                      readpair=wildcards.readpair)
-        idx += expand("results/{sample}/hla/mhc-I/reads/{group}_DNA_flt_PE_{readpair}.bam.bai",
-                      sample=wildcards.sample,
-                      group=key,
-                      readpair=wildcards.readpair)
-
-  if wildcards.nartype == "RNA":
-    if len(config["data"]["rnaseq"]) != 0:
-      for key in config["data"]["rnaseq"].keys():
-        bam += expand("results/{sample}/hla/mhc-I/reads/{group}_RNA_flt_PE_{readpair}.bam",
-                      sample=wildcards.sample,
-                      group=key,
-                      readpair=wildcards.readpair)
-
-        idx += expand("results/{sample}/hla/mhc-I/reads/{group}_RNA_flt_PE_{readpair}.bam.bai",
-                      sample=wildcards.sample,
-                      group=key,
-                      readpair=wildcards.readpair)
-
-  return dict(
-      zip(
-        ["bam", "idx"],
-        [bam, idx]
-    )
-  )
+    seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
+    return config["data"][f"{wildcards.seqtype}"][wildcards.group]
 
 
 def aggregate_mhcI_SE(wildcards):
   checkpoint_output = checkpoints.split_reads_mhcI_SE.get(**wildcards).output[0]
-  return expand("results/{sample}/hla/mhc-I/genotyping/{nartype}_flt_merged_SE/{no}_result.tsv",
+  return expand("results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE/{no}_result.tsv",
     sample=wildcards.sample,
+    group=wildcards.group,
     nartype=wildcards.nartype,
     no=glob_wildcards(os.path.join(checkpoint_output, "R_{no}.bam")).no)
 
 
 def aggregate_mhcI_PE(wildcards):
   checkpoint_output = checkpoints.split_reads_mhcI_PE.get(**wildcards).output[0]
-  return expand("results/{sample}/hla/mhc-I/genotyping/{nartype}_flt_merged_PE/{no}_result.tsv",
+  return expand("results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE/{no}_result.tsv",
     sample=wildcards.sample,
+    group=wildcards.group,
     nartype=wildcards.nartype,
     no=glob_wildcards(os.path.join(checkpoint_output, "R1_{no}.bam")).no)
 
@@ -287,21 +217,29 @@ def get_all_mhcI_alleles(wildcards):
 
   if "DNA" in config["hlatyping"]["MHC-I_mode"]:
     if len(config["data"]["dnaseq"]) != 0:
-      if config["data"]["dnaseq_readtype"] == "SE":
-        values += expand("results/{sample}/hla/mhc-I/genotyping/DNA_flt_merged_SE.tsv",
-                         sample=wildcards.sample)
+      if config["data"]["dnaseq_readtype"] == "SE" or config["data"]["dnaseq_filetype"] == ".bam":
+        for key in config["data"]["dnaseq"].keys():
+          values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_DNA_flt_SE.tsv",
+                           sample=wildcards.sample,
+                           group=key)
       elif config["data"]["dnaseq_readtype"] == "PE":
-        values += expand("results/{sample}/hla/mhc-I/genotyping/DNA_flt_merged_PE.tsv",
-                         sample=wildcards.sample)
+        for key in config["data"]["dnaseq"].keys():
+          values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_DNA_flt_PE.tsv",
+                           sample=wildcards.sample,
+                           group=key)
 
   if "RNA" in config["hlatyping"]["MHC-I_mode"]:
     if len(config["data"]["rnaseq"]) != 0:
-      if config["data"]["rnaseq_readtype"] == "SE":
-        values += expand("results/{sample}/hla/mhc-I/genotyping/RNA_flt_merged_SE.tsv",
-                         sample=wildcards.sample)
+      if config["data"]["rnaseq_readtype"] == "SE" or config["data"]["rnaseq_filetype"] == ".bam":
+        for key in config["data"]["rnaseq"].keys():
+          values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_RNA_flt_SE.tsv",
+                           sample=wildcards.sample,
+                           group=key)
       elif config["data"]["rnaseq_readtype"] == "PE":
-        values += expand("results/{sample}/hla/mhc-I/genotyping/RNA_flt_merged_PE.tsv",
-                         sample=wildcards.sample)
+        for key in config["data"]["rnaseq"].keys():
+          values += expand("results/{sample}/hla/mhc-I/genotyping/{group}_RNA_flt_PE.tsv",
+                           sample=wildcards.sample,
+                           group=key)
 
   if "custom" in config["hlatyping"]["MHC-I_mode"]:
     values += [config["data"]["custom"]["hlatyping"]["MHC-I"]]

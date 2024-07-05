@@ -12,7 +12,7 @@ rule spladder:
       confidence=f"""{config["altsplicing"]["confidence"]}""",
       iteration=f"""{config["altsplicing"]["iterations"]}""",
       edgelimit=f"""{config["altsplicing"]["edgelimit"]}"""
-    threads: config['threads']
+    threads: 20
     shell:
       """
         bash workflow/scripts/run_spladder.sh \

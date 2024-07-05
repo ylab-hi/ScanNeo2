@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.2.9] - 2024-07-04
+
+### Fix 
+
+- Splitted rules in HLA typing to ensure better distribution of the workload
+- Changed order in HLA typing rules (BAM files are now part of single-end)
+    - samtools fastq is only called for BAM files
+    - input of filtering directly from preprocessed/raw reads
+
 ## [0.2.8] - 2024-06-26
 
 ### Fix 

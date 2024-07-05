@@ -1,7 +1,7 @@
 import sys
 
 """
-    python3 merge_alleles.py '<allele_files>' <output_file>
+    python3 merge_alleles.py '<allele_files>' <group> <output_file>
 """
 
 def main():
@@ -24,9 +24,9 @@ def main():
     # remove duplicates
     alleles = list(set(alleles))
 
-    output = open(sys.argv[2], 'w')
+    output = open(sys.argv[3], 'w')
     for i in alleles:
-        output.write(i + '\n')
+        output.write(sys.argv[2] + "\t" + i + '\n')
     output.close()
 
 def load_alleles(alleles_file):
