@@ -347,7 +347,7 @@ rule combine_aug_short_indels_m2:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
             
 rule select_SNVs_m2:
