@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.2.11] - 2024-08-02
+
+## Fix 
+
+- Updated transindel environment to recent samtools version (as --o introduced in samtools >= 1.13 required by transindel)
+
 ## [0.2.10] - 2024-07-08 
 
 ### Fix 
