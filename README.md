@@ -2,6 +2,7 @@
     <h1>ScanNeo2</h1>
     <img src="https://img.shields.io/badge/snakemake-≥8.0.0-brightgreen.svg">
     <img src="https://github.com/ylab-hi/ScanNeo2/actions/workflows/linting.yml/badge.svg" alt="Workflow status badge">
+    <img src="https://img.shields.io/github/downloads/riasc/chiron/total.svg">
 </div>
 
 ## What is ScanNeo2
