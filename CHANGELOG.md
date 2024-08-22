@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.2.12] - 2024-08-21 
+
+## Fix 
+
+- Fixed missing alleles in HLA alleles reference list - [#34](https://github.com/ylab-hi/ScanNeo2/issues/34)
+
 ## [0.2.11] - 2024-08-02
 
 ## Fix 
