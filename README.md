@@ -7,6 +7,7 @@
     <img src="https://img.shields.io/github/downloads/ylab-hi/ScanNeo2/total.svg">
     <img src="https://img.shields.io/github/contributors/ylab-hi/ScanNeo2">
     <img src="https://img.shields.io/github/last-commit/ylab-hi/ScanNeo2">
+    <img src="https://img.shields.io/github/commits-since/ylab-hi/ScanNeo2/latest">
     <img src="https://img.shields.io/github/stars/ylab-hi/ScanNeo2?style=social">
     <img src="https://img.shields.io/github/forks/ylab-hi/ScanNeo2?style=social">
 </div>
