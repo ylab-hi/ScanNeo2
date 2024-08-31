@@ -49,6 +49,7 @@ exitronsplicing:
   activate: false # whether (=true) or not (=false) to include exitron-splicing events
   ao: 3  # allele observation
   pso: 0.05  # percent spliced out
+  strand: 1 # strand specificity of library (0=unstranded, 1=forward, 2=reverse)
 
 # gene fusion
 genefusion:
