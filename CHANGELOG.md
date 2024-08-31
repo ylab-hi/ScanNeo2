@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2024-03-07
+
+## [0.4.x] -2023-xx-xx (unreleased)
+
+### Features
+
+- NMD information (e.g., escape rule,...) is now also calculated for all variants
+
+## [0.3.0] - 2024-08-30
 
 ### Features
 
@@ -14,7 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - pathogen similarity (BLAST against pathogen-derived epitopes from IEDB)
     - proteome similarity (BLAST against human proteome)
 - Prioritization of neoantigens is now done separately for each variant type (speeds up the process)
-- NMD information (e.g., escape rule,...) is now also calculated for all variants
+- Update to recent version of ScanExitron
+    - this version updated to recent version of regtools (v0.5.0) - which is available on Conda
+    - Singularity/Docker is not necessary anymore
+    - Added option to use strand information in exitron calling
+- ScanNeo2 now uses conda environments for all tools (ditched Singularity/Docker)
 
 ## [0.2.12] - 2024-08-21 
 

@@ -30,10 +30,7 @@ To get started with ScanNeo2, follow the steps below:
     mamba activate scanneo2
     ```
 
-    Note: ScanNeo2 requires Snakemake >= 8.x.x is not compatible with Snakemake <= 8.x.x. If ScanNeo2 
-    is configured to use the exitron module, apptainer (formerly singularity) needs to be installed.
-    For that, the `environment_apptainer.yml` can be used. However, most HPC servers provide their own 
-    module installation (which should be preferred)
+    Note: ScanNeo2 requires Snakemake >= 8.x.x is not compatible with Snakemake <= 8.x.x. 
 
 2. Deploy ScanNeo2:
 
@@ -69,12 +66,6 @@ To run the workflow, use the following command:
 ```bash
 cd /path/to/your/working/directory/
 snakemake --cores all --software-deployment-method conda 
-```
-
-As mentioned above, when exitron detection is activated the singularity option `--software-deployment-method apptainer` has to be used as well.
-
-```bash
-snakemake --cores all --software-deployment-method conda apptainer 
 ```
 
 In addition, custom configfiles can be configured using `--configfile <path/to/configfile>`. In principle, this merely 

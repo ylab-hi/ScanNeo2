@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - samtools=1.20
+  - bedtools=2.30.0
+  - pyfaidx=0.7.0
+  - regtools=0.5.0
+

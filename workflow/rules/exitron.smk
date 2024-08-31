@@ -48,14 +48,15 @@ rule scanexitron:
       "Detect exitrons on sample:{wildcards.sample} of group:{wildcards.group}"
     log:
         "logs/scanexitron_{sample}_{group}.log"
+    conda:
+      "../envs/scanexitron.yml"
     threads:
       config["threads"]
-    container:
-      "docker://yanglabinfo/scanneo2-scanexitron"
     params:
       mapq = config['mapq'],
       ao = config['exitronsplicing']['ao'],
-      pso = config['exitronsplicing']['pso']
+      pso = config['exitronsplicing']['pso'],
+      strand = config['exitronsplicing']['strand']
     shell:
       """
         python3 workflow/scripts/scanexitron/ScanExitron.py \
@@ -64,6 +65,7 @@ rule scanexitron:
           --ao {params.ao} \
           --pso {params.pso} \
           -c ../../../{input.config} \
+          -s {params.strand} \
           -i {input.bam} \
           -r hg38
         mv {wildcards.group}_final_STAR.exitron {output}
