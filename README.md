@@ -7,7 +7,7 @@
     <img src="https://img.shields.io/github/downloads/ylab-hi/ScanNeo2/total.svg">
     <img src="https://img.shields.io/github/contributors/ylab-hi/ScanNeo2">
     <img src="https://img.shields.io/github/last-commit/ylab-hi/ScanNeo2">
-    <img src="https://img.shields.io/github/stars/snakemake/snakemake?style=social">
+    <img src="https://img.shields.io/github/stars/ylab-hi/ScanNeo2?style=social">
 </div>
 
 ## What is ScanNeo2
