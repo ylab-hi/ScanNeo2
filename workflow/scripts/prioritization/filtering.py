@@ -95,14 +95,14 @@ class SequenceSimilarity:
             df.insert(len(df.keys()), "pathogen_similarity", score)
             df.insert(len(df.keys()), "pathogen_evalue", evalue)
             df.insert(len(df.keys()), "pathogen_bitscore", bitscore)
-            df.insert(len(df.keys()), "pathogen_organism", organism)
+            df.insert(len(df.keys()), "pathogen", organism)
 
             # calculate proteome similarity
             prot_score, prot_evalue, prot_bit, prot = self.proteome_similarity(mt_epitope_seq)
             df.insert(len(df.keys()), "proteome_similarity", prot_score)
             df.insert(len(df.keys()), "proteome_evalue", prot_evalue)
             df.insert(len(df.keys()), "proteome_bitscore", prot_bit)
-            df.insert(len(df.keys()), "proteome_organism", prot)
+            df.insert(len(df.keys()), "protein", prot)
 
             self.outfile = os.path.join(output_dir, f"{vartype}_{mhc_class}_neoepitopes.txt")
         
