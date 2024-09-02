@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Added option to use strand information in exitron calling
 - ScanNeo2 now uses conda environments for all tools (ditched Singularity/Docker)
 
+### Fix 
+- renamed similarity fields for pathogen and protein to more descriptive names 
+
 ## [0.2.12] - 2024-08-21 
 
 ## Fix 
