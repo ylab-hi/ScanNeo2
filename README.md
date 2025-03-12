@@ -64,7 +64,7 @@ cd ScanNeo2
     ```
 -->
 
-3. Configure ScanNeo2 by editing the `config/config.yml` file. Make sure to adjust parameters to suit your needs and data.
+3. Configure ScanNeo2 by editing the `config/config.yml` file. Make sure to adjust parameters to suit your needs and data. Note that the paths in the config file need to be relative to the directory from which you run snakemake.
 
 ### Running the Workflow
 
