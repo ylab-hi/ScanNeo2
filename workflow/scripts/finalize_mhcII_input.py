@@ -32,6 +32,7 @@ def calc_revcomp(seq):
 
 
 def split(infile, out_fwd, out_rev):
+    print(f"Input file: {infile}")
     print(f"Reverse reads: {out_rev}")
     print(f"Forward reads: {out_fwd}")
     call = "samtools fastq"
@@ -63,7 +64,7 @@ def main():
             print(f"Single-end fastq file detected. Splitting into two files...")
             print(f"Forward reads: {out_fwd}")
             print(f"Reverse reads: {out_rev}")
-            in_fh = open(input_files[0], "r")
+            in_fh = open(inputfile[0], "r")
             out_fwd_fh = open(out_fwd, "w")
             out_rev_fh = open(out_rev, "w")
 
@@ -93,6 +94,6 @@ def main():
 
     elif fext == ".bam": # bamfile is paired-end (at least in ScanNeo2)
         print(f"Paired-end bam file detected. Splitting into two files...")
-        split(input_files[0], out_fwd, out_rev)
+        split(inputfile, out_fwd, out_rev)
 
 main()

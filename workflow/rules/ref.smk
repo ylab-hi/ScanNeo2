@@ -144,7 +144,7 @@ rule get_hla_info:
     "../envs/basic.yml"
   shell:
     """
-      curl -L -o {output} ftp://ftp.ebi.ac.uk/pub/databases/ipd/imgt/hla/hla_gen.fasta
+      curl -L -o {output} https://ftp.ebi.ac.uk/pub/databases/ipd/imgt/hla/hla_gen.fasta
     """
 
 rule create_hla_idx_bowtie:
