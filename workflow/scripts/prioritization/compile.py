@@ -65,18 +65,14 @@ class Compile:
                               vartype)
 
                 # this overwrite the previous outfile (now including immunogenicity)
-                immunogenicity = filtering.Immunogenicity(options.output_dir, 
-                                                          "mhc-I", 
-                                                          vartype)
+                filtering.Immunogenicity(options.output_dir, "mhc-I", vartype)
 
-                # # sequence similarity
-                seqsim = filtering.SequenceSimilarity(options.output_dir, 
-                                                      "mhc-I", 
-                                                      vartype)
+                # this overwrites the previous outfile (now including sequence similarity)
+                filtering.SequenceSimilarity(options.output_dir, "mhc-I", vartype)
 
-
-                self.combine_neoepitopes(immunogenicity.outfile, "mhc-I")
-
+                outfile = os.path.joing(options.output_dir, f"{vartype}_{options.mhc_class}_neoepitopes.txt")
+                self.combine_neoepitopes(outfile, "mhc-I")
+            
 
             else:
                 print(f"No MHC-I alleles were detected: {options.mhcI} is empty")
@@ -92,8 +88,9 @@ class Compile:
                               options.output_dir,
                               "mhc-II",
                               vartype)
-                
-                self.combine_neoepitopes(immunogenicity.outfile, "mhc-II")
+               
+                outfile = os.path.joing(options.output_dir, f"{vartype}_{options.mhc_class}_neoepitopes.txt")
+                self.combine_neoepitopes(outfile, "mhc-II")
                 
 
             else:
@@ -103,7 +100,11 @@ class Compile:
 
 
     def combine_neoepitopes(self, neoepitopes_file, mhc_class):
-        idx = 0 if mhc_class == "mhc-I" else 1
+        if mhc_class == "mhc-I":
+            idx = 0
+        elif mhc_class == "mhc-II":
+            idx = 1
+
         if self.combined[idx] == "":
             self.combined[idx] += "cat "
             self.combined[idx] += neoepitopes_file

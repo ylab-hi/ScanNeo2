@@ -24,7 +24,8 @@ In principle, Scanneo2 aims to resolve its dependencies automatically and requir
 
 Before installing and using ScanNeo2, make sure you have the following software installed:
 
-1. [Mamba](https://github.com/conda-forge/miniforge#mambaforge): An open-source package manager. Mamba should be installed independently by the user.
+1. [Mamba](https://github.com/conda-forge/miniforge#mambaforge): An open-source package manager. 
+Mamba should be installed independently by the user.
 
 ### Installation
 
@@ -52,7 +53,7 @@ cd ScanNeo2
 
     ScanNeo2 employs HLA-HD for HLA Class II genotyping which is required when ScanNeo2 has been configured to predict class II neoantigens. 
     Due to license reasons it has to be installed manually (download request). Please follow the instructions on the official 
-    [website](https://w3.genome.med.kyoto-u.ac.jp/HLA-HD/). ScanNeo2 has been tested using HLA-HD v1.7.0
+    [website](https://w3.genome.med.kyoto-u.ac.jp/HLA-HD/). ScanNeo2 has been tested using HLA-HD v1.7.1
 
 
 <!--
@@ -74,6 +75,8 @@ To run the workflow, use the following command:
 cd /path/to/your/working/directory/
 snakemake --cores all --software-deployment-method conda 
 ```
+
+Note that snakemake currently does not support Mamba v2. We recommend to either use Mamba v1, or provide the option `--conda-frontend conda`.
 
 In addition, custom configfiles can be configured using `--configfile <path/to/configfile>`. In principle, this merely 
 overwrites the default config, and should include all key/value pairs of the valid config file.
