@@ -12,7 +12,6 @@ import pdb
 
 class Variants():
     def __init__(self, variants_input, options, vartype):
-
         # create variant effects object
         self.variant_effects = effects.VariantEffects(options, vartype)
 
@@ -24,6 +23,7 @@ class Variants():
 
         transcript_count = {}
         for entry in vcf_reader:
+            print(entry)
             # FILTER (when applicable)
             if (entry.INFO['SRC'] == 'snv' or
                 entry.INFO['SRC'] == 'short_indel'):
@@ -32,30 +32,44 @@ class Variants():
 
             csq_fields = self.parse_csq_entries(entry, csq_format)
             for field in csq_fields:
-                csq = self.resolve_consequence(field['Consequence'])
+                print(field["Consequence"])
+                csq = self.resolve_consequence(field["Consequence"])
                 if csq is None:
                     continue
 
                 gene_name = field["SYMBOL"]
                 gene_id = field["Gene"]
-                
-                field["strand"] = ut.det_strand_vep(field["STRAND"])
-
+                field["STRAND"] = ut.det_strand_vep(field["STRAND"])
                 var_start = field["var_start"]
                 var_stop = field["var_stop"]
 
-                # determine gene and transcript information 
+                # determine gene and transcript information
                 anno = self.annotation.transcriptome[field["chrom"]][field["Feature"]]
                 field = {**field, **anno}
-                vstart_regulatory_ovlp = self.det_regulatory_ovlp(anno, var_start)
-                vend_regulatory_ovlp = self.det_regulatory_ovlp(anno, var_stop)
-                if not self.det_regulatory_filter(vstart_regulatory_ovlp,
-                                                  vend_regulatory_ovlp):
-                    continue
+                                                    
 
-                field = self.get_transcript_seq(field,
-                                                vstart_regulatory_ovlp,
-                                                vend_regulatory_ovlp)
+
+
+
+                breakpoint()
+
+
+
+                # # determine gene and transcript information 
+                # anno = self.annotation.transcriptome[field["chrom"]][field["Feature"]]
+                # field = {**field, **anno}
+
+                # # vstart_regulatory_ovlp = self.det_regulatory_ovlp(anno, var_start)
+                # # vend_regulatory_ovlp = self.det_regulatory_ovlp(anno, var_stop)
+                # # if not self.det_regulatory_filter(vstart_regulatory_ovlp,
+                                                  # # vend_regulatory_ovlp):
+                    # # continue
+
+                # breakpoint()
+
+                # field = self.get_transcript_seq(field,
+                                                # vstart_regulatory_ovlp,
+                                                # vend_regulatory_ovlp)
 
 
 
@@ -483,12 +497,12 @@ class Variants():
                     if len(vstart_pos) == 0:
                         return None
 
-            if (list(vstart_ovlp)[0].data["region"] == "5'-regulatory_region":
+            # if (list(vstart_ovlp)[0].data["region"] == "5'-regulatory_region":
 
 
-            ["region"] == "5'-regulatory_region" or
-                vend_ovlp["region"] == "5-regulatory_region"):
-                return None
+            # ["region"] == "5'-regulatory_region" or
+                # vend_ovlp["region"] == "5-regulatory_region"):
+                # return None
                 
             
             wt = ""
@@ -913,12 +927,6 @@ class Variants():
                 alleles[alt] = alt[1:]
 
         return alleles
-
-
-
-
-
-
 
     def resolve_consequence(self, consequence_string):
         consequences = {

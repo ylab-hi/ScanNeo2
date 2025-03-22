@@ -38,7 +38,9 @@ class Compile:
         if self.combined[1] != "":
             subprocess.run(self.combined[1], shell=True)
 
+
     def prioritize(self, inputfile, options, vartype):
+        print(vartype)
         if (vartype == "somatic.snvs" or 
             vartype == "somatic.short.indels" or 
             vartype == "long.indels" or 
@@ -53,34 +55,34 @@ class Compile:
 
         binding = prediction.BindingAffinities(options.threads)
 
-        if (options.mhc_class == "I" or 
-            options.mhc_class == "BOTH"):
+        # if (options.mhc_class == "I" or 
+            # options.mhc_class == "BOTH"):
 
-            # check that allele file is not empty
-            if os.stat(options.mhcI).st_size != 0:
-                binding.start(options.mhcI, 
-                              options.mhcI_len, 
-                              options.output_dir,
-                              "mhc-I",
-                              vartype)
+            # # check that allele file is not empty
+            # if os.stat(options.mhcI).st_size != 0:
+                # binding.start(options.mhcI, 
+                              # options.mhcI_len, 
+                              # options.output_dir,
+                              # "mhc-I",
+                              # vartype)
 
-                # this overwrite the previous outfile (now including immunogenicity)
-                immunogenicity = filtering.Immunogenicity(options.output_dir, 
-                                                          "mhc-I", 
-                                                          vartype)
+                # # this overwrite the previous outfile (now including immunogenicity)
+                # immunogenicity = filtering.Immunogenicity(options.output_dir, 
+                                                          # "mhc-I", 
+                                                          # vartype)
 
-                # # sequence similarity
-                seqsim = filtering.SequenceSimilarity(options.output_dir, 
-                                                      "mhc-I", 
-                                                      vartype)
-
-
-                self.combine_neoepitopes(immunogenicity.outfile, "mhc-I")
+                # # # sequence similarity
+                # seqsim = filtering.SequenceSimilarity(options.output_dir, 
+                                                      # "mhc-I", 
+                                                      # vartype)
 
 
-            else:
-                print(f"No MHC-I alleles were detected: {options.mhcI} is empty")
-                sys.exit(1)
+                # self.combine_neoepitopes(immunogenicity.outfile, "mhc-I")
+
+
+            # else:
+                # print(f"No MHC-I alleles were detected: {options.mhcI} is empty")
+                # sys.exit(1)
 
 
         if (options.mhc_class == "II" or 
@@ -124,13 +126,13 @@ def parse_arguments():
     p = configargparse.ArgParser()
     
     # define different type of events (input files)
-    p.add("--SNVs", required=False, help="snv file")
-    p.add("--indels", required=False, help="indel file")
-    p.add("--long_indels", required=False, help="long indel file")
-    p.add("--exitrons", required=False, help="exitron file")
-    p.add("--altsplicing", required=False, help="alternative splicing file")
-    p.add("--custom", required=False, help="custom variants file")
-    p.add('-f', '--fusions', required=False, help='fusion file')
+    p.add("--SNVs", required=False, help="snv file", default="")
+    p.add("--indels", required=False, help="indel file", default="")
+    p.add("--long_indels", required=False, help="long indel file", default="")
+    p.add("--exitrons", required=False, help="exitron file", default="")
+    p.add("--altsplicing", required=False, help="alternative splicing file", default="")
+    p.add("--custom", required=False, help="custom variants file", default="")
+    p.add('-f', '--fusions', required=False, help='fusion file', default="")
     p.add('-c', '--confidence', required=False, choices=['high', 'medium', 'low'], 
           help='confidence level of fusion events') 
     p.add("--mhc_class", required=True, choices=['I', 'II', 'BOTH'], help='MHC class')

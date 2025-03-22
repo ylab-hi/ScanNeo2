@@ -10,7 +10,7 @@ from pathlib import Path
 class VariantEffects:
     def __init__(self, options, vartype):
 
-        self.exome = reference.Annotation(options.reference, options.anno).exome
+        # self.exome = reference.Annotation(options.reference, options.anno).exome
         self.counts = reference.Counts(options.counts).counts
         self.data = {}
 
