@@ -3,7 +3,7 @@ channels:
  - conda-forge
  - anaconda
 dependencies:
- - python=3.7.12
+ - python>=3.7
  - vcfpy=0.13.6
  - pyfaidx=0.7.0
  - configargparse=1.7
