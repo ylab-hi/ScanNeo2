@@ -24,7 +24,7 @@ rule sort_custom_variants:
   output:
     "results/{sample}/variants/custom.vcf.gz"
   message:
-    "Sorting and compressing exitrons on sample:{wildcards.sample}"
+    "Sorting and compressing custom variants on sample:{wildcards.sample}"
   log:
     "logs/{sample}/custom/sort_custom_variants.log"
   conda:
