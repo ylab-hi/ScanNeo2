@@ -33,6 +33,12 @@ class Immunogenicity:
             df.insert(len(df.keys()), "mt_immunogenicity", mt_immunogenicity)
 
             self.outfile = os.path.join(output_dir, f"{vartype}_{mhc_class}_neoepitopes.txt")
+
+        # elif mhc_class == "mhc-II":
+
+            # mutant immunogenicity scores (TODO: changes in mhcII server)
+
+
         
         df.to_csv(self.outfile, sep="\t", index=False)
 
@@ -105,6 +111,25 @@ class SequenceSimilarity:
             df.insert(len(df.keys()), "protein", prot)
 
             self.outfile = os.path.join(output_dir, f"{vartype}_{mhc_class}_neoepitopes.txt")
+
+        elif mhc_class == "mhc-II":
+
+            mt_epitope_seq = df["mt_epitope_seq"]
+            wt_epitope_seq = df["wt_epitope_seq"]
+
+            # calculate the self-similarity
+            selfsim = self.self_similarity(wt_epitope_seq, mt_epitope_seq)
+            df.insert(len(df.keys()), "self-similarity", selfsim)
+
+            # calculate proteome similarity
+            prot_score, prot_evalue, prot_bit, prot = self.proteome_similarity(mt_epitope_seq)
+            df.insert(len(df.keys()), "proteome_similarity", prot_score)
+            df.insert(len(df.keys()), "proteome_evalue", prot_evalue)
+            df.insert(len(df.keys()), "proteome_bitscore", prot_bit)
+            df.insert(len(df.keys()), "protein", prot)
+
+            self.outfile = os.path.join(output_dir, f"{vartype}_{mhc_class}_neoepitopes.txt")
+
         
         df.to_csv(self.outfile, sep="\t", index=False)
 

@@ -70,7 +70,7 @@ class Compile:
                 # this overwrites the previous outfile (now including sequence similarity)
                 filtering.SequenceSimilarity(options.output_dir, "mhc-I", vartype)
 
-                outfile = os.path.joing(options.output_dir, f"{vartype}_{options.mhc_class}_neoepitopes.txt")
+                outfile = os.path.joing(options.output_dir, f"{vartype}_mhc-I_neoepitopes.txt")
                 self.combine_neoepitopes(outfile, "mhc-I")
             
 
@@ -88,8 +88,14 @@ class Compile:
                               options.output_dir,
                               "mhc-II",
                               vartype)
+
+                # this overwrites the previous outfile (now including immunogenicity)
+                # filtering.Immunogenicity(options.output_dir, "mhc-II", vartype)
+
+                # this overwrites the previous outfile (now including sequence similarity)
+                filtering.SequenceSimilarity(options.output_dir, "mhc-II", vartype)
                
-                outfile = os.path.joing(options.output_dir, f"{vartype}_{options.mhc_class}_neoepitopes.txt")
+                outfile = os.path.join(options.output_dir, f"{vartype}_mhc-II_neoepitopes.txt")
                 self.combine_neoepitopes(outfile, "mhc-II")
                 
 
@@ -125,13 +131,13 @@ def parse_arguments():
     p = configargparse.ArgParser()
     
     # define different type of events (input files)
-    p.add("--SNVs", required=False, help="snv file")
-    p.add("--indels", required=False, help="indel file")
-    p.add("--long_indels", required=False, help="long indel file")
-    p.add("--exitrons", required=False, help="exitron file")
-    p.add("--altsplicing", required=False, help="alternative splicing file")
-    p.add("--custom", required=False, help="custom variants file")
-    p.add('-f', '--fusions', required=False, help='fusion file')
+    p.add("--SNVs", required=False, help="snv file", default="")
+    p.add("--indels", required=False, help="indel file", default="")
+    p.add("--long_indels", required=False, help="long indel file", default="")
+    p.add("--exitrons", required=False, help="exitron file", default="")
+    p.add("--altsplicing", required=False, help="alternative splicing file", default="")
+    p.add("--custom", required=False, help="custom variants file", default="")
+    p.add('-f', '--fusions', required=False, help='fusion file', default="")
     p.add('-c', '--confidence', required=False, choices=['high', 'medium', 'low'], 
           help='confidence level of fusion events') 
     p.add("--mhc_class", required=True, choices=['I', 'II', 'BOTH'], help='MHC class')
@@ -143,7 +149,7 @@ def parse_arguments():
     p.add('-a', '--anno', required=True, help='annotation file')
     p.add("-r", "--reference", required=True, help="reference genome")
     p.add('-o', '--output_dir', required=True, help='output directory')
-    p.add('-t', '--threads', required=False, help='number of threads')
+    p.add('-t', '--threads', required=False, help='number of threads', default=1)
     p.add('--counts', required=False, help='featurecounts file')
 
     return p.parse_args()
