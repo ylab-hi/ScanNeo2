@@ -6,18 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.4.x] -2023-xx-xx (unreleased)
+## [0.5.x] -2023-xx-xx (unreleased)
 
 ### Features
 
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
-## [0.3.1] - 2025-03-18
+## [0.3.1] - 2025-03-27
 
 ## Fix 
 
 - Changed protocol for HLA alleles reference list to https (rule get_hla_info)
 - Fixed path to input files in finalize_mhcII_input.py (which caused error when using paired-end reads)
+- Fixed bug in quantification/featurecounts - supported regardless of input type (PE or SE): added wrapper script
+- replaced MHC-II binding affinity prediction with IEDB API
+- Manual Dockerfile replaces containerized version
 
 ## [0.3.0] - 2024-08-30
 
