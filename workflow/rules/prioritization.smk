@@ -45,7 +45,6 @@ rule prioritization:
     counts=get_prioritization_counts,
     mhcI_ba="workflow/scripts/mhc_i/",
     mhcI_im="workflow/scripts/immunogenicity/",
-    mhcII_ba="workflow/scripts/mhc_ii/"
   output:
     directory("results/{sample}/prioritization/"),
   message:
