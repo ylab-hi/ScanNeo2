@@ -70,7 +70,7 @@ class Compile:
                 # this overwrites the previous outfile (now including sequence similarity)
                 filtering.SequenceSimilarity(options.output_dir, "mhc-I", vartype)
 
-                outfile = os.path.joing(options.output_dir, f"{vartype}_mhc-I_neoepitopes.txt")
+                outfile = os.path.join(options.output_dir, f"{vartype}_mhc-I_neoepitopes.txt")
                 self.combine_neoepitopes(outfile, "mhc-I")
             
 
