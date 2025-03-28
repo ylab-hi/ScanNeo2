@@ -10,3 +10,4 @@ dependencies:
   - biopython=1.78
   - gffutils=0.12
   - pysam=0.22.0
+  - curl
