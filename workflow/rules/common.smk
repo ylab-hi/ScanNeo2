@@ -258,17 +258,16 @@ def get_all_mhcI_alleles(wildcards):
 
 def get_input_filter_reads_mhcII_PE(wildcards):
   if config["preproc"]["activate"]:
-    ff = expand("results/{sample}/{seqtype}/reads/{group}_{readpair}_preproc.fq.gz",
+    return expand("results/{sample}/{seqtype}/reads/{group}_{readpair}_preproc.fq.gz",
                 sample=wildcards.sample,
-                seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
+                seqtype="dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
                  group = wildcards.group,
                  readpair=["R1", "R2"]
     )
-    print(ff)
-    return ff
-#  else:
-#    seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
-#    return config["data"][f"{seqtype}"][wildcards.group]
+
+  else:
+    seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
+    return config["data"][f"{seqtype}"][wildcards.group]
 
 def get_input_hlatyping_mhcII(wildcards):
 
