@@ -14,6 +14,7 @@ class VariantEffects:
         self.counts = reference.Counts(options.counts).counts
         self.data = {}
 
+
         output_dir_path =  Path(options.output_dir)
         if not output_dir_path.exists():
             output_dir_path.mkdir()
@@ -57,7 +58,6 @@ class VariantEffects:
 
         # determine TPM
         self.get_counts()
-
 
 
     @staticmethod

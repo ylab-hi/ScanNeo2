@@ -124,6 +124,9 @@ def all_identical(l):
 
 # load up the config
 config['data'] = data_structure(config['data'])
+print(config['data'])
+
+
 
 ########### PREPROCESSING ##########
 def get_raw_reads(wildcards):
@@ -252,6 +255,20 @@ def get_all_mhcI_alleles(wildcards):
 
 
 ##### MHC CLASS II #####
+
+def get_input_filter_reads_mhcII_PE(wildcards):
+  if config["preproc"]["activate"]:
+    return expand("results/{sample}/{seqtype}/reads/{group}_{readpair}_preproc.fq.gz",
+                sample=wildcards.sample,
+                seqtype="dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
+                 group = wildcards.group,
+                 readpair=["R1", "R2"]
+    )
+
+  else:
+    seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
+    return config["data"][f"{seqtype}"][wildcards.group]
+
 def get_input_hlatyping_mhcII(wildcards):
 
   if wildcards.nartype == "DNA":
@@ -286,6 +303,7 @@ def get_predicted_mhcII_alleles(wildcards):
 
   # routines to genotype from DNA
   if "DNA" in config['hlatyping']['MHC-II_mode']:
+    print("DNA")
     if config['data']['dnaseq'] is not None:
       for key in config['data']['dnaseq'].keys():
         
@@ -293,8 +311,7 @@ def get_predicted_mhcII_alleles(wildcards):
           if key in config['data']['normal']:
             continue
 
-        if key not in config['data']['normal']:
-          values += expand("results/{sample}/hla/mhc-II/genotyping/{group}_{nartype}/result/{group}_{nartype}_final.result.txt",
+        values += expand("results/{sample}/hla/mhc-II/genotyping/{group}_{nartype}/result/{group}_{nartype}_final.result.txt",
                            sample=wildcards.sample,
                            group=key,
                            nartype="DNA")

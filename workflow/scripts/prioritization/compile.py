@@ -65,18 +65,14 @@ class Compile:
                               vartype)
 
                 # this overwrite the previous outfile (now including immunogenicity)
-                immunogenicity = filtering.Immunogenicity(options.output_dir, 
-                                                          "mhc-I", 
-                                                          vartype)
+                filtering.Immunogenicity(options.output_dir, "mhc-I", vartype)
 
-                # # sequence similarity
-                seqsim = filtering.SequenceSimilarity(options.output_dir, 
-                                                      "mhc-I", 
-                                                      vartype)
+                # this overwrites the previous outfile (now including sequence similarity)
+                filtering.SequenceSimilarity(options.output_dir, "mhc-I", vartype)
 
-
-                self.combine_neoepitopes(immunogenicity.outfile, "mhc-I")
-
+                outfile = os.path.join(options.output_dir, f"{vartype}_mhc-I_neoepitopes.txt")
+                self.combine_neoepitopes(outfile, "mhc-I")
+            
 
             else:
                 print(f"No MHC-I alleles were detected: {options.mhcI} is empty")
@@ -92,8 +88,15 @@ class Compile:
                               options.output_dir,
                               "mhc-II",
                               vartype)
-                
-                self.combine_neoepitopes(immunogenicity.outfile, "mhc-II")
+
+                # this overwrites the previous outfile (now including immunogenicity)
+                # filtering.Immunogenicity(options.output_dir, "mhc-II", vartype)
+
+                # this overwrites the previous outfile (now including sequence similarity)
+                filtering.SequenceSimilarity(options.output_dir, "mhc-II", vartype)
+               
+                outfile = os.path.join(options.output_dir, f"{vartype}_mhc-II_neoepitopes.txt")
+                self.combine_neoepitopes(outfile, "mhc-II")
                 
 
             else:
@@ -103,7 +106,11 @@ class Compile:
 
 
     def combine_neoepitopes(self, neoepitopes_file, mhc_class):
-        idx = 0 if mhc_class == "mhc-I" else 1
+        if mhc_class == "mhc-I":
+            idx = 0
+        elif mhc_class == "mhc-II":
+            idx = 1
+
         if self.combined[idx] == "":
             self.combined[idx] += "cat "
             self.combined[idx] += neoepitopes_file
@@ -124,13 +131,13 @@ def parse_arguments():
     p = configargparse.ArgParser()
     
     # define different type of events (input files)
-    p.add("--SNVs", required=False, help="snv file")
-    p.add("--indels", required=False, help="indel file")
-    p.add("--long_indels", required=False, help="long indel file")
-    p.add("--exitrons", required=False, help="exitron file")
-    p.add("--altsplicing", required=False, help="alternative splicing file")
-    p.add("--custom", required=False, help="custom variants file")
-    p.add('-f', '--fusions', required=False, help='fusion file')
+    p.add("--SNVs", required=False, help="snv file", default="")
+    p.add("--indels", required=False, help="indel file", default="")
+    p.add("--long_indels", required=False, help="long indel file", default="")
+    p.add("--exitrons", required=False, help="exitron file", default="")
+    p.add("--altsplicing", required=False, help="alternative splicing file", default="")
+    p.add("--custom", required=False, help="custom variants file", default="")
+    p.add('-f', '--fusions', required=False, help='fusion file', default="")
     p.add('-c', '--confidence', required=False, choices=['high', 'medium', 'low'], 
           help='confidence level of fusion events') 
     p.add("--mhc_class", required=True, choices=['I', 'II', 'BOTH'], help='MHC class')
@@ -142,7 +149,7 @@ def parse_arguments():
     p.add('-a', '--anno', required=True, help='annotation file')
     p.add("-r", "--reference", required=True, help="reference genome")
     p.add('-o', '--output_dir', required=True, help='output directory')
-    p.add('-t', '--threads', required=False, help='number of threads')
+    p.add('-t', '--threads', required=False, help='number of threads', default=1)
     p.add('--counts', required=False, help='featurecounts file')
 
     return p.parse_args()

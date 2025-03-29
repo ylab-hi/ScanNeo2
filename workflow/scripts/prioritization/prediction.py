@@ -291,23 +291,47 @@ class BindingAffinities:
         binding_affinities = {}
 # #    binding_affinities[epilen] = {}
         print(f'calculate binding affinities - allele:{allele} epilen:{epilen} group: {group}')
-        call = ['python']
         if mhc_class == "mhc-I":
+            call = []
+            call.append("python")
             call.append("workflow/scripts/mhc_i/src/predict_binding.py")
             call.append("netmhcpan")
+            call.append(allele)
+            call.append(str(epilen))
+            call.append(fa_file)
         elif mhc_class == "mhc-II":
-            call.append("workflow/scripts/mhc_ii/mhc_II_binding.py")
-            call.append("netmhciipan_ba")
-        call.append(allele)
-        call.append(str(epilen))
-        call.append(fa_file)
+            seq = "" # determine the sequence from the fasta file
+            fh = open(fa_file, "r")
+            for line in fh:
+                if line.startswith(">"):
+                    if seq != "":
+                        seq += "%0A"
+                    seq += "%3E" + line[1:].strip()
+                else:
+                    seq += "%0A" + line.strip()
+            fh.close()
+
+            call = f"curl --data \"method=netmhciipan_ba&sequence_text={seq}"
+            call += f"&allele={allele}&length={epilen}\""
+            call += " http://tools-cluster-interface.iedb.org/tools_api/mhcii/"
 
         # make sure that there are entries in the file
         if os.stat(fa_file).st_size != 0:
-            result = subprocess.run(call,
-                stdout = subprocess.PIPE,
-                universal_newlines=True)
+            if mhc_class == "mhc-I":
+                result = subprocess.run(call,
+                    stdout = subprocess.PIPE,
+                    universal_newlines=True)
+            elif mhc_class == "mhc-II":
+                result = subprocess.run(call,
+                    stdout = subprocess.PIPE,
+                    shell=True,
+                    universal_newlines=True)
+
+
+
             predictions = result.stdout.rstrip().split('\n')[1:]
+
+#            print(predictions)
 
             for line in predictions:
                 entries = line.split('\t')
