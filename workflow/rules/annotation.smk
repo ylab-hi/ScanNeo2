@@ -67,6 +67,6 @@ rule annotate_variants:
     "logs/vep/{sample}_{vartype}_annotate.log",
   threads: 4
   wrapper:
-    "v1.31.1/bio/vep/annotate"
+    "v5.9.0/bio/vep/annotate"
 
 

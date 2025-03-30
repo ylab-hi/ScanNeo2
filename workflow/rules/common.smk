@@ -153,7 +153,7 @@ def get_preproc_input(wildcards):
   if config['preproc']['activate']:
     if config['data'][f"{wildcards.seqtype}_readtype"] == 'SE':
       return {
-        config['data'][wildcards.seqtype][wildcards.group]
+          config['data'][wildcards.seqtype][wildcards.group]
       }
 
     elif config['data'][f"{wildcards.seqtype}_readtype"] == 'PE':
@@ -255,55 +255,47 @@ def get_all_mhcI_alleles(wildcards):
 
 
 ##### MHC CLASS II #####
-
 def get_input_filter_reads_mhcII_PE(wildcards):
-  if config["preproc"]["activate"]:
-    return expand("results/{sample}/{seqtype}/reads/{group}_{readpair}_preproc.fq.gz",
-                sample=wildcards.sample,
-                seqtype="dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
-                 group = wildcards.group,
-                 readpair=["R1", "R2"]
-    )
+  seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
+  """ if the reads are in BAM format, we consider them as processed and forward
+  them to the filtering rule. If the reads are in FASTQ format, we may preprocess"""
+  if config["data"][f"{seqtype}_filetype"] == ".bam":
+    return expand("results/{sample}/hla/reads/{group}_{nartype}_BAM.fq",
+                  sample=wildcards.sample,
+                  group=wildcards.group,
+                  nartype=wildcards.nartype)
 
   else:
-    seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
-    return config["data"][f"{seqtype}"][wildcards.group]
+    if config["preproc"]["activate"]:
+      return expand("results/{sample}/{seqtype}/reads/{group}_{readpair}_preproc.fq.gz",
+                    sample=wildcards.sample,
+                    group = wildcards.group,
+                    readpair=["R1", "R2"]
+      )
+    else:
+      return config["data"][f"{seqtype}"][wildcards.group]
 
-def get_input_hlatyping_mhcII(wildcards):
 
-  if wildcards.nartype == "DNA":
-    if config["data"]["dnaseq_readtype"] == "SE":
+def get_output_hlatyping_mhcII(wildcards):
+  seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
+  if config["data"][f"{seqtype}_filetype"] == ".bam" or config["data"][f"{seqtype}_readtype"] == "PE":
+    # we consider the reads in BAM files as PE (so we can use the rule filter_reads_mhcII_PE)
+    return expand("results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_PE.bam",
+                  sample=wildcards.sample,
+                  group=wildcards.group,
+                  nartype=wildcards.nartype)
+  else:
+    if config["data"][f"{seqtype}_readtype"] == "SE":
       return expand("results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_SE.fq",
                     sample=wildcards.sample,
                     group=wildcards.group,
                     nartype=wildcards.nartype)
-
-    elif config["data"]["dnaseq_readtype"] == "PE":
-      return expand("results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_PE.bam",
-                    sample=wildcards.sample,
-                    group=wildcards.group,
-                    nartype=wildcards.nartype)
-
-  elif wildcards.nartype == "RNA":
-    if config["data"]["rnaseq_readtype"] == "SE":
-      return expand("results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_SE.fq",
-                    sample=wildcards.sample,
-                    group=wildcards.group,
-                    nartype=wildcards.nartype)
-
-    elif config["data"]["rnaseq_readtype"] == "PE":
-      return expand("results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_PE.bam",
-                    sample=wildcards.sample,
-                    group=wildcards.group,
-                    nartype=wildcards.nartype)
-
 
 def get_predicted_mhcII_alleles(wildcards):
   values = []
 
   # routines to genotype from DNA
   if "DNA" in config['hlatyping']['MHC-II_mode']:
-    print("DNA")
     if config['data']['dnaseq'] is not None:
       for key in config['data']['dnaseq'].keys():
         
@@ -489,21 +481,24 @@ def get_dna_align_input(wildcards):
 
 
 ########### GENE EXPRESSION ##########
-def get_aligned_reads(wildcards):
-  val = []
-  
+def get_aligned_reads_featurecounts(wildcards):
   if wildcards.seqtype == 'dnaseq':
-    val += expand("results/{sample}/{seqtype}/align/{group}_aligned_BWA.bam",
-                  sample=wildcards.sample,
-                  seqtype='dnaseq',
-                  group=wildcards.group)
+    if config["data"]["dnaseq_filetype"] == ".bam":
+      return config["data"]["dnaseq"][wildcards.group]
+    else:
+      return expand("results/{sample}/{seqtype}/align/{group}_aligned_BWA.bam",
+                    sample=wildcards.sample,
+                    seqtype='dnaseq',
+                    group=wildcards.group)
+      
   elif wildcards.seqtype == 'rnaseq':
-    val += expand("results/{sample}/{seqtype}/align/{group}_final_STAR.bam",
-                  sample=wildcards.sample,
-                  seqtype='rnaseq',
-                  group=wildcards.group)
-
-  return val
+    if config["data"]["rnaseq_filetype"] == ".bam":
+      return config["data"]["rnaseq"][wildcards.group]
+    else:
+      return expand("results/{sample}/{seqtype}/align/{group}_final_STAR.bam",
+                    sample=wildcards.sample,
+                    seqtype='rnaseq',
+                    group=wildcards.group)
 
 
 def get_counts(wildcards):

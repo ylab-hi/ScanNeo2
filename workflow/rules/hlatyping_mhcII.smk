@@ -61,7 +61,7 @@ rule filter_reads_mhcII_PE:
 # this rules create the input files for HLA-HD (needs to be PE)
 rule finalize_reads_mhcII:
   input:
-    get_input_hlatyping_mhcII
+    get_output_hlatyping_mhcII
   output:
     fwd="results/{sample}/hla/mhc-II/reads/{group}_{nartype}_final_R1.fq",
     rev="results/{sample}/hla/mhc-II/reads/{group}_{nartype}_final_R2.fq"

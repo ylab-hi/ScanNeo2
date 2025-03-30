@@ -1,6 +1,6 @@
 rule countfeatures:
   input:
-    sample = get_aligned_reads,
+    sample = get_aligned_reads_featurecounts,
     annotation_file = "resources/refs/genome.gtf"
   output:
     "results/{sample}/{seqtype}/quantification/{group}_counts.txt"
