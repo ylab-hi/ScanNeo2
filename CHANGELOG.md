@@ -12,9 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.3.2] - 2025-03-29
+
+### Fix 
+
+- Removed fixed versions for bwa (0.7.19) and samtools (1.21) to allow installation 
+of the latest versions.
+- Updated the VEP wrapper version from "v1.31.1/bio/vep/annotate" to 
+"v5.9.0/bio/vep/annotate".
+- Modified functions for file type handling: adjusted indentation in get_preproc_input, 
+updated get_input_filter_reads_mhcII_PE to handle BAM files directly, renamed 
+get_aligned_reads to get_aligned_reads_featurecounts, added new function 
+get_output_hlatyping_mhcII, and updated rule input parameters accordingly.
+
+
 ## [0.3.1] - 2025-03-27
 
-## Fix 
+### Fix 
 
 - Changed protocol for HLA alleles reference list to https (rule get_hla_info)
 - Fixed path to input files in finalize_mhcII_input.py (which caused error when using paired-end reads)
