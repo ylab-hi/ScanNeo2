@@ -91,16 +91,26 @@ easier to get started.
 
 ## Test data
 
-In additon, we provided test data in `.tests/integration` with configuration and resulting file that can be used to test the installation
+In additon, we provided test data in `.tests/integration` with configuration and resulting file that can be used 
+to test the installation. 
+
+For example, the following will run the the workflow with custom provided variants:
+```
+snakemake --cores all --sdm conda --configfile .tests/integration/custom-test/config/config.yaml
+```
+Also, the following command will run the workflow with a small raw RNA-seq dataset:
+```
+snakemake --cores all --sdm conda --configfile .tests/integration/indel-test/config/config.yaml
+```
 
 ## System requirements
 
 We recommend to run ScanNeo on a system with at least 64GB
 
 
-## Conclusion
+## Troubleshooting
 
-ScanNeo2 provides an accessible, efficient method for predicting neoantigens. Its comprehensive support for multiple sources of neoantigens, along with its ease of installation and use, make it a powerful tool for researchers in the field. Please don't hesitate to reach out with any questions or feedback - we're always looking to improve ScanNeo2.
+Please don't hesitate to reach out with any questions or feedback
 
 ## Citation
 
