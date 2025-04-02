@@ -32,13 +32,13 @@ preproc:
     wsize: 3
     wqual: 20
 
-### alingment
+### alignment
 align:
-  minovlps: 10
-  chimsegmin: 20
-  chimoverhang: 10
-  chimmax: 50
-  chimmaxdrop: 30
+  chimSegmentMin: 20
+  chimScoreMin: 10
+  chimJunctionOverhangMin: 10
+  chimScoreDropMax: 20
+  chimScoreSeparation: 10
 
 ### variant calling
 # alternative splicing
@@ -88,8 +88,8 @@ quantification:
 hlatyping:
   class: I # I, II or BOTH
   # specific path for class II hlatyping (only required when class: II, or BOTH)
-  MHC-I_mode: DNA, RNA # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
-  MHC-II_mode: BOTH # DNA, RNA, or BOTH (if empty alleles have to be specified in custom)
+  MHC-I_mode: DNA, RNA # DNA, RNA, or custom (if empty alleles have to be specified in custom)
+  MHC-II_mode: BOTH # DNA, RNA, or custom (if empty alleles have to be specified in custom)
 
   freqdata: ./hlahd_files/freq_data/ 
   split: ./hlahd_files/HLA_gene.split.txt
