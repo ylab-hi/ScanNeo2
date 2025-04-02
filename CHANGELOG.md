@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.3.3] - 2025-04-02 
+
+### Fix 
+
+- Fixed parameter in `.tests/integration/config_basic/config.yaml` (align) to match general config
+
 ## [0.3.2] - 2025-03-29
 
 ### Fix 
