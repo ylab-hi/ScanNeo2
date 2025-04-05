@@ -255,6 +255,17 @@ def get_all_mhcI_alleles(wildcards):
 
 
 ##### MHC CLASS II #####
+def get_input_filter_reads_mhcII_SE(wildcards):
+  if config["preproc"]["activate"]:
+    return expand("results/{sample}/{seqtype}/reads/{group}_preproc.fq.gz",
+                  sample=wildcards.sample,
+                  seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
+                  group=wildcards.group)
+  else:
+    seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
+    return config["data"][f"{seqtype}"][wildcards.group]
+
+
 def get_input_filter_reads_mhcII_PE(wildcards):
   seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
   """ if the reads are in BAM format, we consider them as processed and forward
@@ -269,6 +280,7 @@ def get_input_filter_reads_mhcII_PE(wildcards):
     if config["preproc"]["activate"]:
       return expand("results/{sample}/{seqtype}/reads/{group}_{readpair}_preproc.fq.gz",
                     sample=wildcards.sample,
+                    seqtype= "dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
                     group = wildcards.group,
                     readpair=["R1", "R2"]
       )

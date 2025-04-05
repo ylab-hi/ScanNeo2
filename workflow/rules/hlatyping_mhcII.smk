@@ -1,7 +1,7 @@
 ######### MHC-II HLA GENOTYPING ###########
 rule filter_reads_mhcII_SE:
   input:
-    sample=["results/{sample}/hla/reads/{group}_{nartype}_SE.fq"], 
+    sample=get_input_filter_reads_mhcII_SE,
     idx=multiext(
       "resources/hla/bowtie2_index",
       ".1.bt2",
@@ -72,10 +72,27 @@ rule finalize_reads_mhcII:
   threads: 1
   shell:
     """
-      python workflow/scripts/finalize_mhcII_input.py \
+      python workflow/scripts/genotyping/finalize_mhcII_input.py \
           {input} \
           {output.fwd} \
           {output.rev}
+    """
+
+rule readcounts_mhcII:
+  input: 
+    fwd = "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_final_R1.fq",
+    rev = "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_final_R2.fq"
+  output:
+    "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_final_counts.txt"
+  log:
+    "logs/{sample}/genotyping/final_readcounts_mhcII_{group}_{nartype}.log"
+  conda:
+    "../envs/basic.yml"
+  threads: 1
+  shell:
+    """
+      python workflow/scripts/countreads.py \
+          {input.fwd} {output} > {log} 2>&1 | exit 0
     """
 
 
@@ -104,7 +121,7 @@ rule hlatyping_mhcII:
           {input.fwd} {input.rev} \
           {params.split} {params.dic} \
           {wildcards.group}_{wildcards.nartype} \
-          results/{wildcards.sample}/hla/mhc-II/genotyping/
+          results/{wildcards.sample}/hla/mhc-II/genotyping/ > {log} 2>&1
     """
 
 rule merge_predicted_mhcII_allels:
