@@ -8,9 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.x] -2023-xx-xx (unreleased)
 
+
 ### Features
 
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
+
+## [0.3.4] - 2025-04-04
+
+### Fix 
+
+- Moved script for preparing hla input to workflow/scripts/genotyping
+- Added missing pipe to log file in rule hlatyping_mhcII
+- Added wrong input file to filtering of mhcII reads on SE
 
 ## [0.3.3] - 2025-04-02 
 
