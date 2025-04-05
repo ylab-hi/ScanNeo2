@@ -4,7 +4,7 @@
     <img src="https://github.com/ylab-hi/ScanNeo2/actions/workflows/linting.yml/badge.svg" alt="Workflow status badge">
     <img src="https://img.shields.io/badge/snakemake-≥8.0.0-brightgreen.svg">
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg">
-    <img alt="Citation Badge" src="https://api.juleskreuer.eu/citation-badge.php?doi=https://academic.oup.com/bioinformatics/article/39/11/btad659/7330407">
+    <img alt="Citation Badge" src="https://api.juleskreuer.eu/citation-badge.php?doi=https://doi.org/10.1093/bioinformatics/btad659">
     <img src="https://img.shields.io/github/downloads/ylab-hi/ScanNeo2/total.svg">
     <img src="https://img.shields.io/github/contributors/ylab-hi/ScanNeo2">
     <img src="https://img.shields.io/github/last-commit/ylab-hi/ScanNeo2">
