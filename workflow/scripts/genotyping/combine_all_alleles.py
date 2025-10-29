@@ -34,7 +34,7 @@ def main():
         for line in fh_in:
             cols = line.rstrip().split("\t")
             if len(cols) != 2:
-                print(f"Invalid input file: {mhc}")
+                print(f"Invalid input file: {infile}")
                 sys.exit(1)
 
             source = cols[0]
