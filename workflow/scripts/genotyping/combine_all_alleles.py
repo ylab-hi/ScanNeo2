@@ -29,12 +29,22 @@ def main():
     refset = parse_refset(sys.argv[2])
 
     alleles = {}
-    for mhc in infiles:
-        fh_in = open(mhc, "r")
+    for infile in infiles:
+        fh_in = open(infile, "r")
         for line in fh_in:
             cols = line.rstrip().split("\t")
+            if len(cols) != 2:
+                print(f"Invalid input file: {mhc}")
+                sys.exit(1)
+
             source = cols[0]
             mhc = cols[1]
+
+            # chop down the alleles to first two fields 
+            # e.g., HLA-A*02:01:01 becomes HLA-A*02:01
+            if len(mhc.split(':')) > 2:
+                mhc = mhc.split(':')[0] + ':' + mhc.split(':')[1]
+
 
             if mhc in refset:
                 if mhc not in alleles:

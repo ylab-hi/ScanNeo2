@@ -35,3 +35,4 @@ rule merge_counttables:
           -n TPM \
           -o {output} > {log} 2>&1
     """
+

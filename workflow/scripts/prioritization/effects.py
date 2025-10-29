@@ -22,6 +22,7 @@ class VariantEffects:
         self.variantEffectsFile = Path(output_dir_path, f"{vartype}_variant_effects.tsv")
         # create dir if it not exists
 
+
         self.fh = open(self.variantEffectsFile, 'w')
         self.write_header()
 
@@ -328,10 +329,12 @@ class VariantEffects:
         else:
             key = (self.data["gene_id"], self.data["chrom"])
             if key in self.counts:
-                self.data["TPM"] = self.counts[key][self.data["group"]]
+                if self.data["group"] in self.counts[key]:
+                    self.data["TPM"] = self.counts[key][self.data["group"]]
+                else:
+                    self.data["TPM"] = None
             else:
                 self.data["TPM"] = None
-
 
 
     # TODO: no hard coding of output

@@ -138,6 +138,7 @@ rule merge_predicted_mhcII_allels:
   threads: 1
   shell:
     """
+      echo "bla"
       python workflow/scripts/genotyping/merge_predicted_mhcII.py \
           '{input}' {output} > {log} 2>&1
     """
