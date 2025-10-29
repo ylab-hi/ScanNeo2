@@ -13,6 +13,22 @@ rule download_mhcI_ba_tools:
           | tar xz -C workflow/scripts/
     """
 
+rule download_mhcII_ba_tools:
+  output:
+    directory("workflow/scripts/mhc_ii/")
+  message:
+    "Downloading MHC II prediction tools"
+  log:
+    "logs/download_mhc-II_ba_tools.log"
+  conda:
+    "../envs/basic.yml"
+  shell:
+    """
+      curl -L -o - https://downloads.iedb.org/tools/mhcii/3.1.12/IEDB_MHC_II-3.1.12.tar.gz \
+          | tar xz -C workflow/scripts/
+    """
+
+
 rule download_prediction_binding_affinity_tools:
   output:
     directory("workflow/scripts/immunogenicity/")
@@ -44,6 +60,7 @@ rule prioritization:
     annotation="resources/refs/genome_tmp.gtf",
     counts=get_prioritization_counts,
     mhcI_ba="workflow/scripts/mhc_i/",
+    mhcII_ba="workflow/scripts/mhc_ii/",
     mhcI_im="workflow/scripts/immunogenicity/",
   output:
     directory("results/{sample}/prioritization/"),
@@ -60,6 +77,8 @@ rule prioritization:
     mhcII_len = f"""{config["prioritization"]["lengths"]["MHC-II"]}""",
   shell:
     """
+      export PERL5LIB=\${{CONDA_PREFIX}}/lib/perl5/vendor_perl:\${{CONDA_PREFIX}}/lib/perl5/core_perl:\${{CONDA_PREFIX}}/lib/perl5/site_perl:\${{PERL5LIB:-}}
+
       python workflow/scripts/prioritization/compile.py \
           --SNV "{input.snv}" \
           --indels "{input.indels}" \

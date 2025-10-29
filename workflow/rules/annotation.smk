@@ -31,10 +31,21 @@ rule download_vep_cache:
   shell:
     """
       mkdir -p {output}
-      curl -L https://g-a8b222.dd271.03c0.data.globus.org/ensemblorg/pub/release-{params.release}/variation/indexed_vep_cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz \
-      | tar -xz -C resources/vep/cache
+      curl -L -C - \
+          --retry 10 \
+          --retry-delay 10 \
+          --retry-all-errors \
+          -o resources/vep/cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz \
+          https://ftp.ensembl.org/pub/release-{params.release}/variation/indexed_vep_cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz
+
+      tar -xzf resources/vep/cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz -C resources/vep/cache/
+      rm resources/vep/cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz
+
     """
 #      curl -L https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_vep_110_GRCh38.tar.gz \
+          # https://g-a8b222.dd271.03c0.data.globus.org/ensemblorg/pub/release-{params.release}/variation/indexed_vep_cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz
+
+    
 
 rule index_variants:
   input:

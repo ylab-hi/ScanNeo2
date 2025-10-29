@@ -175,7 +175,9 @@ class Variants():
                 if self.variant_effects.self_dissimilarity():
                     self.variant_effects.write_entry()
 
-        self.variant_effects.close_file() 
+        # self.variant_effects.close_file() 
+        self.variant_effects.fh.close()
+
 
     @staticmethod
     def scan_stop_codon(sequence):

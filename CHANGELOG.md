@@ -13,6 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.3.5] - 2025-10-28
+
+### Fix 
+
+- added 10 retries to curl calls to avoid errors when downloading files (VEP cache, plugins)
+- prioritization of MHC-II variants uses now the standalone version of IEDB 
+- explicitely chop HLA alleles to first two fields (e.g., HLA-A*02:01:01 becomes HLA-A*02:01)
+- changed mhc-II refset to match IEDBs binding affinity prediction
+- shell=True caused interactive python session instead of subprocess (when predicting binding affinities MHC-II))
+
+### Changed
+
+- code polishing
+- install instructions for HLA-HD in README
+
 ## [0.3.4] - 2025-04-04
 
 ### Fix 

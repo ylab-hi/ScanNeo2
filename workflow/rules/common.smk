@@ -358,11 +358,17 @@ def get_all_mhcII_alleles(wildcards):
                     sample = wildcards.sample)
 
   if "custom" in config["hlatyping"]["MHC-II_mode"]:
-    values += [config["data"]["custom"]["hlatyping"]["MHC-II"]]
+    if config["data"]["custom"]["hlatyping"]["MHC-II"] is not None:
+      values += [config["data"]["custom"]["hlatyping"]["MHC-II"]]
+    else:
+      print('No custom alleles specified in config file for MHC-II hlatyping')
+      sys.exit(1)
 
   if len(values) == 0:
     print('No hla data found. Check config file for correct specification of data and hla genotyping mode')
     sys.exit(1)
+
+    print(values)
 
   return values
 
@@ -776,6 +782,9 @@ def get_prioritization_counts(wildcards):
   # counts can only be generated if either RNAseq or DNAseq data is provided
   if(len(config["data"]["rnaseq"]) != 0 or
      len(config["data"]["dnaseq"]) != 0):
+
+    # make sure indels are called from rnaseq/dnaseq data 
+
 
     counts += expand("results/{sample}/quantification/allcounts.txt",
                      sample=config["data"]["name"])

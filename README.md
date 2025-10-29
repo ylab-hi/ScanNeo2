@@ -54,8 +54,8 @@ cd ScanNeo2
 
     ScanNeo2 employs HLA-HD for HLA Class II genotyping which is required when ScanNeo2 has been configured to predict class II neoantigens. 
     Due to license reasons it has to be installed manually (download request). Please follow the instructions on the official 
-    [website](https://w3.genome.med.kyoto-u.ac.jp/HLA-HD/). ScanNeo2 has been tested using HLA-HD v1.7.1
-
+    [website](https://w3.genome.med.kyoto-u.ac.jp/HLA-HD/). HLA-HD needs to be installed system-wide. In particular, ScanNeo2 calls `hlahd.sh`. 
+    ScanNeo2 has been tested using HLA-HD v1.7.1
 
 <!--
 
@@ -106,7 +106,7 @@ snakemake --cores all --sdm conda --configfile .tests/integration/indel-test/con
 
 ## System requirements
 
-We recommend to run ScanNeo on a system with at least 64GB
+We recommend to run ScanNeo2 on a system with at least 64GB
 
 
 ## Troubleshooting
