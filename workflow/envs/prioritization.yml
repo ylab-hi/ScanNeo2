@@ -11,6 +11,8 @@ dependencies:
  - blast=2.15.0
  - zstd=1.5.5
  - pip=24.0
+ - perl
+ - perl-env
  - pip:
    - gffutils==0.12
    - blosum==2.0.2
