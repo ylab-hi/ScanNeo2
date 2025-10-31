@@ -364,6 +364,7 @@ class BindingAffinities:
                 if epitope_seq not in binding_affinities[seqnum]:
                     binding_affinities[seqnum][epitope_seq] = (allele, start, end, ic50, rank)
 
+
         return binding_affinities
     
     @staticmethod

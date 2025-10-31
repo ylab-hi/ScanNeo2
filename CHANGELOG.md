@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
 
+## [0.3.6] - 2025-10-30
+
+### Fix
+
+- fixed bug in prioritization of MHC-II variants (using standaline IEDB with adjusted perl paths)
+
+
 ## [0.3.5] - 2025-10-28
 
 ### Fix 

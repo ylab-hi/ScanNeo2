@@ -94,6 +94,9 @@ class Variants():
                 
                 if field["Amino_acids"]:
                     aa_change = field["Amino_acids"]
+
+                    if '/' not in aa_change:
+                        continue
                 else:
                     continue
 
@@ -122,6 +125,8 @@ class Variants():
                     
                     # retrieve the start and end of the variant / initial variant start 
                     var_start = self.get_variant_startpos(field["Protein_position"])
+                    # if "/" not in aa_change:
+                    #     continue # TODO: check if this is the right way to handle this
                     wt_aa_change, mt_aa_change = self.determine_aa_change(aa_change)
                     
                     # scan for stop codons
@@ -175,8 +180,8 @@ class Variants():
                 if self.variant_effects.self_dissimilarity():
                     self.variant_effects.write_entry()
 
-        # self.variant_effects.close_file() 
-        self.variant_effects.fh.close()
+        self.variant_effects.close_file() 
+        #self.variant_effects.fh.close()
 
 
     @staticmethod
@@ -195,6 +200,12 @@ class Variants():
 
     @staticmethod
     def determine_aa_change(aa_change):
+        # if "/" not in aa_change:
+        #     if aa_change == '*':
+        #         return '', '*'
+        #     else:
+        #         return aa_change, ''
+        #
         wt_aa_change, mt_aa_change = aa_change.split('/')
         if wt_aa_change == '-':
             wt_aa_change = ''

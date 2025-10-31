@@ -26,8 +26,15 @@ rule download_mhcII_ba_tools:
     """
       curl -L -o - https://downloads.iedb.org/tools/mhcii/3.1.12/IEDB_MHC_II-3.1.12.tar.gz \
           | tar xz -C workflow/scripts/
+      cp misc/mhc_ii/methods/netmhciipan-3.2-executable/netmhciipan_3_2_executable/netmhciipan_python_interface.py \
+          workflow/scripts/mhc_ii/methods/netmhciipan-3.2-executable/netmhciipan_3_2_executable/
+      cp misc/mhc_ii/methods/netmhciipan-4.1-executable/netmhciipan_4_1_executable/netmhciipan_python_interface.py \
+          workflow/scripts/mhc_ii/methods/netmhciipan-4.1-executable/netmhciipan_4_1_executable/
+      cp misc/mhc_ii/methods/netmhciipan-4.2-executable/netmhciipan_4_2_executable/netmhciipan_python_interface.py \
+          workflow/scripts/mhc_ii/methods/netmhciipan-4.2-executable/netmhciipan_4_2_executable/
+      cp misc/mhc_ii/methods/netmhciipan-4.3-executable/netmhciipan_4_3_executable/netmhciipan_python_interface.py \
+          workflow/scripts/mhc_ii/methods/netmhciipan-4.3-executable/netmhciipan_4_3_executable/
     """
-
 
 rule download_prediction_binding_affinity_tools:
   output:
@@ -77,8 +84,6 @@ rule prioritization:
     mhcII_len = f"""{config["prioritization"]["lengths"]["MHC-II"]}""",
   shell:
     """
-      export PERL5LIB=\${{CONDA_PREFIX}}/lib/perl5/vendor_perl:\${{CONDA_PREFIX}}/lib/perl5/core_perl:\${{CONDA_PREFIX}}/lib/perl5/site_perl:\${{PERL5LIB:-}}
-
       python workflow/scripts/prioritization/compile.py \
           --SNV "{input.snv}" \
           --indels "{input.indels}" \
