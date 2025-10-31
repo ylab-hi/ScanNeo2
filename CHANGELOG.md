@@ -15,9 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.6] - 2025-10-30
 
-### Fix
+### Fixes
+- Fixed bug in prioritization of MHC-II variants. Added wrong perl path to IEDB tools
+- Enhanced validation to skip malformed amino acid change entries
 
-- fixed bug in prioritization of MHC-II variants (using standaline IEDB with adjusted perl paths)
+### Chores
+- Updated workflow environment configuration with additional dependencies
 
 
 ## [0.3.5] - 2025-10-28
