@@ -41,7 +41,7 @@ rule sort_and_index_reads_mhcI_SE:
     "../envs/samtools.yml"
   shell:
     """
-      samtools sort -@ {threads} -m4g {input} -o {output.bam} > {log} 2>&1
+      samtools sort -n -@ {threads} -m4g {input} -o {output.bam} > {log} 2>&1
       samtools index {output.bam} >> {log} 2>&1
     """
 
@@ -65,7 +65,8 @@ checkpoint split_reads_mhcI_SE:
           -I {input.fwd} \
           --OUTPUT {output} \
           --OUT_PREFIX R \
-          --SPLIT_TO_N_READS 100000
+          --SPLIT_TO_N_READS 100000 \
+          > {log} 2>&1
     """
 
 rule hlatyping_mhcI_SE:  
@@ -148,7 +149,7 @@ rule sort_and_index_reads_mhcI_PE:
     "../envs/samtools.yml"
   shell:
     """
-      samtools sort -@ {threads} -m4g {input} -o {output.bam} > {log} 2>&1
+      samtools sort -n -@ {threads} -m4g {input} -o {output.bam} > {log} 2>&1
       samtools index {output.bam} >> {log} 2>&1
     """
 
@@ -174,13 +175,15 @@ checkpoint split_reads_mhcI_PE:
           -I {input.fwd} \
           --OUTPUT {output} \
           --OUT_PREFIX R1 \
-          --SPLIT_TO_N_READS 100000
+          --SPLIT_TO_N_READS 100000 \
+          > {log} 2>&1
       
       gatk SplitSamByNumberOfReads \
           -I {input.rev} \
           --OUTPUT {output} \
           --OUT_PREFIX R2 \
-          --SPLIT_TO_N_READS 100000
+          --SPLIT_TO_N_READS 100000 \
+          > {log} 2>&1
     """
 
 rule hlatyping_mhcI_PE:  
