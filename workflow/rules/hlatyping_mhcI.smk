@@ -24,12 +24,11 @@ rule filter_reads_mhcI_SE:
           {input.reads} | samtools view -h -F 4 -b1 - -o {output.reads} > {log} 2>&1
     """
 
-rule sort_and_index_reads_mhcI_SE:
+rule sort_reads_mhcI_SE:
   input:
     "results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE.bam",
   output:
     bam="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE_sorted.bam",
-    idx="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE_sorted.bam.bai"
   message:
     "Sort the filtered {wildcards.nartype}seq reads for hlatyping of sample: {wildcards.sample}"
   threads: 4
@@ -41,8 +40,7 @@ rule sort_and_index_reads_mhcI_SE:
     "../envs/samtools.yml"
   shell:
     """
-      samtools sort -@ {threads} -m4g {input} -o {output.bam} > {log} 2>&1
-      samtools index {output.bam} >> {log} 2>&1
+      samtools sort -n -@ {threads} -m4g {input} -o {output.bam} > {log} 2>&1
     """
 
 checkpoint split_reads_mhcI_SE:
@@ -65,7 +63,8 @@ checkpoint split_reads_mhcI_SE:
           -I {input.fwd} \
           --OUTPUT {output} \
           --OUT_PREFIX R \
-          --SPLIT_TO_N_READS 100000
+          --SPLIT_TO_N_READS 100000 \
+          > {log} 2>&1
     """
 
 rule hlatyping_mhcI_SE:  
@@ -136,7 +135,6 @@ rule sort_and_index_reads_mhcI_PE:
     "results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_{readpair}.bam",
   output:
     bam="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_{readpair}_sorted.bam",
-    idx="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_{readpair}_sorted.bam.bai"
   message:
     "Sort the filtered {wildcards.nartype}seq reads for hlatyping of sample: {wildcards.sample} with readpair: {wildcards.readpair}"
   threads: 4
@@ -148,16 +146,13 @@ rule sort_and_index_reads_mhcI_PE:
     "../envs/samtools.yml"
   shell:
     """
-      samtools sort -@ {threads} -m4g {input} -o {output.bam} > {log} 2>&1
-      samtools index {output.bam} >> {log} 2>&1
+      samtools sort -n -@ {threads} -m4g {input} -o {output.bam} > {log} 2>&1
     """
 
 checkpoint split_reads_mhcI_PE:
   input:
     fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R1_sorted.bam",
-    fwd_idx="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R1_sorted.bam.bai",
     rev="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R2_sorted.bam",
-    rev_idx="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R2_sorted.bam.bai"
   output:
     directory("results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE/")
   message:
@@ -174,13 +169,15 @@ checkpoint split_reads_mhcI_PE:
           -I {input.fwd} \
           --OUTPUT {output} \
           --OUT_PREFIX R1 \
-          --SPLIT_TO_N_READS 100000
+          --SPLIT_TO_N_READS 100000 \
+          > {log} 2>&1
       
       gatk SplitSamByNumberOfReads \
           -I {input.rev} \
           --OUTPUT {output} \
           --OUT_PREFIX R2 \
-          --SPLIT_TO_N_READS 100000
+          --SPLIT_TO_N_READS 100000 \
+          >> {log} 2>&1
     """
 
 rule hlatyping_mhcI_PE:  
