@@ -8,10 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.x] -2023-xx-xx (unreleased)
 
-
 ### Features
 
 - NMD information (e.g., escape rule,...) is now also calculated for all variants
+
+## [0.3.7] - 2025-11-01
+
+### Fix
+- Improved error logging and output capture for sample processing steps.
+- Optimized the workflow by sorting input files by QNAME before splitting 
+in mhc-I genotyping, and removing the indexing step
 
 ## [0.3.6] - 2025-10-30
 
