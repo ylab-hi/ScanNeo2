@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-03-26
+
 ### Fixed
 
 - **Batch binding affinity predictions**: Split large FASTA files into batches of 500 sequences before sending to NetMHCpan/NetMHCIIpan, preventing indefinite hangs on large inputs (e.g., 3,700+ alternative splicing events). Also fixed `as_completed` loop running outside the executor context and added detailed progress logging. ([#58](https://github.com/ylab-hi/ScanNeo2/pull/58))
