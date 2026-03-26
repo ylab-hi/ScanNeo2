@@ -5,7 +5,7 @@ rule countfeatures:
   output:
     "results/{sample}/{seqtype}/quantification/{group}_counts.txt"
   log:
-    "logs/{sample}/featurecounts/{seqtype}_{group}.log"
+    "logs/{sample}/quantification/countfeatures_{seqtype}_{group}.log"
   threads: 2
   conda:
     "../envs/subread.yml"
@@ -15,7 +15,7 @@ rule countfeatures:
     """
       python workflow/scripts/quantification/featurecounts_wrapper.py \
           {input.sample} {output} {input.annotation_file} \
-          {params.mapq} {threads} 
+          {params.mapq} {threads} > {log} 2>&1
     """
 
 # merges the count tables from all samples into single table (calculates TPM)

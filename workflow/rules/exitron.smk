@@ -4,14 +4,14 @@ rule prepare_cds:
   output:
     "resources/refs/CDS.bed"
   log:
-    "logs/prepare_cds.log"
+    "logs/ref/prepare_cds.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
       cat resources/refs/genome.gtf \
           | awk 'OFS="\\t" {{if ($3=="CDS") {{print $1,$4-1,$5,$10,$16,$7}}}}' \
-          | tr -d '";' > {output}
+          | tr -d '";' > {output} 2> {log}
     """
 
 rule prepare_scanexitron_config:
@@ -22,7 +22,7 @@ rule prepare_scanexitron_config:
   output:
     "resources/scanexitron_config.ini"
   log:
-    "logs/prepare_scanexitron_config.log"
+    "logs/ref/prepare_scanexitron_config.log"
   conda:
     "../envs/basic.yml"
   shell:
@@ -31,11 +31,11 @@ rule prepare_scanexitron_config:
           {input.genome} \
           {input.annotation} \
           {input.cds} \
-          {output} > {log}
+          {output} > {log} 2>&1
     """
-      
+
 rule scanexitron:
-    input: 
+    input:
         bam = "results/{sample}/rnaseq/align/{group}_final_STAR.bam",
         idx = "results/{sample}/rnaseq/align/{group}_final_STAR.bam.bai",
         fasta = "resources/refs/genome.fasta",
@@ -47,7 +47,7 @@ rule scanexitron:
     message:
       "Detect exitrons on sample:{wildcards.sample} of group:{wildcards.group}"
     log:
-        "logs/scanexitron_{sample}_{group}.log"
+        "logs/{sample}/exitron/scanexitron_{group}.log"
     conda:
       "../envs/scanexitron.yml"
     threads:
@@ -67,7 +67,7 @@ rule scanexitron:
           -c ../../../{input.config} \
           -s {params.strand} \
           -i {input.bam} \
-          -r hg38
+          -r hg38 > {log} 2>&1
         mv {wildcards.group}_final_STAR.exitron {output}
         mv {wildcards.group}_final_STAR* results/{wildcards.sample}/rnaseq/exitron/
       """
@@ -78,14 +78,14 @@ rule exitron_to_vcf:
   output:
     "results/{sample}/rnaseq/exitron/{group}_exitrons.vcf"
   log:
-    "logs/exitron2vcf_{sample}_{group}.log"
+    "logs/{sample}/exitron/exitron_to_vcf_{group}.log"
   conda:
     "../envs/manipulate_vcf.yml"
   shell:
     """
       python workflow/scripts/exitron2vcf.py \
         {input} {output} \
-        resources/refs/genome.fasta > {log}
+        resources/refs/genome.fasta > {log} 2>&1
     """
 
 rule exitron_augment:
@@ -96,7 +96,7 @@ rule exitron_augment:
   message:
     "Augmenting exitrons on sample:{wildcards.sample} of group:{wildcards.group}"
   log:
-    "logs/{sample}/exitron/{group}_exitron_augment.log"
+    "logs/{sample}/exitron/exitron_augment_{group}.log"
   conda:
     "../envs/manipulate_vcf.yml"
   shell:
@@ -116,7 +116,7 @@ rule sort_exitron:
   message:
     "Sorting and compressing exitrons on sample:{wildcards.sample} of group:{wildcards.group}"
   log:
-    "logs/exitron_sort_{sample}_{group}.log"
+    "logs/{sample}/exitron/sort_exitron_{group}.log"
   conda:
     "../envs/bcftools.yml"
   shell:
@@ -132,7 +132,7 @@ rule combine_exitrons:
   message:
     "Combining exitrons on sample:{wildcards.sample}"
   log:
-    "logs/{sample}/exitrons/combine_exitrons.log"
+    "logs/{sample}/exitron/combine_exitrons.log"
   conda:
     "../envs/bcftools.yml"
   shell:

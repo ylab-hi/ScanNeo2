@@ -7,7 +7,7 @@ rule fastqc_single_end:
     params:
         extra = "--quiet"
     log:
-        "logs/{sample}/fastqc/{seqtype}_{group}.log"
+        "logs/{sample}/preproc/fastqc_single_end_{seqtype}_{group}.log"
     threads: 1
     resources:
         mem_mb = 1024
@@ -24,7 +24,7 @@ rule preproc_single_end:
     html="results/{sample}/{seqtype}/reads/{group}_preproc_report.html",
     json="results/{sample}/{seqtype}/reads/{group}_preproc_report.json"
   log:
-    "logs/{sample}/fastp/{seqtype}_{group}.log"
+    "logs/{sample}/preproc/fastp_single_end_{seqtype}_{group}.log"
   params:
     adapters="",
     extra=""
@@ -41,7 +41,7 @@ rule fastqc_forward:
     params:
         extra = ""
     log:
-        "logs/{sample}/fastqc/{seqtype}_{group}_fwd_raw.log"
+        "logs/{sample}/preproc/fastqc_forward_{seqtype}_{group}.log"
     threads: 1
     resources:
         mem_mb = 1024
@@ -57,7 +57,7 @@ rule fastqc_reverse:
     params:
         extra = "--quiet"
     log:
-        "logs/{sample}/fastqc/{seqtype}_{group}_fwd_raw.log"
+        "logs/{sample}/preproc/fastqc_reverse_{seqtype}_{group}.log"
     threads: 1
     resources:
         mem_mb = 1024
@@ -70,7 +70,7 @@ rule preproc_paired_end:
       qc1="results/{sample}/{seqtype}/qualitycontrol/{group}_R1_fastqc_raw.html",
       qc2="results/{sample}/{seqtype}/qualitycontrol/{group}_R2_fastqc_raw.html"
     output:
-        trimmed=["results/{sample}/{seqtype}/reads/{group}_R1_preproc.fq.gz", 
+        trimmed=["results/{sample}/{seqtype}/reads/{group}_R1_preproc.fq.gz",
                  "results/{sample}/{seqtype}/reads/{group}_R2_preproc.fq.gz"],
         unpaired1="results/{sample}/{seqtype}/reads/{group}_R1_preproc_unpaired.fq.gz",
         unpaired2="results/{sample}/{seqtype}/reads/{group}_R2_preproc_unpaired.fq.gz",
@@ -78,11 +78,11 @@ rule preproc_paired_end:
         html="results/{sample}/{seqtype}/reads/{group}_preproc_report.html",
         json="results/{sample}/{seqtype}/reads/{group}_preproc_report.json",
     log:
-        "logs/{sample}/fastp/{seqtype}_{group}.log"
+        "logs/{sample}/preproc/fastp_paired_end_{seqtype}_{group}.log"
     params:
       dapters="",
       extra=lambda wildcards: "-u 100 -e {0} -l {1} {2} ".format(
-          config['basequal'], 
+          config['basequal'],
           config['preproc']['minlen'],
           "-3 --cut_tail_window_size {} cut_tail_mean_quality {}".format(
               config['preproc']['slidingwindow']['wsize'],
@@ -103,7 +103,7 @@ rule fastqc_forward_after:
     params:
         extra = ""
     log:
-        "logs/{sample}/fastqc/{seqtype}_{group}_fwd.log"
+        "logs/{sample}/preproc/fastqc_forward_after_{seqtype}_{group}.log"
     threads: 1
     resources:
         mem_mb = 1024
@@ -120,11 +120,10 @@ rule fastqc_reverse_after:
     params:
         extra = "--quiet"
     log:
-        "logs/{sample}/fastqc/{seqtype}_{group}_rev.log"
+        "logs/{sample}/preproc/fastqc_reverse_after_{seqtype}_{group}.log"
     threads: 1
     resources:
         mem_mb = 1024
     wrapper:
         "v2.2.1/bio/fastqc"
-
 

@@ -7,7 +7,7 @@ rule filter_reads_mhcI_SE:
     panel=multiext("resources/hla/yara_index/{nartype}",
         ".lf.drp", ".lf.drs", ".lf.drv",
         ".lf.pst", ".rid.concat", ".rid.limits",
-        ".sa.ind", ".sa.len", ".sa.val", 
+        ".sa.ind", ".sa.len", ".sa.val",
         ".txt.concat", ".txt.limits", ".txt.size"),
   output:
     reads="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE.bam",
@@ -35,7 +35,7 @@ rule sort_reads_mhcI_SE:
   resources:
     mem_mb=20000
   log:
-    "logs/{sample}/hlatyping/sort_and_index_reads_mhcI_PE_{group}_{nartype}.log"
+    "logs/{sample}/hlatyping/sort_reads_mhcI_SE_{group}_{nartype}.log"
   conda:
     "../envs/samtools.yml"
   shell:
@@ -52,7 +52,7 @@ checkpoint split_reads_mhcI_SE:
   message:
     "Splitting filtered group: {wildcards.group} BAM files ({wildcards.nartype}seq reads) for HLA typing"
   log:
-    "logs/{sample}/hlatyping/split_bam_mhcI_SE_{group}_{nartype}.log"
+    "logs/{sample}/hlatyping/split_reads_mhcI_SE_{group}_{nartype}.log"
   conda:
     "../envs/gatk.yml"
   threads: 1
@@ -67,7 +67,7 @@ checkpoint split_reads_mhcI_SE:
           > {log} 2>&1
     """
 
-rule hlatyping_mhcI_SE:  
+rule hlatyping_mhcI_SE:
   input:
     fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE/R_{no}.bam",
     rev="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE/R_{no}.bam",
@@ -96,14 +96,14 @@ rule combine_hlatyping_mhcI_SE:
   message:
     "Combining HLA alleles from predicted optitype results from {wildcards.nartype}seq reads in group: {wildcards.group}"
   log:
-    "logs/{sample}/hlatyping/combine_optitype_mhcI_PE_{group}_{nartype}.log"
+    "logs/{sample}/hlatyping/combine_hlatyping_mhcI_SE_{group}_{nartype}.log"
   conda:
     "../envs/basic.yml"
   threads: 1
   shell:
     """
       python3 workflow/scripts/genotyping/combine_optitype_results.py \
-          '{input}' {wildcards.group} {output}
+          '{input}' {wildcards.group} {output} > {log} 2>&1
     """
 
 ############# paired-end reads ###########
@@ -113,7 +113,7 @@ rule filter_reads_mhcI_PE:
     panel=multiext("resources/hla/yara_index/{nartype}",
         ".lf.drp", ".lf.drs", ".lf.drv",
         ".lf.pst", ".rid.concat", ".rid.limits",
-        ".sa.ind", ".sa.len", ".sa.val", 
+        ".sa.ind", ".sa.len", ".sa.val",
         ".txt.concat", ".txt.limits", ".txt.size"),
   output:
     reads="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_{readpair}.bam",
@@ -158,7 +158,7 @@ checkpoint split_reads_mhcI_PE:
   message:
     "Splitting filtered group: {wildcards.group} BAM files ({wildcards.nartype}seq reads) for HLA typing"
   log:
-    "logs/{sample}/hlatyping/split_bam_mhcI_PE_{group}_{nartype}.log"
+    "logs/{sample}/hlatyping/split_reads_mhcI_PE_{group}_{nartype}.log"
   conda:
     "../envs/gatk.yml"
   threads: 1
@@ -171,7 +171,7 @@ checkpoint split_reads_mhcI_PE:
           --OUT_PREFIX R1 \
           --SPLIT_TO_N_READS 100000 \
           > {log} 2>&1
-      
+
       gatk SplitSamByNumberOfReads \
           -I {input.rev} \
           --OUTPUT {output} \
@@ -180,7 +180,7 @@ checkpoint split_reads_mhcI_PE:
           >> {log} 2>&1
     """
 
-rule hlatyping_mhcI_PE:  
+rule hlatyping_mhcI_PE:
   input:
     fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE/R1_{no}.bam",
     rev="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE/R2_{no}.bam",
@@ -209,14 +209,14 @@ rule combine_hlatyping_mhcI_PE:
   message:
     "Combining HLA alleles from predicted optitype results from {wildcards.nartype}seq reads in group: {wildcards.group}"
   log:
-    "logs/{sample}/hlatyping/combine_optitype_mhcI_PE_{group}_{nartype}.log"
+    "logs/{sample}/hlatyping/combine_hlatyping_mhcI_PE_{group}_{nartype}.log"
   conda:
     "../envs/basic.yml"
   threads: 1
   shell:
     """
       python3 workflow/scripts/genotyping/combine_optitype_results.py \
-          '{input}' {wildcards.group} {output}
+          '{input}' {wildcards.group} {output} > {log} 2>&1
     """
 
 rule combine_all_mhcI_alleles:
@@ -227,13 +227,13 @@ rule combine_all_mhcI_alleles:
   message:
     "Combining HLA alleles from different sources (e.g., predicted and user-defined alleles)"
   log:
-    "logs/{sample}/genotyping/combine_all_mhc-I.log"
+    "logs/{sample}/hlatyping/combine_all_mhcI_alleles.log"
   conda:
     "../envs/basic.yml"
   threads: 1
   shell:
     """
       python workflow/scripts/genotyping/combine_all_alleles.py \
-          '{input}' mhc-I {output}
+          '{input}' mhc-I {output} > {log} 2>&1
     """
 

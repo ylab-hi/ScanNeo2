@@ -12,7 +12,7 @@ if config['data']['rnaseq_filetype'] == '.fastq' or config['data']['rnaseq_filet
     message:
       "Aligning reads from {wildcards.group} to genome using STAR"
     log:
-      "logs/{sample}/star_align/rnaseq_{group}.log"
+      "logs/{sample}/align/star_align_fastq_{group}.log"
     params:
       extra=lambda wildcards: f"""--outSAMtype BAM Unsorted \
           --genomeSAindexNbases 10 \
@@ -35,7 +35,7 @@ if config['data']['rnaseq_filetype'] == '.fastq' or config['data']['rnaseq_filet
     threads: config['threads']
     wrapper:
         "v2.2.1/bio/star/align"
-          
+
 ### align reads to genome using STAR (when reads are in BAM - no preprocessing performed)
 if config['data']['rnaseq_filetype'] == '.bam':
   checkpoint split_bamfile_RG:
@@ -46,14 +46,14 @@ if config['data']['rnaseq_filetype'] == '.bam':
     conda:
       "../envs/samtools.yml"
     log:
-      "logs/{sample}/samtools/split/{group}.logs"
+      "logs/{sample}/align/split_bamfile_RG_{group}.log"
     threads: 10
     shell:
       """
         mkdir -p {output}
         samtools split -@ {threads} \
         -u {output}/noRG.bam \
-        -h {input} -f {output}/%!.%. {input}
+        -h {input} -f {output}/%!.%. {input} > {log} 2>&1
       """
 
   rule bamfile_RG_to_fastq:
@@ -66,12 +66,13 @@ if config['data']['rnaseq_filetype'] == '.bam':
     conda:
       "../envs/samtools.yml"
     log:
-      "logs/{sample}/samtools/bam2fastq/{group}_{rg}.log"
+      "logs/{sample}/align/bamfile_RG_to_fastq_{group}_{rg}.log"
     threads: config['threads']
     shell:
       """
-        samtools collate -Oun128 -@ {threads} {input} \
-            | samtools fastq -OT RG -@ {threads} - | gzip -c - > {output}
+        (samtools collate -Oun128 -@ {threads} {input} \
+            | samtools fastq -OT RG -@ {threads} - \
+            | gzip -c - > {output}) 2> {log}
       """
 
   rule star_align_bamfile:
@@ -84,7 +85,7 @@ if config['data']['rnaseq_filetype'] == '.bam':
       log="results/{sample}/rnaseq/align/{group}/{rg}.log",
       sj="results/{sample}/rnaseq/align/{group}/{rg}.tab"
     log:
-      "logs/{sample}/star_align/bam/{group}_{rg}.log"
+      "logs/{sample}/align/star_align_bamfile_{group}_{rg}.log"
     params:
       extra=lambda wildcards: f"""--outSAMtype BAM Unsorted --genomeSAindexNbases 10 \
         --readFilesCommand zcat \
@@ -105,14 +106,14 @@ if config['data']['rnaseq_filetype'] == '.bam':
     threads: config['threads']
     wrapper:
       "v1.26.0/bio/star/align"
-      
+
   rule merge_alignment_results:
     input:
       aggregate_aligned_rg
     output:
       "results/{sample}/rnaseq/align/{group}_aligned_STAR.bam"
     log:
-      "logs/{sample}/samtools/merge/{group}.log"
+      "logs/{sample}/align/merge_alignment_results_{group}.log"
     params:
       extra="",  # optional additional parameters as string
     threads: config['threads']
@@ -128,7 +129,7 @@ rule rnaseq_postproc_fixmate:
   conda:
     "../envs/samtools.yml"
   log:
-    "logs/{sample}/postproc/rnaseq_{group}_fixmate.log"
+    "logs/{sample}/align/rnaseq_postproc_fixmate_{group}.log"
   threads: 4
   params:
     mapq="--min-MQ config['mapq']"
@@ -139,7 +140,7 @@ rule rnaseq_postproc_fixmate:
       | samtools fixmate -pcmu -O bam -@ {threads} - {output} > {log} 2>&1
     """
 
-# sort and markdup needed to be separated (ensure no core dump for whatever reason) 
+# sort and markdup needed to be separated (ensure no core dump for whatever reason)
 rule rnaseq_postproc_markdup:
   input:
     bam="results/{sample}/rnaseq/align/{group}_fixmate_STAR.bam",
@@ -149,7 +150,7 @@ rule rnaseq_postproc_markdup:
   conda:
     "../envs/samtools.yml"
   log:
-    "logs/{sample}/postproc/rnaseq_{group}_markdup.log"
+    "logs/{sample}/align/rnaseq_postproc_markdup_{group}.log"
   threads: 4
   resources:
     mem_mb_per_cpu=4000
@@ -158,7 +159,7 @@ rule rnaseq_postproc_markdup:
       samtools sort -@4 -m4G -O BAM -T tmp/ {input.bam} \
           -o tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam > {log} 2>&1
       samtools markdup -r -@4 tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam \
-          {output} > {log} 2>&1 
+          {output} >> {log} 2>&1
       rm tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam
     """
 
@@ -170,7 +171,7 @@ rule postproc_bam_index:
   conda:
     "../envs/samtools.yml"
   log:
-    "logs/{sample}/postproc/index/rnaseq_{group}.log"
+    "logs/{sample}/align/postproc_bam_index_{group}.log"
   shell:
     """
       samtools index {input} > {log} 2>&1
@@ -185,14 +186,14 @@ rule get_readgroups:
   conda:
       "../envs/basic.yml"
   log:
-        "logs/{sample}/get_readgroups/{seqtype}_{group}.log"
+        "logs/{sample}/align/get_readgroups_{seqtype}_{group}.log"
   shell:
     """
           python workflow/scripts/get_readgroups.py '{input}' \
           {output} > {log} 2>&1
       """
 
-# realign RNAseq and align DNAseq 
+# realign RNAseq and align DNAseq
 rule realign:
   input:
     bam=get_readgroups_input,
@@ -203,7 +204,7 @@ rule realign:
   conda:
     "../envs/realign.yml"
   log:
-    "logs/{sample}/realign/{seqtype}_{group}.log"
+    "logs/{sample}/align/realign_{seqtype}_{group}.log"
   threads: config['threads']
   shell:
     """
@@ -223,7 +224,7 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
     output:
       "results/{sample}/dnaseq/align/{group}_aligned_BWA.bam"
     log:
-      "logs/{sample}/bwa_align/dnaseq_{group}.log"
+      "logs/{sample}/align/bwa_align_dnaseq_{group}.log"
     conda:
       "../envs/realign.yml"
     params:
@@ -243,7 +244,7 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
     output:
       bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
     log:
-      "logs/{sample}/postproc/dnaseq_{group}.log"
+      "logs/{sample}/align/dnaseq_postproc_{group}.log"
     conda:
       "../envs/samtools.yml"
     params:
@@ -257,14 +258,14 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
             | samtools sort -@ 4 -m1g -O bam -T tmp/ - -o - \
             | samtools markdup -r -@ 6 - {output.bam} > {log} 2>&1
       """
-    
+
 rule samtools_index_BWA_final:
     input:
         "results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
     output:
         "results/{sample}/{seqtype}/align/{group}_final_BWA.bam.bai",
     log:
-        "logs/samtools_index/realign_{seqtype}_{sample}_{group}.log",
+        "logs/{sample}/align/samtools_index_BWA_final_{seqtype}_{group}.log",
     params:
         extra="",  # optional params string
     threads: 4  # This value - 1 will be sent to -@

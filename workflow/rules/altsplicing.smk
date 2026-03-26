@@ -4,10 +4,10 @@ rule spladder:
         bamidx = "results/{sample}/rnaseq/align/{group}_final_STAR.bam.bai"
     output:
         directory("results/{sample}/rnaseq/altsplicing/spladder/{group}")
-    conda: 
+    conda:
         "../envs/spladder.yml"
     log:
-        "logs/{sample}/spladder/{group}_build.log"
+        "logs/{sample}/altsplicing/spladder_{group}.log"
     params:
       confidence=f"""{config["altsplicing"]["confidence"]}""",
       iteration=f"""{config["altsplicing"]["iterations"]}""",
@@ -23,7 +23,7 @@ rule spladder:
             {params.confidence} \
             {params.iteration} \
             {params.edgelimit} \
-            {log} 
+            {log}
       """
 
 rule splicing_to_vcf:
@@ -34,7 +34,7 @@ rule splicing_to_vcf:
   message:
     "Converting splicing events to VCF format"
   log:
-    "logs/{sample}/spladder/{group}_to_vcf.log"
+    "logs/{sample}/altsplicing/splicing_to_vcf_{group}.log"
   conda:
     "../envs/manipulate_vcf.yml"
   shell:
@@ -52,7 +52,7 @@ rule sort_altsplicing:
   message:
     "Sorting and compressing splicing events on sample:{wildcards.sample} of group:{wildcards.group}"
   log:
-    "logs/{sample}/spladder/{group}_sort.log"
+    "logs/{sample}/altsplicing/sort_altsplicing_{group}.log"
   conda:
     "../envs/bcftools.yml"
   shell:
@@ -66,9 +66,9 @@ rule combine_altsplicing:
   output:
     "results/{sample}/variants/altsplicing.vcf.gz"
   message:
-    "Combining exitrons on sample:{wildcards.sample}"
+    "Combining alternative splicing events on sample:{wildcards.sample}"
   log:
-    "logs/{sample}/exitrons/combine_exitrons.log"
+    "logs/{sample}/altsplicing/combine_altsplicing.log"
   conda:
     "../envs/bcftools.yml"
   shell:

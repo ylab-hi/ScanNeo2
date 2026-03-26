@@ -14,7 +14,7 @@ rule filter_reads_mhcII_SE:
   output:
     "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_SE.bam"
   log:
-    "logs/{sample}/genotyping/reads_filtering_mhc-II_{group}_{nartype}.log"
+    "logs/{sample}/hlatyping/filter_reads_mhcII_SE_{group}_{nartype}.log"
   params:
     extra="",  # optional parameters
   threads: config['threads']  # Use at least two threads
@@ -27,7 +27,7 @@ rule bam2fastq_reads_mhcII_SE:
   output:
     "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_SE.fq"
   log:
-    "logs/{sample}/genotyping/{group}_{nartype}_hla_sam.log"
+    "logs/{sample}/hlatyping/bam2fastq_reads_mhcII_SE_{group}_{nartype}.log"
   conda:
     "../envs/samtools.yml"
   threads: 1
@@ -51,7 +51,7 @@ rule filter_reads_mhcII_PE:
   output:
     "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_PE.bam"
   log:
-    "logs/{sample}/genotyping/reads_filtering_mhc-II_{group}_{nartype}.log"
+    "logs/{sample}/hlatyping/filter_reads_mhcII_PE_{group}_{nartype}.log"
   params:
     extra="",  # optional parameters
   threads: config['threads']  # Use at least two threads
@@ -66,7 +66,7 @@ rule finalize_reads_mhcII:
     fwd="results/{sample}/hla/mhc-II/reads/{group}_{nartype}_final_R1.fq",
     rev="results/{sample}/hla/mhc-II/reads/{group}_{nartype}_final_R2.fq"
   log:
-    "logs/{sample}/genotyping/finalize_reads_mhcII_{group}_{nartype}.log"
+    "logs/{sample}/hlatyping/finalize_reads_mhcII_{group}_{nartype}.log"
   conda:
     "../envs/basic.yml"
   threads: 1
@@ -75,17 +75,17 @@ rule finalize_reads_mhcII:
       python workflow/scripts/genotyping/finalize_mhcII_input.py \
           {input} \
           {output.fwd} \
-          {output.rev}
+          {output.rev} > {log} 2>&1
     """
 
 rule readcounts_mhcII:
-  input: 
+  input:
     fwd = "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_final_R1.fq",
     rev = "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_final_R2.fq"
   output:
     "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_final_counts.txt"
   log:
-    "logs/{sample}/genotyping/final_readcounts_mhcII_{group}_{nartype}.log"
+    "logs/{sample}/hlatyping/readcounts_mhcII_{group}_{nartype}.log"
   conda:
     "../envs/basic.yml"
   threads: 1
@@ -103,7 +103,7 @@ rule hlatyping_mhcII:
   output:
     "results/{sample}/hla/mhc-II/genotyping/{group}_{nartype}/result/{group}_{nartype}_final.result.txt"
   log:
-    "logs/{sample}/hla/{group}_{nartype}_hlahd.log"
+    "logs/{sample}/hlatyping/hlatyping_mhcII_{group}_{nartype}.log"
   conda:
     "../envs/hlahd.yml"
   params:
@@ -132,7 +132,7 @@ rule merge_predicted_mhcII_allels:
   message:
     "Merging HLA alleles from different sources"
   log:
-    "logs/{sample}/genotyping/merge_predicted_mhc-II.log"
+    "logs/{sample}/hlatyping/merge_predicted_mhcII_alleles.log"
   conda:
     "../envs/basic.yml"
   threads: 1
@@ -152,7 +152,7 @@ rule combine_all_mhcII_alleles:
   message:
     "Combining HLA mhc-II alleles from different sources"
   log:
-    "logs/{sample}/genotyping/combine_all_mhc-II.log"
+    "logs/{sample}/hlatyping/combine_all_mhcII_alleles.log"
   conda:
     "../envs/basic.yml"
   threads: 1

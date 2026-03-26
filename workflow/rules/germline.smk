@@ -15,12 +15,12 @@ rule get_gatk_vqsr_training_sets:
   message:
     "Downloading training sets for calling high confidence variants"
   log:
-    "logs/gatk_get_training_sets.log"
+    "logs/download/gatk_vqsr_training_sets.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
-    curl -L https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/hapmap_3.3.hg38.vcf.gz -o resources/vqsr/hapmap_3.3.hg38.vcf.gz
+    (curl -L https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/hapmap_3.3.hg38.vcf.gz -o resources/vqsr/hapmap_3.3.hg38.vcf.gz
     curl -L https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/hapmap_3.3.hg38.vcf.gz.tbi -o resources/vqsr/hapmap_3.3.hg38.vcf.gz.tbi
     curl -L https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/1000G_omni2.5.hg38.vcf.gz -o resources/vqsr/1000G_omni2.5.hg38.vcf.gz
     curl -L https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/1000G_omni2.5.hg38.vcf.gz.tbi -o resources/vqsr/1000G_omni2.5.hg38.vcf.gz.tbi
@@ -29,7 +29,7 @@ rule get_gatk_vqsr_training_sets:
     curl -L https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/00-common_all.vcf.gz  -o resources/vqsr/dbSNP_b150.vcf.gz
     curl -L https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/00-common_all.vcf.gz.tbi  -o resources/vqsr/dbSNP_b150.vcf.gz.tbi
     curl -L https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz -o resources/vqsr/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-    curl -L https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi -o resources/vqsr/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi
+    curl -L https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi -o resources/vqsr/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi) > {log} 2>&1
     """
 
 # do a first round of variant calling on original, unrecalibrated data
@@ -44,13 +44,13 @@ checkpoint split_bam_htc_first_round:
   message:
     "Splitting bam file for first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/align/{seqtype}_{group}_split.log"
+    "logs/{sample}/germline/split_bam_htc_1rd_{seqtype}_{group}.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
       python workflow/scripts/split_bam_by_chr.py \
-          {input.bam} {output}
+          {input.bam} {output} > {log} 2>&1
     """
 
 rule index_split_bam_htc_first_round:
@@ -61,7 +61,7 @@ rule index_split_bam_htc_first_round:
   message:
     "Indexing split bam file for first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/align/{seqtype}_{group}_split_{chr}_index.log"
+    "logs/{sample}/germline/index_split_bam_htc_1rd_{seqtype}_{group}_{chr}.log"
   conda:
     "../envs/samtools.yml"
   shell:
@@ -80,7 +80,7 @@ rule detect_variants_htc_first_round:
   message:
     "First round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
-    "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_{chr}.log",
+    "logs/{sample}/germline/detect_variants_htc_1rd_{seqtype}_{group}_{chr}.log",
   threads: 4
   resources:
     mem_mb=1024
@@ -95,7 +95,7 @@ rule sort_variants_htc_first_round:
   message:
     "Sorting vcf file from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
-    "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_{chr}_sort.log"
+    "logs/{sample}/germline/sort_variants_htc_1rd_{seqtype}_{group}_{chr}.log"
   conda:
     "../envs/bcftools.yml"
   shell:
@@ -111,7 +111,7 @@ rule index_variants_htc_first_round:
   message:
     "Indexing vcf file from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
-     "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_{chr}_index.log"
+    "logs/{sample}/germline/index_variants_htc_1rd_{seqtype}_{group}_{chr}.log"
   conda:
     "../envs/bcftools.yml"
   shell:
@@ -128,14 +128,14 @@ rule merge_variants_htc_first_round:
   message:
     "Merging vcf files from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_merge.log"
+    "logs/{sample}/germline/merge_variants_htc_1rd_{seqtype}_{group}.log"
   conda:
     "../envs/bcftools.yml"
   shell:
     """
       bcftools concat --naive-force -O z {input.vcf} -o - | bcftools sort -O z -o {output} > {log} 2>&1
     """
-      
+
 rule index_merged_variants_htc_first_round:
   input:
     "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf.gz"
@@ -144,7 +144,7 @@ rule index_merged_variants_htc_first_round:
   message:
     "Indexing merged vcf file from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/gatk/haplotypecaller/{seqtype}_{group}_1rd_index.log"
+    "logs/{sample}/germline/index_merged_variants_htc_1rd_{seqtype}_{group}.log"
   conda:
     "../envs/bcftools.yml"
   shell:
@@ -152,7 +152,7 @@ rule index_merged_variants_htc_first_round:
       bcftools index -t {input} > {log} 2>&1
     """
 
-      
+
 # recalibrate variants (SNP)
 rule recalibrate_variants_first_round:
   input:
@@ -170,9 +170,9 @@ rule recalibrate_variants_first_round:
   message:
     "Recalibrate variants (SNP) on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/gatk/vqsr/{seqtype}_{group}_variants.1rd.recal.log"
+    "logs/{sample}/germline/recalibrate_variants_1rd_{seqtype}_{group}.log"
   params:
-    mode="BOTH", 
+    mode="BOTH",
     resources={
         "hapmap": {"known": False, "training": True, "truth": True, "prior": 15.0},
         "omni": {"known": False, "training": True, "truth": True, "prior": 12.0},
@@ -201,7 +201,7 @@ rule apply_VQSR_SNVs_first_round:
   message:
     "Apply VQSR (SNP) on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-      "logs/{sample}/gatk/vqsr/{seqtype}_{group}_apply.1rd.snvs.log"
+      "logs/{sample}/germline/apply_VQSR_SNVs_1rd_{seqtype}_{group}.log"
   params:
       mode="SNP",  # set mode, must be either SNP, INDEL or BOTH
       extra="--truth-sensitivity-filter-level 99.5",  # optional
@@ -222,7 +222,7 @@ rule apply_VSQR_INDEL_first_round:
   message:
     "Apply VQSR (INDEL) on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-      "logs/{sample}/gatk/vqsr/{seqtype}_{group}_apply.1rd.indels.log"
+      "logs/{sample}/germline/apply_VQSR_INDEL_1rd_{seqtype}_{group}.log"
   params:
       mode="INDEL",  # set mode, must be either SNP, INDEL or BOTH
       extra="--truth-sensitivity-filter-level 99.5",  # optional
@@ -230,18 +230,18 @@ rule apply_VSQR_INDEL_first_round:
       mem_mb=1024,
   wrapper:
       "v1.31.1/bio/gatk/applyvqsr"
-    
+
 rule recalibrate_bases:
   input:
     bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
     ref="resources/refs/genome.fasta",
     dict="resources/refs/genome.dict",
-    known=["results/{sample}/{seqtype}/indel/htcaller/{group}_indels.1rd.flt.vcf", 
+    known=["results/{sample}/{seqtype}/indel/htcaller/{group}_indels.1rd.flt.vcf",
       "results/{sample}/{seqtype}/indel/htcaller/{group}_snvs.1rd.flt.vcf"]
   output:
     recal_table="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal.grp"
   log:
-    "logs/{sample}/gatk/baserecalibrator/{seqtype}_{group}.log"
+    "logs/{sample}/germline/recalibrate_bases_{seqtype}_{group}.log"
   params:
     extra="",  # optional
     java_opts="",  # optional
@@ -259,7 +259,7 @@ rule apply_BQSR:
   output:
     bam="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal.bam"
   log:
-    "logs/{sample}/gatk/gatk_applybqsr/{seqtype}_{group}.log",
+    "logs/{sample}/germline/apply_BQSR_{seqtype}_{group}.log",
   params:
     extra="",  # optional
     java_opts="",  # optional
@@ -275,7 +275,7 @@ rule index_bases_recal:
     output:
         "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal.bam.bai"
     log:
-        "logs/{sample}/{seqtype}/indel/htcaller/index_recal_{group}.log",
+        "logs/{sample}/germline/index_bases_recal_{seqtype}_{group}.log",
     params:
         extra="",  # optional params string
     threads: 4  # This value - 1 will be sent to -@
@@ -294,13 +294,13 @@ checkpoint split_bam_htc_final_round:
   message:
     "Splitting bam file for the final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/indel/gatk/haplotypecaller/split_recal_{seqtype}_{group}.log"
+    "logs/{sample}/germline/split_bam_htc_final_{seqtype}_{group}.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
       python workflow/scripts/split_bam_by_chr.py \
-          {input.bam} {output}
+          {input.bam} {output} > {log} 2>&1
     """
 
 rule index_split_bam_htc_final_round:
@@ -311,7 +311,7 @@ rule index_split_bam_htc_final_round:
   message:
     "Indexing split bam file for the final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/indel/gatk/haplotypecaller/index_recal_{seqtype}_{group}_{chr}.log"
+    "logs/{sample}/germline/index_split_bam_htc_final_{seqtype}_{group}_{chr}.log"
   conda:
     "../envs/samtools.yml"
   shell:
@@ -327,9 +327,9 @@ rule detect_variants_htc_final_round:
   output:
     vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf"
   message:
-    "First round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
+    "Final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
-    "logs/{sample}/indel/gatk/haplotypecaller/htc_final_{seqtype}_{group}_{chr}.log",
+    "logs/{sample}/germline/detect_variants_htc_final_{seqtype}_{group}_{chr}.log",
   threads: 4
   resources:
     mem_mb=1024
@@ -344,7 +344,7 @@ rule sort_variants_htc_final_round:
   message:
     "Sorting vcf file from final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
-    "logs/{sample}/indel/gatk/haplotypecaller/sort_final_{seqtype}_{group}_{chr}.log"
+    "logs/{sample}/germline/sort_variants_htc_final_{seqtype}_{group}_{chr}.log"
   conda:
     "../envs/bcftools.yml"
   shell:
@@ -360,7 +360,7 @@ rule index_variants_htc_final_round:
   message:
     "Indexing vcf file from final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
-     "logs/{sample}/indel/gatk/haplotypecaller/index_final_{seqtype}_{group}_{chr}.log"
+    "logs/{sample}/germline/index_variants_htc_final_{seqtype}_{group}_{chr}.log"
   conda:
     "../envs/bcftools.yml"
   shell:
@@ -375,9 +375,9 @@ rule merge_variants_htc_final_round:
   output:
     "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final.vcf.gz"
   message:
-    "Merging vcf files from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
+    "Merging vcf files from final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/indel/gatk/haplotypecaller/merge_final_{seqtype}_{group}.log"
+    "logs/{sample}/germline/merge_variants_htc_final_{seqtype}_{group}.log"
   conda:
     "../envs/bcftools.yml"
   shell:
@@ -393,7 +393,7 @@ rule index_merged_variants_htc_final_round:
   message:
     "Indexing merged vcf file from final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/indel/gatk/haplotypecaller/index_final_{seqtype}_{group}.log"
+    "logs/{sample}/germline/index_merged_variants_htc_final_{seqtype}_{group}.log"
   conda:
     "../envs/bcftools.yml"
   shell:
@@ -402,7 +402,7 @@ rule index_merged_variants_htc_final_round:
     """
 
 
-# recalibrate variants 
+# recalibrate variants
 rule recalibrate_variants_final_round:
   input:
     vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final.vcf.gz",
@@ -419,10 +419,10 @@ rule recalibrate_variants_final_round:
   message:
     "Recalibrate variants (SNP) on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/gatk/vqsr/{seqtype}_{group}_final.variants.recal.log"
+    "logs/{sample}/germline/recalibrate_variants_final_{seqtype}_{group}.log"
 
   params:
-    mode="BOTH", 
+    mode="BOTH",
     resources={
         "hapmap": {"known": False, "training": True, "truth": True, "prior": 15.0},
         "omni": {"known": False, "training": True, "truth": True, "prior": 12.0},
@@ -450,7 +450,7 @@ rule apply_VQSR_SNVs_final:
   message:
     "Apply VQSR (SNP) on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/gatk/vqsr/{seqtype}_{group}_apply.final.snvs.log"
+    "logs/{sample}/germline/apply_VQSR_SNVs_final_{seqtype}_{group}.log"
   params:
     mode="BOTH",  # set mode, must be either SNP, INDEL or BOTH
     extra="--truth-sensitivity-filter-level 99.5",  # optional
@@ -470,7 +470,7 @@ rule apply_VSQR_INDELS_final:
   message:
     "Apply VQSR (INDEL) on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
-    "logs/{sample}/gatk/vqsr/{seqtype}_{group}_apply.final.indel.log"
+    "logs/{sample}/germline/apply_VQSR_INDELS_final_{seqtype}_{group}.log"
   params:
     mode="INDEL",  # set mode, must be either SNP, INDEL or BOTH
     extra="--truth-sensitivity-filter-level 99.5",  # optional
