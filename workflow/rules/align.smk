@@ -132,7 +132,7 @@ rule rnaseq_postproc_fixmate:
     "logs/{sample}/align/rnaseq_postproc_fixmate_{group}.log"
   threads: 4
   params:
-    mapq="--min-MQ config['mapq']"
+    mapq=f"--min-MQ {config['mapq']}"
   shell:
     """
       samtools view -h -F 4 {params.mapq} {input} -o - \

@@ -17,19 +17,19 @@ class Compile:
         self.combined = ["",""] # combined neoepitopes from different types
         self.options = options
 
-        if options.SNVs is not "":
+        if options.SNVs != "":
             self.prioritize(options.SNVs, options, "somatic.snvs")
-        if options.indels is not "":
+        if options.indels != "":
             self.prioritize(options.indels, options, "somatic.short.indels")
-        if options.long_indels is not "":
+        if options.long_indels != "":
             self.prioritize(options.long_indels, options, "long.indels")
-        if options.exitrons is not "":
+        if options.exitrons != "":
             self.prioritize(options.exitrons, options, "exitrons")
-        if options.altsplicing is not "":
+        if options.altsplicing != "":
             self.prioritize(options.altsplicing, options, "altsplicing")
-        if options.custom is not "":
+        if options.custom != "":
             self.prioritize(options.custom, options, "custom")
-        if options.fusions is not "":
+        if options.fusions != "":
             self.prioritize(options.fusions, options, "fusions")
 
         # combine neoepitopes

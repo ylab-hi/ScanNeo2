@@ -11,7 +11,7 @@ def main():
     """make sure this works if the input is empty - this happens when the user
     does not provide sequencing files (and instead works on provided vcf files)"""
                                                    
-    if options.input is not "":
+    if options.input != "":
         samples = options.input.split(" ")
         counts = {}
         groups = []
