@@ -8,17 +8,17 @@ rule get_genome:
   conda:
     "../envs/basic.yml"
   log:
-    "logs/get-genome.log",
+    "logs/ref/get_genome.log",
   params:
     release=f"""{config['reference']['release']}"""
   shell:
     """
-      curl -L -o {output.genome}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz 
+      (curl -L -o {output.genome}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
       gzip -d {output.genome}.gz
-      curl -L -o {output.annotation}.gz https://ftp.ensembl.org/pub/release-{params.release}/gtf/homo_sapiens/Homo_sapiens.GRCh38.{params.release}.gtf.gz 
+      curl -L -o {output.annotation}.gz https://ftp.ensembl.org/pub/release-{params.release}/gtf/homo_sapiens/Homo_sapiens.GRCh38.{params.release}.gtf.gz
       gzip -d {output.annotation}.gz
       curl -L -o {output.peptide}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz
-      gzip -d {output.peptide}.gz
+      gzip -d {output.peptide}.gz) > {log} 2>&1
     """
 
 rule mod_genome:
@@ -33,19 +33,19 @@ rule mod_genome:
   conda:
     "../envs/basic.yml"
   log:
-    "logs/mod-genome.log"
+    "logs/ref/mod_genome.log"
   params:
     nonchr=f"""{int(config['reference']['nonchr'])}"""
   shell:
     """
-        python3 workflow/scripts/reference/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation} {params.nonchr}
+        python3 workflow/scripts/reference/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation} {params.nonchr} > {log} 2>&1
     """
 
 # this forces to redownload the reference on each execution
 ##      rm resources/refs/genome_tmp.fasta
 #      rm resources/refs/genome_tmp.gtf
 
-rule genome_index: 
+rule genome_index:
   input:
     "resources/refs/genome.fasta"
   output:
@@ -53,7 +53,7 @@ rule genome_index:
   message:
     "Create index of reference genome"
   log:
-    "logs/samtools/index_genome.log",
+    "logs/ref/genome_index.log",
   params:
     extra="",  # optional params string
   wrapper:
@@ -67,12 +67,12 @@ rule annotation_sort_bgzip:
   message:
     "Sort of bgzip the annotations file"
   log:
-    "logs/bgzip_annotation"
+    "logs/ref/annotation_sort_bgzip.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
-      (grep "^#" {input}; grep -v "^#" {input} | sort -t"`printf '\t'`" -k1,1 -k4,4n) | bgzip > {output}
+      ((grep "^#" {input}; grep -v "^#" {input} | sort -t"`printf '\t'`" -k1,1 -k4,4n) | bgzip > {output}) 2> {log}
     """
 
 rule tabix:
@@ -81,7 +81,7 @@ rule tabix:
   output:
       "resources/refs/genome.gtf.gz.csi",
   log:
-      "logs/tabix/annotation.log",
+      "logs/ref/tabix.log",
   params:
       # pass arguments to tabix (e.g. index a vcf)
       "-C -p gff",
@@ -99,7 +99,7 @@ rule star_index:
   params:
       extra="--genomeSAindexNbases 5 ",
   log:
-      "logs/star/create_star_index.log",
+      "logs/ref/star_index.log",
   wrapper:
       "v1.26.0/bio/star/index"
 
@@ -109,7 +109,7 @@ rule bwa_index:
   output:
     idx = multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
   log:
-    "logs/bwa_index.log",
+    "logs/ref/bwa_index.log",
   params:
     algorithm="bwtsw",
   wrapper:
@@ -124,7 +124,7 @@ rule create_sequence_dictionary:
   message:
     "Create sequence dictionary of reference genome"
   log:
-    "logs/picard/create_dict.log"
+    "logs/ref/create_sequence_dictionary.log"
   params:
     extra="",  # optional: extra arguments for picard.
   resources:
@@ -139,12 +139,12 @@ rule get_hla_info:
   message:
     "Download full resolution HLA information"
   log:
-    "logs/get_hla_info.log"
+    "logs/ref/get_hla_info.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
-      curl -L -o {output} https://ftp.ebi.ac.uk/pub/databases/ipd/imgt/hla/hla_gen.fasta
+      curl -L -o {output} https://ftp.ebi.ac.uk/pub/databases/ipd/imgt/hla/hla_gen.fasta > {log} 2>&1
     """
 
 rule create_hla_idx_bowtie:
@@ -163,7 +163,7 @@ rule create_hla_idx_bowtie:
   message:
     "Create bowtie index of HLA reference"
   log:
-    "logs/bowtie2/create_hla_idx.log"
+    "logs/ref/create_hla_idx_bowtie.log"
   params:
       extra="",  # optional parameters
   threads: 8

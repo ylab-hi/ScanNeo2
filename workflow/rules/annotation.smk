@@ -4,17 +4,17 @@ rule download_vep_plugins:
   message:
     "Downloading VEP plugins"
   log: 
-    "logs/vep/download_plugins.log"
+    "logs/download/vep_plugins.log"
   conda:
     "../envs/basic.yml"
   params:
     release=f"""{config['reference']['release']}"""
   shell:
     """
-      mkdir -p resources/vep/plugins/
+      (mkdir -p resources/vep/plugins/
       curl -L -o {output}/NMD.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/{params.release}/NMD.pm
       curl -L -o {output}/Downstream.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/{params.release}/Downstream.pm
-      curl -L -o {output}/Wildtype.pm https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm
+      curl -L -o {output}/Wildtype.pm https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm) > {log} 2>&1
     """
 
 rule download_vep_cache:
@@ -23,14 +23,14 @@ rule download_vep_cache:
   message:
     "Downloading VEP cache"
   log:
-    "logs/vep/cache.log"
+    "logs/download/vep_cache.log"
   conda:
     "../envs/basic.yml"
   params:
     release=f"""{config['reference']['release']}"""
   shell:
     """
-      mkdir -p {output}
+      (mkdir -p {output}
       curl -L -C - \
           --retry 10 \
           --retry-delay 10 \
@@ -39,7 +39,7 @@ rule download_vep_cache:
           https://ftp.ensembl.org/pub/release-{params.release}/variation/indexed_vep_cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz
 
       tar -xzf resources/vep/cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz -C resources/vep/cache/
-      rm resources/vep/cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz
+      rm resources/vep/cache/homo_sapiens_vep_{params.release}_GRCh38.tar.gz) > {log} 2>&1
 
     """
 #      curl -L https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_vep_110_GRCh38.tar.gz \
@@ -53,12 +53,12 @@ rule index_variants:
   output:
     "results/{sample}/variants/{vartype}.vcf.gz.tbi"
   log:
-    "logs/indexvcf/{sample}_{vartype}.log"
+    "logs/{sample}/annotation/index_variants_{vartype}.log"
   conda:
     "../envs/samtools.yml"
   shell:
     """
-      tabix {input}
+      tabix {input} > {log} 2>&1
     """
 
 rule annotate_variants:
@@ -75,7 +75,7 @@ rule annotate_variants:
     plugins=["NMD","Wildtype","Downstream"],
     extra="--everything",  # optional: extra arguments
   log:
-    "logs/vep/{sample}_{vartype}_annotate.log",
+    "logs/{sample}/annotation/annotate_variants_{vartype}.log",
   threads: 4
   wrapper:
     "v5.9.0/bio/vep/annotate"

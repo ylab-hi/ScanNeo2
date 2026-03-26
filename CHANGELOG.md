@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Batch binding affinity predictions**: Split large FASTA files into batches of 500 sequences before sending to NetMHCpan/NetMHCIIpan, preventing indefinite hangs on large inputs (e.g., 3,700+ alternative splicing events). Also fixed `as_completed` loop running outside the executor context and added detailed progress logging. ([#58](https://github.com/ylab-hi/ScanNeo2/pull/58))
 
+### Refactored
+
+- **Standardize log paths and fix missing log redirects**: Unified log directory structure across all 138 rules (`logs/ref/`, `logs/download/`, `logs/{sample}/{stage}/`), added missing `> {log} 2>&1` redirects to ~40 shell rules, and fixed several log path bugs (typos, duplicates, SE/PE mismatches). ([#60](https://github.com/ylab-hi/ScanNeo2/pull/60))
+
 ## [0.3.7] - 2025-11-01
 
 ### Fix

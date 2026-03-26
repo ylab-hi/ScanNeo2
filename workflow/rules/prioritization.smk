@@ -4,13 +4,13 @@ rule download_mhcI_ba_tools:
   message:
     "Downloading MHC I prediction tools"
   log:
-    "logs/download_mhc-I_ba_tools.log"
+    "logs/download/mhcI_ba_tools.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
-      curl -L -o - https://downloads.iedb.org/tools/mhci/3.1.4/IEDB_MHC_I-3.1.4.tar.gz \
-          | tar xz -C workflow/scripts/
+      (curl -L -o - https://downloads.iedb.org/tools/mhci/3.1.4/IEDB_MHC_I-3.1.4.tar.gz \
+          | tar xz -C workflow/scripts/) > {log} 2>&1
     """
 
 rule download_mhcII_ba_tools:
@@ -19,12 +19,12 @@ rule download_mhcII_ba_tools:
   message:
     "Downloading MHC II prediction tools"
   log:
-    "logs/download_mhc-II_ba_tools.log"
+    "logs/download/mhcII_ba_tools.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
-      curl -L -o - https://downloads.iedb.org/tools/mhcii/3.1.12/IEDB_MHC_II-3.1.12.tar.gz \
+      (curl -L -o - https://downloads.iedb.org/tools/mhcii/3.1.12/IEDB_MHC_II-3.1.12.tar.gz \
           | tar xz -C workflow/scripts/
       cp misc/mhc_ii/methods/netmhciipan-3.2-executable/netmhciipan_3_2_executable/netmhciipan_python_interface.py \
           workflow/scripts/mhc_ii/methods/netmhciipan-3.2-executable/netmhciipan_3_2_executable/
@@ -33,7 +33,7 @@ rule download_mhcII_ba_tools:
       cp misc/mhc_ii/methods/netmhciipan-4.2-executable/netmhciipan_4_2_executable/netmhciipan_python_interface.py \
           workflow/scripts/mhc_ii/methods/netmhciipan-4.2-executable/netmhciipan_4_2_executable/
       cp misc/mhc_ii/methods/netmhciipan-4.3-executable/netmhciipan_4_3_executable/netmhciipan_python_interface.py \
-          workflow/scripts/mhc_ii/methods/netmhciipan-4.3-executable/netmhciipan_4_3_executable/
+          workflow/scripts/mhc_ii/methods/netmhciipan-4.3-executable/netmhciipan_4_3_executable/) > {log} 2>&1
     """
 
 rule download_prediction_binding_affinity_tools:
@@ -42,13 +42,13 @@ rule download_prediction_binding_affinity_tools:
   message:
     "Downloading immunogenicity prediction tools"
   log:
-    "logs/download_immunogenicity_tools.log"
+    "logs/download/immunogenicity_tools.log"
   conda:
     "../envs/basic.yml"
   shell:
     """
-      curl -L -o - https://downloads.iedb.org/tools/immunogenicity/3.0/IEDB_Immunogenicity-3.0.tar.gz \
-          | tar xz -C workflow/scripts/
+      (curl -L -o - https://downloads.iedb.org/tools/immunogenicity/3.0/IEDB_Immunogenicity-3.0.tar.gz \
+          | tar xz -C workflow/scripts/) > {log} 2>&1
     """
 
 rule prioritization:
@@ -76,7 +76,7 @@ rule prioritization:
   conda:
     "../envs/prioritization.yml"
   log:
-    "logs/prioritization/{sample}.log"
+    "logs/{sample}/prioritization/prioritization.log"
   threads: config["threads"]
   params:
     mhc_class = f"""{config["prioritization"]["class"]}""",

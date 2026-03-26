@@ -7,9 +7,9 @@ rule create_tmp_folder:
   conda:
     "../envs/basic.yml"
   log:
-    "logs/prelim.log"
+    "logs/ref/create_tmp_folder.log"
   shell:
     """
-      mkdir -p {output}
+      mkdir -p {output} > {log} 2>&1
     """
 
