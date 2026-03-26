@@ -5,6 +5,8 @@ import subprocess
 from pathlib import Path
 import utility as ut
 
+BATCH_SIZE = 500
+
 class BindingAffinities:
     def __init__(self, threads):
         self.threads = threads
@@ -109,21 +111,26 @@ class BindingAffinities:
                 fh_wt[epilen].close()
                 fh_mt[epilen].close()
 
-            print(f"calculate binding affinities...")
-            wt_affinities = self.collect_binding_affinities(self.alleles, 
-                                                            wt_fname, 
-                                                            epilens, 
+            total_seqs = max((wt_cnt.get(epilens[0], 1),
+                              mt_cnt.get(epilens[0], 1))) - 1
+            print(f"calculate binding affinities for {total_seqs} sequences "
+                  f"({len(self.alleles)} alleles, epitope lengths: "
+                  f"{','.join(map(str, epilens))})...", flush=True)
+
+            wt_affinities = self.collect_binding_affinities(self.alleles,
+                                                            wt_fname,
+                                                            epilens,
                                                             'wt',
                                                             mhc_class,
                                                             self.threads)
-            
+
             mt_affinities = self.collect_binding_affinities(self.alleles,
                                                             mt_fname,
                                                             epilens,
                                                             'mt',
                                                             mhc_class,
                                                             self.threads)
-            print("Done")
+            print("Done", flush=True)
             
             outfile = open(os.path.join(output_dir,
                                         f"{vartype}_{mhc_class}_neoepitopes.txt"),"w")
@@ -244,126 +251,174 @@ class BindingAffinities:
         return epilens
     
     @staticmethod
-    def collect_binding_affinities(alleles, 
-                                   fnames, 
-                                   epilens, 
-                                   group, 
-                                   mhc_class, 
+    def collect_binding_affinities(alleles,
+                                   fnames,
+                                   epilens,
+                                   group,
+                                   mhc_class,
                                    threads):
         affinities_results = {}
         number_threads = int(threads)
 
-        # # only iterate through keys (alleles)
-        # # TODO: also incorporate sources
+        total_jobs = len(alleles) * len(epilens)
+        completed_jobs = 0
+        print(f"  submitting {total_jobs} jobs ({len(alleles)} alleles x "
+              f"{len(epilens)} epitope lengths) for {group} sequences",
+              flush=True)
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=number_threads) as executor:
             futures = {}
             for allele in alleles:
                 for epilen in epilens:
-                    future = executor.submit(BindingAffinities.calc_binding_affinities, 
-                                             fnames[epilen], 
-                                             allele, 
-                                             epilen, 
+                    future = executor.submit(BindingAffinities.calc_binding_affinities,
+                                             fnames[epilen],
+                                             allele,
+                                             epilen,
                                              group,
                                              mhc_class)
-                    futures[future] = epilen
+                    futures[future] = (epilen, allele)
 
+            for future in concurrent.futures.as_completed(futures):
+                epilen, allele = futures[future]
+                completed_jobs += 1
+                print(f"  [{completed_jobs}/{total_jobs}] completed "
+                      f"allele:{allele} epilen:{epilen} group:{group}",
+                      flush=True)
+                binding_affinities = future.result()
 
-        for future in concurrent.futures.as_completed(futures):
-            epilen = futures[future]
-            binding_affinities = future.result()
+                # check epilen already present
+                if epilen not in affinities_results.keys():
+                    affinities_results[epilen] = {}
 
-            # check epilen already present
-            if epilen not in affinities_results.keys():
-                affinities_results[epilen] = {}
-
-            for seqnum in binding_affinities.keys():
-                if seqnum not in affinities_results[epilen].keys():
-                    affinities_results[epilen][seqnum] = binding_affinities[seqnum]
-                else:
-                    for seq in binding_affinities[seqnum].keys():
-                        if seq not in affinities_results[epilen][seqnum].keys():
-                            affinities_results[epilen][seqnum][seq] = binding_affinities[seqnum][seq]
+                for seqnum in binding_affinities.keys():
+                    if seqnum not in affinities_results[epilen].keys():
+                        affinities_results[epilen][seqnum] = binding_affinities[seqnum]
+                    else:
+                        for seq in binding_affinities[seqnum].keys():
+                            if seq not in affinities_results[epilen][seqnum].keys():
+                                affinities_results[epilen][seqnum][seq] = binding_affinities[seqnum][seq]
 
         return affinities_results
     
     @staticmethod
+    def split_fasta_into_batches(fa_file, batch_dir, batch_size=BATCH_SIZE):
+        """Split a FASTA file into smaller batch files of at most batch_size
+        sequences each.  Returns a list of batch file paths.  Original
+        sequence IDs (the >N header lines) are preserved so results can be
+        merged back without remapping."""
+        batches = []
+        current_lines = []
+        seq_count = 0
+
+        with open(fa_file, 'r') as fh:
+            for line in fh:
+                if line.startswith('>'):
+                    # start of a new sequence – flush if batch is full
+                    if seq_count >= batch_size and current_lines:
+                        batch_file = os.path.join(
+                            batch_dir, f'batch_{len(batches)}.fa')
+                        with open(batch_file, 'w') as bf:
+                            bf.writelines(current_lines)
+                        batches.append(batch_file)
+                        current_lines = []
+                        seq_count = 0
+                    seq_count += 1
+                current_lines.append(line)
+
+        # write remaining sequences
+        if current_lines:
+            batch_file = os.path.join(
+                batch_dir, f'batch_{len(batches)}.fa')
+            with open(batch_file, 'w') as bf:
+                bf.writelines(current_lines)
+            batches.append(batch_file)
+
+        return batches
+
+    @staticmethod
+    def _run_prediction(call, fa_file, group, mhc_class):
+        """Run a single prediction subprocess and parse its output into a
+        binding_affinities dict keyed by (seqnum -> epitope_seq -> tuple)."""
+        binding_affinities = {}
+
+        result = subprocess.run(call,
+                                stdout=subprocess.PIPE,
+                                universal_newlines=True)
+        predictions = result.stdout.rstrip().split('\n')[1:]
+
+        for line in predictions:
+            entries = line.split('\t')
+            if group == 'mt':
+                if float(entries[8]) >= 500:
+                    continue
+
+            # start and end in sequence (0-based)
+            start = int(entries[2]) - 1
+            end = int(entries[3]) - 1
+
+            # sequence number in results used as key
+            allele = entries[0]
+            seqnum = int(entries[1])
+            if mhc_class == "mhc-I":
+                epitope_seq = entries[5]
+                ic50 = float(entries[8])
+                rank = float(entries[9])
+            elif mhc_class == "mhc-II":
+                epitope_seq = entries[6]
+                ic50 = float(entries[7])
+                rank = float(entries[8])
+
+            if seqnum not in binding_affinities:
+                binding_affinities[seqnum] = {}
+
+            if epitope_seq not in binding_affinities[seqnum]:
+                binding_affinities[seqnum][epitope_seq] = (allele, start, end, ic50, rank)
+
+        return binding_affinities
+
+    @staticmethod
+    def _build_call(batch_file, allele, epilen, mhc_class):
+        """Build the subprocess command list for a prediction tool."""
+        if mhc_class == "mhc-I":
+            return ["python",
+                    "workflow/scripts/mhc_i/src/predict_binding.py",
+                    "netmhcpan", allele, str(epilen), batch_file]
+        elif mhc_class == "mhc-II":
+            return ["python",
+                    "workflow/scripts/mhc_ii/mhc_II_binding.py",
+                    "netmhciipan_ba", allele, batch_file, str(epilen)]
+
+    @staticmethod
     def calc_binding_affinities(fa_file, allele, epilen, group, mhc_class):
         binding_affinities = {}
-# #    binding_affinities[epilen] = {}
-        print(f'calculate binding affinities - allele:{allele} epilen:{epilen} group: {group}')
-        if mhc_class == "mhc-I":
-            call = []
-            call.append("python")
-            call.append("workflow/scripts/mhc_i/src/predict_binding.py")
-            call.append("netmhcpan")
-            call.append(allele)
-            call.append(str(epilen))
-            call.append(fa_file)
-        elif mhc_class == "mhc-II":
-            call = []
-            call.append("python")
-            call.append("workflow/scripts/mhc_ii/mhc_II_binding.py")
-            call.append("netmhciipan_ba")
-            call.append(allele)
-            call.append(fa_file)
-            call.append(str(epilen))
 
-            # seq = "" # determine the sequence from the fasta file
-            # fh = open(fa_file, "r")
-            # for line in fh:
-            #     if line.startswith(">"):
-            #         if seq != "":
-            #             seq += "%0A"
-            #         seq += "%3E" + line[1:].strip()
-            #     else:
-            #         seq += "%0A" + line.strip()
-            # fh.close()
-            #
-            # call = f"curl --data \"method=netmhciipan_ba&sequence_text={seq}"
-            # call += f"&allele={allele}&length={epilen}\""
-            # call += " http://tools-cluster-interface.iedb.org/tools_api/mhcii/"
+        if os.stat(fa_file).st_size == 0:
+            return binding_affinities
 
-        # make sure that there are entries in the file
-        if os.stat(fa_file).st_size != 0:
-            if mhc_class == "mhc-I":
-                result = subprocess.run(call,
-                    stdout = subprocess.PIPE,
-                    universal_newlines=True)
-            elif mhc_class == "mhc-II":
-                result = subprocess.run(call,
-                    stdout = subprocess.PIPE,
-                    universal_newlines=True)
+        with tempfile.TemporaryDirectory() as batch_dir:
+            batches = BindingAffinities.split_fasta_into_batches(
+                fa_file, batch_dir)
+            num_batches = len(batches)
 
-            predictions = result.stdout.rstrip().split('\n')[1:]
+            for batch_idx, batch_file in enumerate(batches):
+                if num_batches > 1:
+                    print(f'    batch {batch_idx + 1}/{num_batches} - '
+                          f'allele:{allele} epilen:{epilen} group:{group}',
+                          flush=True)
 
-            for line in predictions:
-                entries = line.split('\t')
-                if group == 'mt':
-                    if float(entries[8]) >= 500:
-                        continue
+                call = BindingAffinities._build_call(
+                    batch_file, allele, epilen, mhc_class)
+                batch_results = BindingAffinities._run_prediction(
+                    call, batch_file, group, mhc_class)
 
-                # start and end in sequence (0-based)
-                start = int(entries[2])-1 
-                end = int(entries[3])-1
-                
-                # sequence number in results used as key
-                allele = entries[0]
-                seqnum = int(entries[1])
-                if mhc_class == "mhc-I":
-                    epitope_seq = entries[5]
-                    ic50 = float(entries[8])
-                    rank = float(entries[9])
-                elif mhc_class == "mhc-II":
-                    epitope_seq = entries[6]
-                    ic50 = float(entries[7])
-                    rank = float(entries[8])
-
-                if seqnum not in binding_affinities:
-                    binding_affinities[seqnum] = {}
-
-                if epitope_seq not in binding_affinities[seqnum]:
-                    binding_affinities[seqnum][epitope_seq] = (allele, start, end, ic50, rank)
-
+                # merge batch results
+                for seqnum in batch_results:
+                    if seqnum not in binding_affinities:
+                        binding_affinities[seqnum] = batch_results[seqnum]
+                    else:
+                        for seq in batch_results[seqnum]:
+                            if seq not in binding_affinities[seqnum]:
+                                binding_affinities[seqnum][seq] = batch_results[seqnum][seq]
 
         return binding_affinities
     
