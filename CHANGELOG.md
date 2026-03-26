@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Batch binding affinity predictions**: Split large FASTA files into batches of 500 sequences before sending to NetMHCpan/NetMHCIIpan, preventing indefinite hangs on large inputs (e.g., 3,700+ alternative splicing events). Also fixed `as_completed` loop running outside the executor context and added detailed progress logging. ([#58](https://github.com/ylab-hi/ScanNeo2/pull/58))
+- **Fix malformed params and string comparisons**: Fixed `align.smk` params that passed a literal string instead of the config MAPQ value, and replaced `is not ""` with `!=` across `compile.py` and `merge_counttables.py` (future Python 3.12 SyntaxError). ([#61](https://github.com/ylab-hi/ScanNeo2/issues/61), [#72](https://github.com/ylab-hi/ScanNeo2/pull/72))
 
 ### Refactored
 
