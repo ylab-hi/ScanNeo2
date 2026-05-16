@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Replace shell=True subprocess calls with list-based arguments**: Refactored 5 wrapper scripts (`optitype_wrapper`, `finalize_mhcII_input`, `get_readgroups`, `compile`, `featurecounts_wrapper`) to use list-based `subprocess.run(..., check=True)` instead of shell=True string commands. Eliminates path-with-spaces breakage, surfaces tool stderr, and lets failures fail loudly. `compile.combine_neoepitopes` rewritten to concatenate files in Python; `get_readgroups.scan_bamfile` filters `@RG` headers in Python instead of piping samtools to grep. ([#62](https://github.com/ylab-hi/ScanNeo2/issues/62), [#74](https://github.com/ylab-hi/ScanNeo2/pull/74))
+- **Fix dead VQSR download URLs and add --fail to all curl rules**: The Broad's hg38 GATK resources moved from `genomics-public-data/resources/broad/hg38/v0/` (now access-denied) to `gcp-public-data--broad-references/hg38/v0/`; the old URLs caused `curl` to silently save a 298-byte XML 403 page as the VCF, and GATK VariantRecalibrator then failed with "no suitable codecs found". Updated the 4 affected URLs and added `--fail` to every curl call across 5 rule files (23 invocations) so download failures surface at the download step. Contributes to [#63](https://github.com/ylab-hi/ScanNeo2/issues/63) (`--fail` half complete; checksum verification still open). ([#74](https://github.com/ylab-hi/ScanNeo2/pull/74))
 
 ## [0.3.8] - 2026-03-26
 
