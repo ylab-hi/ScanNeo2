@@ -14,12 +14,16 @@ class ReadGroups:
         # self.readgroups = {}
     def scan_bamfile(self, bamfile):
         try:
-            rg_header = subprocess.Popen("samtools view -H " + bamfile + 
-                " | grep ^@RG", stdout=subprocess.PIPE, shell=True)
+            result = subprocess.run(
+                ["samtools", "view", "-H", bamfile],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, check=True)
 
-            for rg_objects in rg_header.stdout:
+            for header_line in result.stdout.splitlines():
+                if not header_line.startswith("@RG"):
+                    continue
                 entry = ['unknown','unknown','unknown','unknown']
-                line = rg_objects.decode("utf-8").rstrip().split("\t")
+                line = header_line.rstrip().split("\t")
                 for tag in line:
                     if tag.startswith("ID"):
                         rg_id = str(tag.split(":")[1])
@@ -35,7 +39,7 @@ class ReadGroups:
                 self.add_readgroup(rg_id,entry)
 
         except subprocess.CalledProcessError as e:
-            print("samtools failed")
+            print(f"samtools failed: {e.stderr}")
 
 
     def add_readgroup(self, rg_id, tags):
