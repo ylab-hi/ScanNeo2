@@ -40,6 +40,7 @@ class ReadGroups:
 
         except subprocess.CalledProcessError as e:
             print(f"samtools failed: {e.stderr}")
+            raise
 
 
     def add_readgroup(self, rg_id, tags):

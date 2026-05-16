@@ -45,5 +45,6 @@ def main():
 
     except subprocess.CalledProcessError as e:
         print("samtools failed: " + str(e))
+        raise
 
 main()
