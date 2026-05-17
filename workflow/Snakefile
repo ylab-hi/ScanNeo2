@@ -6,6 +6,19 @@ min_version("8.0.0")
 #### setup #######
 configfile: "config/config.yaml"
 
+wildcard_constraints:
+    sample="[^/]+",
+    seqtype="dnaseq|rnaseq",
+    nartype="DNA|RNA",
+    readtype="SE|PE",
+    readpair="R[12]",
+    group="[^/]+",
+    vartype="[^/]+",
+    chr="[^/]+",
+    no=r"\d+",
+    rg="[^/]+",
+    replicate="[^/]+",
+
 rule all:
   input:
     expand("results/{sample}/prioritization/", 
