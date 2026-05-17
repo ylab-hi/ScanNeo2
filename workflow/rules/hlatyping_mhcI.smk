@@ -46,7 +46,6 @@ rule sort_reads_mhcI_SE:
 checkpoint split_reads_mhcI_SE:
   input:
     fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE_sorted.bam",
-    fwd_idx="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE_sorted.bam.bai",
   output:
     directory("results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE/")
   message:
@@ -84,8 +83,9 @@ rule hlatyping_mhcI_SE:
   shell:
     """
       python3 workflow/scripts/genotyping/optitype_wrapper.py \
-          '{input.fwd} {input.rev}' {wildcards.nartype} {wildcards.no} \
-          results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_SE/ > {log} 2>&1
+          {wildcards.nartype} {wildcards.no} \
+          results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_SE/ \
+          {input.fwd} {input.rev} > {log} 2>&1
     """
 
 rule combine_hlatyping_mhcI_SE:
@@ -197,8 +197,9 @@ rule hlatyping_mhcI_PE:
   shell:
     """
       python3 workflow/scripts/genotyping/optitype_wrapper.py \
-          '{input.fwd} {input.rev}' {wildcards.nartype} {wildcards.no} \
-          results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_PE/ > {log} 2>&1
+          {wildcards.nartype} {wildcards.no} \
+          results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_PE/ \
+          {input.fwd} {input.rev} > {log} 2>&1
     """
 
 rule combine_hlatyping_mhcI_PE:
