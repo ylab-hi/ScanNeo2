@@ -25,8 +25,9 @@ def main():
 def get_mode(inputbam):
     """ This function checks if the input is in paired-end or single-end mode. """
     tmpfile = tempfile.NamedTemporaryFile(delete=False)
-    call = f"samtools view -f 1 {inputbam} -o {tmpfile.name}" 
-    subprocess.run(call, shell=True, check=True)
+    subprocess.run(
+        ["samtools", "view", "-f", "1", inputbam, "-o", tmpfile.name],
+        check=True)
 
     if os.stat(tmpfile.name).st_size == 0:
         return "SE"
@@ -35,14 +36,22 @@ def get_mode(inputbam):
 
 def featureCounts(mode, inputfile, outputfile, annofile, mapq, threads):
     """ This function calls featureCounts"""
-    call = "featureCounts "
+    cmd = ["featureCounts"]
     if mode == "PE":
-        call += "-p "
-    call += "-F GTF -t gene -g gene_id --fracOverlap 0.2 "
-    call += f"-Q {mapq} -T {threads} "
-    call += f"-a {annofile} -o {outputfile} {inputfile} "
+        cmd.append("-p")
+    cmd.extend([
+        "-F", "GTF",
+        "-t", "gene",
+        "-g", "gene_id",
+        "--fracOverlap", "0.2",
+        "-Q", str(mapq),
+        "-T", str(threads),
+        "-a", annofile,
+        "-o", outputfile,
+        inputfile,
+    ])
 
     # run featureCounts
-    subprocess.run(call, shell=True, check=True)
+    subprocess.run(cmd, check=True)
 
 main()

@@ -13,11 +13,11 @@ rule get_genome:
     release=f"""{config['reference']['release']}"""
   shell:
     """
-      (curl -L -o {output.genome}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
+      (curl --fail -L -o {output.genome}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
       gzip -d {output.genome}.gz
-      curl -L -o {output.annotation}.gz https://ftp.ensembl.org/pub/release-{params.release}/gtf/homo_sapiens/Homo_sapiens.GRCh38.{params.release}.gtf.gz
+      curl --fail -L -o {output.annotation}.gz https://ftp.ensembl.org/pub/release-{params.release}/gtf/homo_sapiens/Homo_sapiens.GRCh38.{params.release}.gtf.gz
       gzip -d {output.annotation}.gz
-      curl -L -o {output.peptide}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz
+      curl --fail -L -o {output.peptide}.gz https://ftp.ensembl.org/pub/release-{params.release}/fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz
       gzip -d {output.peptide}.gz) > {log} 2>&1
     """
 
@@ -144,7 +144,7 @@ rule get_hla_info:
     "../envs/basic.yml"
   shell:
     """
-      curl -L -o {output} https://ftp.ebi.ac.uk/pub/databases/ipd/imgt/hla/hla_gen.fasta > {log} 2>&1
+      curl --fail -L -o {output} https://ftp.ebi.ac.uk/pub/databases/ipd/imgt/hla/hla_gen.fasta > {log} 2>&1
     """
 
 rule create_hla_idx_bowtie:

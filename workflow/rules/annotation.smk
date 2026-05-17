@@ -12,9 +12,9 @@ rule download_vep_plugins:
   shell:
     """
       (mkdir -p resources/vep/plugins/
-      curl -L -o {output}/NMD.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/{params.release}/NMD.pm
-      curl -L -o {output}/Downstream.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/{params.release}/Downstream.pm
-      curl -L -o {output}/Wildtype.pm https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm) > {log} 2>&1
+      curl --fail -L -o {output}/NMD.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/{params.release}/NMD.pm
+      curl --fail -L -o {output}/Downstream.pm https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/{params.release}/Downstream.pm
+      curl --fail -L -o {output}/Wildtype.pm https://raw.githubusercontent.com/griffithlab/pVAC-Seq/master/pvacseq/VEP_plugins/Wildtype.pm) > {log} 2>&1
     """
 
 rule download_vep_cache:
@@ -31,7 +31,7 @@ rule download_vep_cache:
   shell:
     """
       (mkdir -p {output}
-      curl -L -C - \
+      curl --fail -L -C - \
           --retry 10 \
           --retry-delay 10 \
           --retry-all-errors \
