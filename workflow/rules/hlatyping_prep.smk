@@ -11,8 +11,8 @@ rule get_mhcI_hla_panel:
     "logs/ref/get_mhcI_hla_panel.log"
   shell:
     """
-      (curl -o {output.dna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_dna.fasta
-      curl -o {output.rna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_rna.fasta) > {log} 2>&1
+      (curl --fail -o {output.dna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_dna.fasta
+      curl --fail -o {output.rna} https://raw.githubusercontent.com/FRED-2/OptiType/v1.3.5/data/hla_reference_rna.fasta) > {log} 2>&1
     """
 
 rule index_mhcI_hla_panel:

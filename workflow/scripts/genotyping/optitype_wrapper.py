@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+from pathlib import Path
 
 """
     Usage:
@@ -8,36 +9,42 @@ import subprocess
 """
 
 def main():
-    inbams = sys.argv[1]
+    inbams_arg = sys.argv[1]
     nartype = "dna" if sys.argv[2] == "DNA" else "rna"
     prefix = sys.argv[3]
     outpath = sys.argv[4]
 
-    for filename in inbams.split(' '):
+    inbams = inbams_arg.split()
+
+    for filename in inbams:
         if not os.path.exists(filename + '.bai'):
             print("Indexing BAM file: " + filename)
-            samtools_idx = subprocess.Popen("samtools index " + 
-                                            filename, shell=True)
+            subprocess.run(["samtools", "index", filename], check=True)
 
-    # check if input file is not empty (using samtools)
     try:
-        samtools = subprocess.Popen("samtools view -c " + inbams.split(' ')[0] + " 2>/dev/null", 
-                                    stdout=subprocess.PIPE, shell=True)
+        result = subprocess.run(
+            ["samtools", "view", "-c", inbams[0]],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            universal_newlines=True, check=True)
 
-        if int(samtools.communicate()[0]) < 10:
-            print("Input BAM file: " + inbams + " is empty")
-            # create an empty output file
-            pdf = subprocess.Popen("touch " + outpath + prefix + "_coverage_plot.pdf", shell=True)
-            tsv = subprocess.Popen("touch " + outpath + prefix + "_result.tsv", shell=True)
+        if int(result.stdout.strip()) < 10:
+            print("Input BAM file: " + inbams_arg + " is empty")
+            Path(outpath + prefix + "_coverage_plot.pdf").touch()
+            Path(outpath + prefix + "_result.tsv").touch()
         else:
-            # call optitype 
-            optitype_call = "OptiTypePipeline.py --input " + inbams + " --outdir " + outpath + " --prefix " + prefix + " --" + nartype + " -v"
-            print(optitype_call)
-            os.system(optitype_call)
-#            optitype = subprocess.Popen(optitype_call, shell=True)
-
+            optitype_cmd = [
+                "OptiTypePipeline.py",
+                "--input", *inbams,
+                "--outdir", outpath,
+                "--prefix", prefix,
+                "--" + nartype,
+                "-v",
+            ]
+            print(" ".join(optitype_cmd))
+            subprocess.run(optitype_cmd, check=True)
 
     except subprocess.CalledProcessError as e:
-        print("samtools failed")
+        print("samtools failed: " + str(e))
+        raise
 
 main()

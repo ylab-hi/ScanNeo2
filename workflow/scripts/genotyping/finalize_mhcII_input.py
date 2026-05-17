@@ -35,13 +35,16 @@ def split(infile, out_fwd, out_rev):
     print(f"Input file: {infile}")
     print(f"Reverse reads: {out_rev}")
     print(f"Forward reads: {out_fwd}")
-    call = "samtools fastq"
-    call += " -1 " + out_fwd + " -2 " + out_rev
-    call += " -0 /dev/null" # discard unpaired reads
-    call += " -s /dev/null" # discard singletons
-    call += " " + infile
-    print(call)
-    subprocess.call(call, shell=True)
+    cmd = [
+        "samtools", "fastq",
+        "-1", out_fwd,
+        "-2", out_rev,
+        "-0", "/dev/null",  # discard unpaired reads
+        "-s", "/dev/null",  # discard singletons
+        infile,
+    ]
+    print(" ".join(cmd))
+    subprocess.run(cmd, check=True)
     print("Done.")
 
 def main():

@@ -1,7 +1,6 @@
 import os
 import sys
 import configargparse
-import subprocess
 
 # classes
 import reference
@@ -14,7 +13,8 @@ import filtering
 
 class Compile:
     def __init__(self, options):
-        self.combined = ["",""] # combined neoepitopes from different types
+        # per-class lists of neoepitope files to concatenate at the end
+        self.combined = {"mhc-I": [], "mhc-II": []}
         self.options = options
 
         if options.SNVs != "":
@@ -32,11 +32,20 @@ class Compile:
         if options.fusions != "":
             self.prioritize(options.fusions, options, "fusions")
 
-        # combine neoepitopes
-        if self.combined[0] != "":
-            subprocess.run(self.combined[0], shell=True)
-        if self.combined[1] != "":
-            subprocess.run(self.combined[1], shell=True)
+        # combine neoepitopes per MHC class: take header from the first file,
+        # strip header from subsequent ones.
+        for mhc_class, files in self.combined.items():
+            if not files:
+                continue
+            outfile = os.path.join(
+                options.output_dir, f"{mhc_class}_neoepitopes_all.txt")
+            with open(outfile, "w") as out_fh:
+                for idx, fname in enumerate(files):
+                    with open(fname, "r") as in_fh:
+                        if idx > 0:
+                            next(in_fh, None)
+                        for line in in_fh:
+                            out_fh.write(line)
 
     def prioritize(self, inputfile, options, vartype):
         if (vartype == "somatic.snvs" or 
@@ -106,21 +115,7 @@ class Compile:
 
 
     def combine_neoepitopes(self, neoepitopes_file, mhc_class):
-        if mhc_class == "mhc-I":
-            idx = 0
-        elif mhc_class == "mhc-II":
-            idx = 1
-
-        if self.combined[idx] == "":
-            self.combined[idx] += "cat "
-            self.combined[idx] += neoepitopes_file
-            self.combined[idx] += " > "
-            self.combined[idx] += f"{self.options.output_dir}/{mhc_class}_neoepitopes_all.txt"
-        else:
-            self.combined[idx] += " && tail -n +2 "
-            self.combined[idx] += neoepitopes_file
-            self.combined[idx] += " >> "
-            self.combined[idx] += f"{self.options.output_dir}/{mhc_class}_neoepitopes_all.txt"
+        self.combined[mhc_class].append(neoepitopes_file)
 
 def main():
     options = parse_arguments()
