@@ -46,7 +46,6 @@ rule sort_reads_mhcI_SE:
 checkpoint split_reads_mhcI_SE:
   input:
     fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE_sorted.bam",
-    fwd_idx="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE_sorted.bam.bai",
   output:
     directory("results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE/")
   message:
