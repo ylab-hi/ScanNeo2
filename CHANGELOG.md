@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Harden `_run_prediction` subprocess call**: Added `timeout=3600s` (per-batch wall-clock cap), `stderr=subprocess.PIPE`, and `check=True` to the netMHCpan/netMHCIIpan invocation in `prediction.py`. Wraps the call in `try/except subprocess.TimeoutExpired / subprocess.CalledProcessError`, logs a warning, and returns an empty dict so a single hung or failing batch doesn't stall the whole prioritization run. ([#59](https://github.com/ylab-hi/ScanNeo2/issues/59), [#75](https://github.com/ylab-hi/ScanNeo2/pull/75))
+
 ### Fixed
 
 - **Replace shell=True subprocess calls with list-based arguments**: Refactored 5 wrapper scripts (`optitype_wrapper`, `finalize_mhcII_input`, `get_readgroups`, `compile`, `featurecounts_wrapper`) to use list-based `subprocess.run(..., check=True)` instead of shell=True string commands. Eliminates path-with-spaces breakage, surfaces tool stderr, and lets failures fail loudly. `compile.combine_neoepitopes` rewritten to concatenate files in Python; `get_readgroups.scan_bamfile` filters `@RG` headers in Python instead of piping samtools to grep. ([#62](https://github.com/ylab-hi/ScanNeo2/issues/62), [#74](https://github.com/ylab-hi/ScanNeo2/pull/74))
