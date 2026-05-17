@@ -5,16 +5,19 @@ from pathlib import Path
 
 """
     Usage:
-        python3 optitype_wrapper.py <input> <nartype> <prefix> <outpath>
+        python3 optitype_wrapper.py <nartype> <prefix> <outpath> <bam1> [bam2] [...]
 """
 
 def main():
-    inbams_arg = sys.argv[1]
-    nartype = "dna" if sys.argv[2] == "DNA" else "rna"
-    prefix = sys.argv[3]
-    outpath = sys.argv[4]
+    if len(sys.argv) < 5:
+        sys.exit(
+            f"Usage: {sys.argv[0]} <nartype> <prefix> <outpath> "
+            f"<bam1> [bam2] [...]")
 
-    inbams = inbams_arg.split()
+    nartype = "dna" if sys.argv[1] == "DNA" else "rna"
+    prefix = sys.argv[2]
+    outpath = sys.argv[3]
+    inbams = sys.argv[4:]
 
     for filename in inbams:
         if not os.path.exists(filename + '.bai'):
@@ -28,7 +31,7 @@ def main():
             universal_newlines=True, check=True)
 
         if int(result.stdout.strip()) < 10:
-            print("Input BAM file: " + inbams_arg + " is empty")
+            print("Input BAM file: " + inbams[0] + " is empty")
             Path(outpath + prefix + "_coverage_plot.pdf").touch()
             Path(outpath + prefix + "_result.tsv").touch()
         else:
