@@ -6,6 +6,7 @@ from pathlib import Path
 import utility as ut
 
 BATCH_SIZE = 500
+PREDICTION_TIMEOUT_SEC = 3600  # per-batch wall-clock cap for netMHCpan / netMHCIIpan
 
 class BindingAffinities:
     def __init__(self, threads):
@@ -338,12 +339,28 @@ class BindingAffinities:
     @staticmethod
     def _run_prediction(call, fa_file, group, mhc_class):
         """Run a single prediction subprocess and parse its output into a
-        binding_affinities dict keyed by (seqnum -> epitope_seq -> tuple)."""
+        binding_affinities dict keyed by (seqnum -> epitope_seq -> tuple).
+
+        A hung or failing batch is skipped (returns an empty dict) so one
+        bad batch does not stall the whole run."""
         binding_affinities = {}
 
-        result = subprocess.run(call,
-                                stdout=subprocess.PIPE,
-                                universal_newlines=True)
+        try:
+            result = subprocess.run(call,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    universal_newlines=True,
+                                    timeout=PREDICTION_TIMEOUT_SEC,
+                                    check=True)
+        except subprocess.TimeoutExpired:
+            print(f"    WARNING: prediction timed out after "
+                  f"{PREDICTION_TIMEOUT_SEC}s for {fa_file}", flush=True)
+            return binding_affinities
+        except subprocess.CalledProcessError as e:
+            print(f"    WARNING: prediction failed for {fa_file}: "
+                  f"{e.stderr}", flush=True)
+            return binding_affinities
+
         predictions = result.stdout.rstrip().split('\n')[1:]
 
         for line in predictions:
