@@ -21,7 +21,7 @@ rule filter_reads_mhcI_SE:
   shell:
     """
       yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
-          {input.reads} | samtools view -h -F 4 -b1 - -o {output.reads} > {log} 2>&1
+          {input.reads:q} | samtools view -h -F 4 -b1 - -o {output.reads:q} > {log} 2>&1
     """
 
 rule sort_reads_mhcI_SE:
@@ -40,7 +40,7 @@ rule sort_reads_mhcI_SE:
     "../envs/samtools.yml"
   shell:
     """
-      samtools sort -n -@ {threads} -m4g {input} -o {output.bam} > {log} 2>&1
+      samtools sort -n -@ {threads} -m4g {input:q} -o {output.bam:q} > {log} 2>&1
     """
 
 checkpoint split_reads_mhcI_SE:
@@ -59,8 +59,8 @@ checkpoint split_reads_mhcI_SE:
     """
       mkdir -p results/{wildcards.sample}/hla/mhc-I/reads/{wildcards.group}_{wildcards.nartype}_flt_SE/
       gatk SplitSamByNumberOfReads \
-          -I {input.fwd} \
-          --OUTPUT {output} \
+          -I {input.fwd:q} \
+          --OUTPUT {output:q} \
           --OUT_PREFIX R \
           --SPLIT_TO_N_READS 100000 \
           > {log} 2>&1
@@ -85,7 +85,7 @@ rule hlatyping_mhcI_SE:
       python3 workflow/scripts/genotyping/optitype_wrapper.py \
           {wildcards.nartype} {wildcards.no} \
           results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_SE/ \
-          {input.fwd} {input.rev} > {log} 2>&1
+          {input.fwd:q} {input.rev:q} > {log} 2>&1
     """
 
 rule combine_hlatyping_mhcI_SE:
@@ -127,7 +127,7 @@ rule filter_reads_mhcI_PE:
   shell:
     """
       yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
-          {input.reads} | samtools view -h -F 4 -b1 - -o {output.reads} > {log} 2>&1
+          {input.reads:q} | samtools view -h -F 4 -b1 - -o {output.reads:q} > {log} 2>&1
     """
 
 rule sort_and_index_reads_mhcI_PE:
@@ -146,7 +146,7 @@ rule sort_and_index_reads_mhcI_PE:
     "../envs/samtools.yml"
   shell:
     """
-      samtools sort -n -@ {threads} -m4g {input} -o {output.bam} > {log} 2>&1
+      samtools sort -n -@ {threads} -m4g {input:q} -o {output.bam:q} > {log} 2>&1
     """
 
 checkpoint split_reads_mhcI_PE:
@@ -166,15 +166,15 @@ checkpoint split_reads_mhcI_PE:
     """
       mkdir -p results/{wildcards.sample}/hla/mhc-I/reads/{wildcards.group}_{wildcards.nartype}_flt_PE/
       gatk SplitSamByNumberOfReads \
-          -I {input.fwd} \
-          --OUTPUT {output} \
+          -I {input.fwd:q} \
+          --OUTPUT {output:q} \
           --OUT_PREFIX R1 \
           --SPLIT_TO_N_READS 100000 \
           > {log} 2>&1
 
       gatk SplitSamByNumberOfReads \
-          -I {input.rev} \
-          --OUTPUT {output} \
+          -I {input.rev:q} \
+          --OUTPUT {output:q} \
           --OUT_PREFIX R2 \
           --SPLIT_TO_N_READS 100000 \
           >> {log} 2>&1
@@ -199,7 +199,7 @@ rule hlatyping_mhcI_PE:
       python3 workflow/scripts/genotyping/optitype_wrapper.py \
           {wildcards.nartype} {wildcards.no} \
           results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_PE/ \
-          {input.fwd} {input.rev} > {log} 2>&1
+          {input.fwd:q} {input.rev:q} > {log} 2>&1
     """
 
 rule combine_hlatyping_mhcI_PE:
