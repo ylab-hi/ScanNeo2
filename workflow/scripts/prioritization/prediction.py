@@ -73,8 +73,6 @@ class BindingAffinities:
                     try to extend it to the left """
                     while left > 0 and right - left + 1 < epilen + 1:
                         left -= 1
-#                    if right - left + 1 < epilen + 1:
-#                        continue
 
                     wt_subseq_adj = wt_subseq[left:right+1]
                     mt_subseq_adj = mt_subseq[left:right+1]

@@ -4,7 +4,6 @@ import vcfpy
 import sys
 import reference
 import effects
-import pdb
 
 class Variants():
     def __init__(self, variants_input, options, vartype):

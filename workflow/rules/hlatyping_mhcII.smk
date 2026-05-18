@@ -92,7 +92,7 @@ rule readcounts_mhcII:
   shell:
     """
       python workflow/scripts/countreads.py \
-          {input.fwd} {output} > {log} 2>&1 | exit 0
+          {input.fwd} {output} > {log} 2>&1 || true
     """
 
 
