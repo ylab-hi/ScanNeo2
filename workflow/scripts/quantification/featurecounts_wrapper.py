@@ -1,17 +1,15 @@
-import os
 import sys
-import tempfile
 import subprocess
 
 """
-    This scripts is a wrapper for featureCounts. It checks if the input is in paired-end or 
+    This scripts is a wrapper for featureCounts. It checks if the input is in paired-end or
     single-end mode and calls the appropriate function.
 
     Usage:
         featureCounts_wrapper.py <input_bam> <output> <annotation> <mapq> <threads>
 """
 def main():
-    # determine 
+    # determine
     inputbam = sys.argv[1]
     outputfile = sys.argv[2]
     annofile = sys.argv[3]
@@ -24,15 +22,10 @@ def main():
 
 def get_mode(inputbam):
     """ This function checks if the input is in paired-end or single-end mode. """
-    tmpfile = tempfile.NamedTemporaryFile(delete=False)
-    subprocess.run(
-        ["samtools", "view", "-f", "1", inputbam, "-o", tmpfile.name],
-        check=True)
-
-    if os.stat(tmpfile.name).st_size == 0:
-        return "SE"
-    else:
-        return "PE"
+    result = subprocess.run(
+        ["samtools", "view", "-c", "-f", "1", inputbam],
+        capture_output=True, text=True, check=True)
+    return "PE" if int(result.stdout.strip()) > 0 else "SE"
 
 def featureCounts(mode, inputfile, outputfile, annofile, mapq, threads):
     """ This function calls featureCounts"""

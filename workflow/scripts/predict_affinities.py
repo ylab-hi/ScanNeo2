@@ -87,12 +87,6 @@ def main():
 
         wt_affinities = collect_binding_affinities(alleles, wt_fname, epilens, 'wt', options.threads)
         mt_affinities = collect_binding_affinities(alleles, mt_fname, epilens, 'mt', options.threads)
-        
-#        wt_affinities = calc_peptide_binding(alleles, wt_fname, 'wt')
-#        mt_affinities = calc_peptide_binding(alleles, mt_fname, 'mt')
-#        print(mt_affinities)
-
-#        print(wt_affinities.keys())
 
         outputfile = open(options.output, 'w')
         print_header(outputfile)
