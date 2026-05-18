@@ -6,7 +6,7 @@ if config['data']['rnaseq_filetype'] == '.fastq' or config['data']['rnaseq_filet
       faidx = "resources/refs/genome.fasta.fai",
       idx = "resources/refs/star/",
     output:
-      aln="results/{sample}/rnaseq/align/{group}_aligned_STAR.bam",
+      aln=temp("results/{sample}/rnaseq/align/{group}_aligned_STAR.bam"),
       log="results/{sample}/rnaseq/align/{group}_aligned_STAR.log",
       sj="results/{sample}/rnaseq/align/{group}_aligned_STAR.tab",
     message:
@@ -111,7 +111,7 @@ if config['data']['rnaseq_filetype'] == '.bam':
     input:
       aggregate_aligned_rg
     output:
-      "results/{sample}/rnaseq/align/{group}_aligned_STAR.bam"
+      temp("results/{sample}/rnaseq/align/{group}_aligned_STAR.bam")
     log:
       "logs/{sample}/align/merge_alignment_results_{group}.log"
     params:
@@ -125,7 +125,7 @@ rule rnaseq_postproc_fixmate:
   input:
     "results/{sample}/rnaseq/align/{group}_aligned_STAR.bam"
   output:
-    "results/{sample}/rnaseq/align/{group}_fixmate_STAR.bam"
+    temp("results/{sample}/rnaseq/align/{group}_fixmate_STAR.bam")
   conda:
     "../envs/samtools.yml"
   log:

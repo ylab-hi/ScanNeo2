@@ -224,7 +224,7 @@ rule combine_all_mhcI_alleles:
   input:
     get_all_mhcI_alleles
   output:
-    "results/{sample}/hla/mhc-I.tsv"
+    protected("results/{sample}/hla/mhc-I.tsv")
   message:
     "Combining HLA alleles from different sources (e.g., predicted and user-defined alleles)"
   log:
