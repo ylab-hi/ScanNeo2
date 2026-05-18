@@ -1,0 +1,9 @@
+# Local Claude Code config (commands, settings) — keep out of repo for now
+.claude/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Pytest
+.pytest_cache/
