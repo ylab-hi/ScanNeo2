@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Pytest scaffolding and unit tests for `combine_all_alleles.py`**: First testing-infrastructure PR. Adds `pytest.ini`, `.github/workflows/test.yml` (runs `pytest .tests/unit/` on Python 3.12), `.gitignore`, and 6 unit tests covering the script's happy path, allele-field truncation, off-refset rejection, empty-input diagnosis, malformed-line rejection, and mixed-source breakdown. Locks in the diagnostic behavior added in PR #83. Hand-rolled rather than auto-generated because naive `snakemake --generate-unit-tests` produces 6+ GB fixtures (vendored IEDB tools declared as rule inputs). ([#85](https://github.com/ylab-hi/ScanNeo2/pull/85))
+
 ### Changed
 
 - **Harden `_run_prediction` subprocess call**: Added `timeout=3600s` (per-batch wall-clock cap), `stderr=subprocess.PIPE`, and `check=True` to the netMHCpan/netMHCIIpan invocation in `prediction.py`. Wraps the call in `try/except subprocess.TimeoutExpired / subprocess.CalledProcessError`, logs a warning, and returns an empty dict so a single hung or failing batch doesn't stall the whole prioritization run. ([#59](https://github.com/ylab-hi/ScanNeo2/issues/59), [#75](https://github.com/ylab-hi/ScanNeo2/pull/75))
