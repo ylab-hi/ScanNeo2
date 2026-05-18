@@ -22,10 +22,6 @@ class Immunogenicity:
 
             # wildtype immunogenicity scores
             wt_epitope_seq = df["wt_epitope_seq"]
-            # remove entries that contain $ in the wt_epitope_seq
-            wt_epitope_seq_rm = wt_epitope_seq.str.contains("\$")
-            wt_epitope_seq_flt = wt_epitope_seq[~wt_epitope_seq_rm]
-
             wt_immuno_scores = self.calc_immunogenicity_mhcI(wt_epitope_seq)
             wt_immunogenicity = self.assign_scores(wt_epitope_seq, wt_immuno_scores)
 
