@@ -26,32 +26,42 @@ def parse_refset(mhc_class):
 
 def main():
     infiles = sys.argv[1].split(' ')
-    refset = parse_refset(sys.argv[2])
+    mhc_class = sys.argv[2]
+    refset = parse_refset(mhc_class)
 
     alleles = {}
+    per_file_stats = []  # (path, size_bytes, lines_read, matched_alleles)
+
     for infile in infiles:
-        fh_in = open(infile, "r")
-        for line in fh_in:
-            cols = line.rstrip().split("\t")
-            if len(cols) != 2:
-                print(f"Invalid input file: {infile}")
-                sys.exit(1)
+        lines_read = 0
+        matched = 0
+        size_bytes = os.path.getsize(infile)
 
-            source = cols[0]
-            mhc = cols[1]
+        with open(infile, "r") as fh_in:
+            for line in fh_in:
+                lines_read += 1
+                cols = line.rstrip().split("\t")
+                if len(cols) != 2:
+                    print(f"Invalid input file: {infile}")
+                    sys.exit(1)
 
-            # chop down the alleles to first two fields 
-            # e.g., HLA-A*02:01:01 becomes HLA-A*02:01
-            if len(mhc.split(':')) > 2:
-                mhc = mhc.split(':')[0] + ':' + mhc.split(':')[1]
+                source = cols[0]
+                mhc = cols[1]
+
+                # chop down the alleles to first two fields
+                # e.g., HLA-A*02:01:01 becomes HLA-A*02:01
+                if len(mhc.split(':')) > 2:
+                    mhc = mhc.split(':')[0] + ':' + mhc.split(':')[1]
 
 
-            if mhc in refset:
-                if mhc not in alleles:
-                    alleles[mhc] = source
-                else:
-                    alleles[mhc] += ',' + source
-        fh_in.close()
+                if mhc in refset:
+                    matched += 1
+                    if mhc not in alleles:
+                        alleles[mhc] = source
+                    else:
+                        alleles[mhc] += ',' + source
+
+        per_file_stats.append((infile, size_bytes, lines_read, matched))
 
     outfile = sys.argv[3]
     fh_out = open(outfile, 'w')
@@ -60,8 +70,31 @@ def main():
     fh_out.close()
 
     if len(alleles) == 0:
-        print("No valid alleles found in the input files!")
-        print("Please check the input files (e.g., dnaseq, rnaseq, user-provided alleles) and try again")
+        print("ERROR: No valid alleles collected from any input source.\n")
+        print("Per-source breakdown:")
+        for path, size, lines, matched in per_file_stats:
+            if size == 0:
+                state = "EMPTY (0 bytes) — upstream rule produced no output"
+            elif lines == 0:
+                state = "no content rows"
+            elif matched == 0:
+                state = (f"{lines} row(s) read, 0 matched the {mhc_class} "
+                         f"reference set ({len(refset)} alleles)")
+            else:
+                # Unreachable here (len(alleles) == 0 implies no file matched),
+                # but keep a sensible fallback.
+                state = f"{lines} row(s), {matched} matched allele(s)"
+            print(f"  {path} — {state}")
+
+        print("\nLikely upstream culprit:")
+        print("  For predicted alleles: check the HLA-filtered BAMs")
+        print(f"    results/<sample>/hla/{mhc_class}/reads/<group>_<nartype>_flt_{{SE,PE}}.bam")
+        print("    - If near-empty: the yara HLA-panel filter discarded most reads")
+        print("      (low HLA-region coverage in input FASTQ/BAM, or off-target sequencing)")
+        print("    - If non-empty but per-batch OptiType results are 0 bytes: the")
+        print("      optitype wrapper hit its '<10 reads per batch' empty-output branch")
+        print(f"      (see results/<sample>/hla/{mhc_class}/genotyping/<group>_<nartype>_flt_*/)")
+        print("  For user-provided alleles: check config['data']['custom']['hlatyping']")
         sys.exit(1)
 
 main()
