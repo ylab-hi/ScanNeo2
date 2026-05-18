@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Mark large intermediates as `temp()` and final outputs as `protected()`**: Annotation-only sweep across 6 rule files (no logic changes). `temp()` on STAR aligned/fixmate BAMs, transindel build BAMs, BWA per-chr split directory + indexes, and per-chromosome htcaller/mutect2 VCFs and their bgzipped/indexed siblings — Snakemake auto-deletes once no downstream rule needs them. `protected()` on the three final outputs (`results/{sample}/prioritization/`, `results/{sample}/hla/mhc-I.tsv`, `results/{sample}/hla/mhc-II.tsv`) — chmod read-only after creation to prevent accidental clobbering. Re-running a `protected()` rule requires `chmod -R u+w` first. ([#67](https://github.com/ylab-hi/ScanNeo2/issues/67), [#87](https://github.com/ylab-hi/ScanNeo2/pull/87))
+
 ## [0.3.9] - 2026-05-17
 
 ### Added
