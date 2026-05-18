@@ -35,7 +35,7 @@ def main():
     for infile in infiles:
         lines_read = 0
         matched = 0
-        size_bytes = os.path.getsize(infile) if os.path.exists(infile) else 0
+        size_bytes = os.path.getsize(infile)
 
         with open(infile, "r") as fh_in:
             for line in fh_in:
