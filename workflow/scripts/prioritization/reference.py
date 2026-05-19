@@ -24,39 +24,37 @@ class Annotation:
     # 0-based
     def parse_transcriptome(self, gtfFile):
         transcriptome = {}
-        fh = open(gtfFile, "r")
-        for line in fh:
-            # ignore header
-            if not line.startswith("#"):
-                l = line.rstrip().split("\t")
-                if l[2] == "transcript":
-                    transcript_id = re.search(r'transcript_id "([^.\s]+)"', l[8]).group(1)
-                    if transcript_id not in transcriptome:
-                        transcriptome[transcript_id] = [int(l[3])-1, int(l[4])-1]
+        with open(gtfFile, "r") as fh:
+            for line in fh:
+                # ignore header
+                if not line.startswith("#"):
+                    l = line.rstrip().split("\t")
+                    if l[2] == "transcript":
+                        transcript_id = re.search(r'transcript_id "([^.\s]+)"', l[8]).group(1)
+                        if transcript_id not in transcriptome:
+                            transcriptome[transcript_id] = [int(l[3])-1, int(l[4])-1]
 
-        fh.close()
         return transcriptome
 
 
     def parse_exome(self, gtfFile):
         exome = {}
-        fh = open(gtfFile, 'r')
-        for line in fh:
-            # ignore header
-            if not line.startswith('#'):
-                l = line.rstrip().split('\t')
+        with open(gtfFile, 'r') as fh:
+            for line in fh:
+                # ignore header
+                if not line.startswith('#'):
+                    l = line.rstrip().split('\t')
 
-                if l[2] == 'exon': 
-                    exon_number = re.search(r'exon_number "([^.\s]+)"', l[8]).group(1)
-                    transcript_id = re.search(r'transcript_id "([^.\s]+)"', l[8]).group(1)
+                    if l[2] == 'exon':
+                        exon_number = re.search(r'exon_number "([^.\s]+)"', l[8]).group(1)
+                        transcript_id = re.search(r'transcript_id "([^.\s]+)"', l[8]).group(1)
 
-                    if transcript_id not in exome:
-                        exome[transcript_id] = {}
+                        if transcript_id not in exome:
+                            exome[transcript_id] = {}
 
-                    if not exon_number in exome[transcript_id]:
-                        exome[transcript_id][int(exon_number)] = [l[3],l[4]]
+                        if not exon_number in exome[transcript_id]:
+                            exome[transcript_id][int(exon_number)] = [l[3], l[4]]
 
-        fh.close()
         return exome
 
 class Counts:
@@ -64,8 +62,8 @@ class Counts:
         # parse counts
         self.counts = {}
         if countFile is not None and countFile != "":
-            count_fh = open(countFile, 'r')
-            lines = count_fh.readlines()
+            with open(countFile, 'r') as count_fh:
+                lines = count_fh.readlines()
             print(lines[0].rstrip().split('\t'))
             groups = lines[0].rstrip().split('\t')[3:]
             print(groups)
@@ -81,6 +79,4 @@ class Counts:
                     self.counts[key] = {}
                     for group in groups:
                         self.counts[key][group] = float(cols[3+groups.index(group)])
-
-            count_fh.close()
 

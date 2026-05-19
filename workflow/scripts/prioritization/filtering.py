@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 import tempfile
 import subprocess
@@ -56,13 +57,19 @@ class Immunogenicity:
             seq.to_csv(tmpsfile, sep="\t", header=False, index=False)
 
             # run immunogenicity
-            result = subprocess.run(
-                    ['python', 
-                     'workflow/scripts/immunogenicity/predict_immunogenicity.py',
-                     tmpsfile.name],
-                    stdout = subprocess.PIPE,
-                    universal_newlines = True
-            )
+            try:
+                result = subprocess.run(
+                        ['python',
+                         'workflow/scripts/immunogenicity/predict_immunogenicity.py',
+                         tmpsfile.name],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True,
+                        check=True,
+                )
+            except subprocess.CalledProcessError as e:
+                print(f"predict_immunogenicity.py failed: {e.stderr}", file=sys.stderr, flush=True)
+                raise
             res = result.stdout.rstrip().split('\n')[4:]
 #            print(f'res: {res}')
 
@@ -186,18 +193,24 @@ class SequenceSimilarity:
             fh_in.close()
 
             outfile = tempfile.NamedTemporaryFile()
-            result = subprocess.run(
-                    ['blastp',
-                     '-query',
-                     infile.name,
-                     '-db',
-                     'workflow/scripts/filtering/pathogen-derived_epitopes_MHC-I_blastdb',
-                     '-out',
-                     outfile.name,
-                     '-outfmt',
-                     '6'],
-                    stdout = subprocess.PIPE,
-                    universal_newlines = True)
+            try:
+                result = subprocess.run(
+                        ['blastp',
+                         '-query',
+                         infile.name,
+                         '-db',
+                         'workflow/scripts/filtering/pathogen-derived_epitopes_MHC-I_blastdb',
+                         '-out',
+                         outfile.name,
+                         '-outfmt',
+                         '6'],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True,
+                        check=True)
+            except subprocess.CalledProcessError as e:
+                print(f"blastp (pathogen) failed: {e.stderr}", file=sys.stderr, flush=True)
+                raise
 
             fh_out = open(outfile.name, "r")
             for line in fh_out:
@@ -243,16 +256,22 @@ class SequenceSimilarity:
         # tempfile (write the sequences to file)  no with
         with tempfile.NamedTemporaryFile() as infile:
             # create proteome database
-            index = subprocess.run(
-                    ["makeblastdb", 
-                     "-in",
-                     "resources/refs/peptide.fasta",
-                     "-dbtype",
-                     "prot",
-                     "-out",
-                     "resources/refs/proteome_blastdb"],
-                    stdout = subprocess.PIPE,
-                    universal_newlines = True)
+            try:
+                index = subprocess.run(
+                        ["makeblastdb",
+                         "-in",
+                         "resources/refs/peptide.fasta",
+                         "-dbtype",
+                         "prot",
+                         "-out",
+                         "resources/refs/proteome_blastdb"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True,
+                        check=True)
+            except subprocess.CalledProcessError as e:
+                print(f"makeblastdb failed: {e.stderr}", file=sys.stderr, flush=True)
+                raise
 
             fh_in = open(infile.name, "w")
             for idx, val in enumerate(mt_seqs):
@@ -260,18 +279,24 @@ class SequenceSimilarity:
             fh_in.close()
 
             outfile = tempfile.NamedTemporaryFile()
-            result = subprocess.run(
-                    ['blastp',
-                     '-query',
-                     infile.name,
-                     '-db',
-                     'resources/refs/proteome_blastdb',
-                     '-out',
-                     outfile.name,
-                     '-outfmt',
-                     '6'],
-                    stdout = subprocess.PIPE,
-                    universal_newlines = True)
+            try:
+                result = subprocess.run(
+                        ['blastp',
+                         '-query',
+                         infile.name,
+                         '-db',
+                         'resources/refs/proteome_blastdb',
+                         '-out',
+                         outfile.name,
+                         '-outfmt',
+                         '6'],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True,
+                        check=True)
+            except subprocess.CalledProcessError as e:
+                print(f"blastp (proteome) failed: {e.stderr}", file=sys.stderr, flush=True)
+                raise
 
             fh_out = open(outfile.name, "r")
             for line in fh_out:

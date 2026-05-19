@@ -4,15 +4,11 @@ import subprocess
 
 def main():
     # read file with results
-    fh = open(sys.argv[1], 'r')
-    next(fh)
-    # create fasta file with immunogenic peptides
-    im_fh = open('workflow/scripts/im.txt', 'w')
-    for entry in fh:
-        entry_splitted = entry.rstrip().split('\t')
-        im_fh.write(f'{entry_splitted[15]}\n')
-    im_fh.close()
-    fh.close()
+    with open(sys.argv[1], 'r') as fh, open('workflow/scripts/im.txt', 'w') as im_fh:
+        next(fh)
+        for entry in fh:
+            entry_splitted = entry.rstrip().split('\t')
+            im_fh.write(f'{entry_splitted[15]}\n')
 
     immunogenecity_values = ['immunogenicity'] + calc_immunogenecity('workflow/scripts/im.txt')
     # add immunogenicity scores to result table
@@ -25,13 +21,19 @@ def main():
 
 def calc_immunogenecity(seq):
     print(seq)
-    result = subprocess.run(
-        ['python', 
-         'workflow/scripts/immunogenicity/predict_immunogenicity.py', 
-         str(seq)],
-        stdout = subprocess.PIPE,
-        universal_newlines = True 
-    )
+    try:
+        result = subprocess.run(
+            ['python',
+             'workflow/scripts/immunogenicity/predict_immunogenicity.py',
+             str(seq)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"predict_immunogenicity.py failed: {e.stderr}", file=sys.stderr, flush=True)
+        raise
 
     res = result.stdout.rstrip().split('\n')[4:]
     scores = [float(item.split(',')[2]) for item in res if len(item.split(',')) >= 3]

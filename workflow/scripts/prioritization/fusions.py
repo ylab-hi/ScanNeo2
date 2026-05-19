@@ -16,88 +16,87 @@ class Fusions:
         proteome = reference.Proteome(options.proteome).proteome
         annotation = reference.Annotation(options.reference, options.anno)
 
-        # create variant effects object
-        self.variant_effects = effects.VariantEffects(options, vartype)
+        # create variant effects object (context-managed so the output file
+        # is closed even if an exception occurs mid-loop)
+        with effects.VariantEffects(options, vartype) as variant_effects:
+            self.variant_effects = variant_effects
 
-        group = Path(fusions_input).stem.split('_fusions')[0]
-        confidence_level = {"low": ["low", "medium", "high"],
-                           "medium": ["medium", "high"],
-                           "high": ["high"]}
-
-
-        with open(fusions_input) as fh:
-            next(fh) # ignore header
-            for line in fh:
-                cols = line.rstrip().split('\t')
-                if cols[14] in confidence_level[options.confidence]:
-                    event_type = cols[8]
-                    reading_frame = cols[15]
-                    csq = self.determine_consequence(reading_frame, event_type)
-                    if csq == None:
-                        continue
-
-                    peptide_seq = cols[28]
-                    if peptide_seq == '.': # could be determined
-                        continue
-                    
-                    # get genomic coordiantes
-                    chrom, start, end = self.determine_coordinates(cols[4],cols[5])
-                    gene_name = cols[0] + '|' + cols[1]
-                    gene_id = cols[20] + '|' + cols[21]
-
-                    tid1 = cols[22]
-                    tid2 = cols[23]
-
-                    transcript_id = tid1 + '|' + tid2
-
-                    ao = str(len(cols[29]))
-                    dp = str(cols[12]+cols[13])
-
-                    # get the fusion transcript
-                    transcript = cols[27].upper()
-                    for symbol in ['[', ']', '(', ')', '_']:
-                        transcript = transcript.replace(symbol, '')
-                    transcript_bp = transcript.find('|')
-                    transcript = transcript.replace('|', '')
-
-                    # retrieve polypeptide sequence of 
-                    fusion_pepseq = cols[28]
-                    if fusion_pepseq == '.':
-                        continue
-
-                    # determine (complete) wildtype peptide sequence (which is the wt of first gene)
-                    gene1_wt_seq = ''
-                    # retrieve 
-                    if tid1 in proteome:
-                        gene1_wt_seq = proteome[tid1]
-                    wt_seq, mt_seq, var_start = self.determine_peptide_sequence(fusion_pepseq,
-                                                                                gene1_wt_seq)
-
-                    self.variant_effects.change_entry(chrom=chrom,
-                                               start=start,
-                                               end=None,
-                                               gene_id=gene_id,
-                                               gene_name=gene_name,
-                                               transcript_id=transcript_id,
-                                               transcript=transcript,
-                                               transcript_bp=transcript_bp,
-                                               source="fusion",
-                                               group=group,
-                                               var_type=csq,
-                                               var_start=var_start,
-                                               wt_seq=wt_seq,
-                                               mt_seq=mt_seq,
-                                               vaf=-1,
-                                               ao=ao,
-                                               dp=dp,
-                                               nmd_event=None)
-
-                    # check if variant is self dissimilar
-                    if self.variant_effects.self_dissimilarity():
-                        self.variant_effects.write_entry()
+            group = Path(fusions_input).stem.split('_fusions')[0]
+            confidence_level = {"low": ["low", "medium", "high"],
+                               "medium": ["medium", "high"],
+                               "high": ["high"]}
 
 
-            self.variant_effects.close_file()
+            with open(fusions_input) as fh:
+                next(fh) # ignore header
+                for line in fh:
+                    cols = line.rstrip().split('\t')
+                    if cols[14] in confidence_level[options.confidence]:
+                        event_type = cols[8]
+                        reading_frame = cols[15]
+                        csq = self.determine_consequence(reading_frame, event_type)
+                        if csq == None:
+                            continue
+
+                        peptide_seq = cols[28]
+                        if peptide_seq == '.': # could be determined
+                            continue
+
+                        # get genomic coordiantes
+                        chrom, start, end = self.determine_coordinates(cols[4], cols[5])
+                        gene_name = cols[0] + '|' + cols[1]
+                        gene_id = cols[20] + '|' + cols[21]
+
+                        tid1 = cols[22]
+                        tid2 = cols[23]
+
+                        transcript_id = tid1 + '|' + tid2
+
+                        ao = str(len(cols[29]))
+                        dp = str(cols[12]+cols[13])
+
+                        # get the fusion transcript
+                        transcript = cols[27].upper()
+                        for symbol in ['[', ']', '(', ')', '_']:
+                            transcript = transcript.replace(symbol, '')
+                        transcript_bp = transcript.find('|')
+                        transcript = transcript.replace('|', '')
+
+                        # retrieve polypeptide sequence of
+                        fusion_pepseq = cols[28]
+                        if fusion_pepseq == '.':
+                            continue
+
+                        # determine (complete) wildtype peptide sequence (which is the wt of first gene)
+                        gene1_wt_seq = ''
+                        # retrieve
+                        if tid1 in proteome:
+                            gene1_wt_seq = proteome[tid1]
+                        wt_seq, mt_seq, var_start = self.determine_peptide_sequence(fusion_pepseq,
+                                                                                    gene1_wt_seq)
+
+                        self.variant_effects.change_entry(chrom=chrom,
+                                                   start=start,
+                                                   end=None,
+                                                   gene_id=gene_id,
+                                                   gene_name=gene_name,
+                                                   transcript_id=transcript_id,
+                                                   transcript=transcript,
+                                                   transcript_bp=transcript_bp,
+                                                   source="fusion",
+                                                   group=group,
+                                                   var_type=csq,
+                                                   var_start=var_start,
+                                                   wt_seq=wt_seq,
+                                                   mt_seq=mt_seq,
+                                                   vaf=-1,
+                                                   ao=ao,
+                                                   dp=dp,
+                                                   nmd_event=None)
+
+                        # check if variant is self dissimilar
+                        if self.variant_effects.self_dissimilarity():
+                            self.variant_effects.write_entry()
 
 
     @staticmethod
