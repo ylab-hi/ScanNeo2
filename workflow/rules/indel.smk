@@ -5,8 +5,8 @@ rule detect_long_indel_ti_build_RNA:
         bam = "results/{sample}/rnaseq/align/{group}_final_BWA.bam",
         idx = "results/{sample}/rnaseq/align/{group}_final_BWA.bam.bai"
     output:
-        bam="results/{sample}/rnaseq/indel/transindel/{group}_build.bam",
-        idx="results/{sample}/rnaseq/indel/transindel/{group}_build.bam.bai"
+        bam=temp("results/{sample}/rnaseq/indel/transindel/{group}_build.bam"),
+        idx=temp("results/{sample}/rnaseq/indel/transindel/{group}_build.bam.bai")
     message:
       "Building new BAM file with redefined CIGAR string using transindel build on sample:{wildcards.sample} with group:{wildcards.group}"
     log:
@@ -28,8 +28,8 @@ rule detect_long_indel_ti_build_DNA:
         bam = "results/{sample}/dnaseq/align/{group}_final_BWA.bam",
         idx = "results/{sample}/dnaseq/align/{group}_final_BWA.bam.bai"
     output:
-        bam="results/{sample}/dnaseq/indel/transindel/{group}_build.bam",
-        idx="results/{sample}/dnaseq/indel/transindel/{group}_build.bam.bai"
+        bam=temp("results/{sample}/dnaseq/indel/transindel/{group}_build.bam"),
+        idx=temp("results/{sample}/dnaseq/indel/transindel/{group}_build.bam.bai")
     message:
       "Building new BAM file with redefined CIGAR string using transindel build on sample:{wildcards.sample} with group:{wildcards.group}"
     log:
@@ -174,7 +174,7 @@ rule detect_short_indels_m2:
     idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
     fasta="resources/refs/genome.fasta"
   output:
-    vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}.vcf"
+    vcf=temp("results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}.vcf")
   message:
     "Detection of somatic SNVs/Indels with Mutect2 on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
@@ -192,7 +192,7 @@ rule filter_short_indels_m2:
     idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
     ref="resources/refs/genome.fasta"
   output:
-    vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf"
+    vcf=temp("results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf")
   message:
     "Filtering somatic SNVs/Indels with FilterMutectCalls on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
@@ -216,7 +216,7 @@ rule sort_short_indels_m2:
   input:
     "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf"
   output:
-    "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf.gz",
+    temp("results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf.gz"),
   message:
     "Sorting vcf file from somatic variant calling (mutect2) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
@@ -232,7 +232,7 @@ rule index_short_indels_m2:
   input:
     "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf.gz",
   output:
-    "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf.gz.tbi"
+    temp("results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf.gz.tbi")
   message:
     "Indexing vcf file from somatic variant valling (mutect2) first round on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:

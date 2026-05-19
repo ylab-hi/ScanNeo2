@@ -40,7 +40,7 @@ checkpoint split_bam_htc_first_round:
     bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
     idx="results/{sample}/{seqtype}/align/{group}_final_BWA.bam.bai"
   output:
-    directory("results/{sample}/{seqtype}/align/{group}_final_BWA_split")
+    temp(directory("results/{sample}/{seqtype}/align/{group}_final_BWA_split"))
   message:
     "Splitting bam file for first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
@@ -57,7 +57,7 @@ rule index_split_bam_htc_first_round:
   input:
     bam="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam"
   output:
-    idx="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam.bai"
+    idx=temp("results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam.bai")
   message:
     "Indexing split bam file for first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
   log:
@@ -76,7 +76,7 @@ rule detect_variants_htc_first_round:
     ref="resources/refs/genome.fasta",
     ref_idx="resources/refs/genome.fasta.fai"
   output:
-    vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf"
+    vcf=temp("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf")
   message:
     "First round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
@@ -91,7 +91,7 @@ rule sort_variants_htc_first_round:
   input:
     "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf"
   output:
-    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz",
+    temp("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz"),
   message:
     "Sorting vcf file from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
@@ -107,7 +107,7 @@ rule index_variants_htc_first_round:
   input:
     "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz"
   output:
-    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz.tbi"
+    temp("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd/{chr}.vcf.gz.tbi")
   message:
     "Indexing vcf file from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
@@ -325,7 +325,7 @@ rule detect_variants_htc_final_round:
     idx="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal_split/{chr}.bam.bai",
     ref="resources/refs/genome.fasta"
   output:
-    vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf"
+    vcf=temp("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf")
   message:
     "Final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
@@ -340,7 +340,7 @@ rule sort_variants_htc_final_round:
   input:
     "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf"
   output:
-    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf.gz",
+    temp("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf.gz"),
   message:
     "Sorting vcf file from final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:
@@ -356,7 +356,7 @@ rule index_variants_htc_final_round:
   input:
     "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf.gz"
   output:
-    "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf.gz.tbi"
+    temp("results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final/{chr}.vcf.gz.tbi")
   message:
     "Indexing vcf file from final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
   log:

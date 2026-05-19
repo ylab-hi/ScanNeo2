@@ -22,10 +22,6 @@ class Immunogenicity:
 
             # wildtype immunogenicity scores
             wt_epitope_seq = df["wt_epitope_seq"]
-            # remove entries that contain $ in the wt_epitope_seq
-            wt_epitope_seq_rm = wt_epitope_seq.str.contains("\$")
-            wt_epitope_seq_flt = wt_epitope_seq[~wt_epitope_seq_rm]
-
             wt_immuno_scores = self.calc_immunogenicity_mhcI(wt_epitope_seq)
             wt_immunogenicity = self.assign_scores(wt_epitope_seq, wt_immuno_scores)
 
@@ -136,10 +132,17 @@ class SequenceSimilarity:
 
     def self_similarity(self, wt_seqs, mt_seqs):
         selfsim = []
-        # iterate 
+        # iterate
         for i in range(len(wt_seqs)):
             wt_seq = wt_seqs[i]
             mt_seq = mt_seqs[i]
+
+            # skip if either sequence is missing (NaN) — happens when
+            # the wt or mt epitope didn't meet length requirements in
+            # prediction.py and was written as a 0 seqnum
+            if pd.isna(wt_seq) or pd.isna(mt_seq):
+                selfsim.append(-1)
+                continue
 
             # calculate the similarity
             if '$' in wt_seq:
