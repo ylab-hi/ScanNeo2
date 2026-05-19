@@ -25,7 +25,6 @@ rule all:
            sample=config['data']['name'])
 
 #### load rules ####
-include: "rules/prelim.smk"
 include: "rules/ref.smk"
 include: "rules/common.smk"
 include: "rules/hlatyping_prep.smk"

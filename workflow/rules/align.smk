@@ -145,7 +145,6 @@ rule rnaseq_postproc_fixmate:
 rule rnaseq_postproc_markdup:
   input:
     bam="results/{sample}/rnaseq/align/{group}_fixmate_STAR.bam",
-    tmp="tmp/"
   output:
     "results/{sample}/rnaseq/align/{group}_final_STAR.bam"
   conda:
@@ -157,7 +156,8 @@ rule rnaseq_postproc_markdup:
     mem_mb_per_cpu=4000
   shell:
     """
-      samtools sort -@4 -m4G -O BAM -T tmp/ {input.bam} \
+      mkdir -p tmp/
+      samtools sort -@4 -m4G -O BAM -T tmp/sort_{wildcards.sample}_{wildcards.group}_ {input.bam} \
           -o tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam > {log} 2>&1
       samtools markdup -r -@4 tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam \
           {output} >> {log} 2>&1
@@ -244,7 +244,6 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
   rule dnaseq_postproc:
     input:
       aln="results/{sample}/dnaseq/align/{group}_aligned_BWA.bam",
-      tmp="tmp/"
     output:
       bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
     log:
@@ -258,8 +257,9 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
       mem_mb=20000
     shell:
       """
+        mkdir -p tmp/
         ( samtools fixmate -pcmu -O bam -@ 6 {input.aln} - \
-          | samtools sort -@ 4 -m1g -O bam -T tmp/ - -o - \
+          | samtools sort -@ 4 -m1g -O bam -T tmp/sort_{wildcards.sample}_{wildcards.group}_ - -o - \
           | samtools markdup -r -@ 6 - {output.bam} \
         ) > {log} 2>&1
       """
