@@ -132,10 +132,17 @@ class SequenceSimilarity:
 
     def self_similarity(self, wt_seqs, mt_seqs):
         selfsim = []
-        # iterate 
+        # iterate
         for i in range(len(wt_seqs)):
             wt_seq = wt_seqs[i]
             mt_seq = mt_seqs[i]
+
+            # skip if either sequence is missing (NaN) — happens when
+            # the wt or mt epitope didn't meet length requirements in
+            # prediction.py and was written as a 0 seqnum
+            if pd.isna(wt_seq) or pd.isna(mt_seq):
+                selfsim.append(-1)
+                continue
 
             # calculate the similarity
             if '$' in wt_seq:
