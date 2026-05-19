@@ -113,7 +113,7 @@ rule longindel_sort_and_compress:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      ( bcftools sort {input} -o - | bcftools view -O z -o {output} ) > {log} 2>&1
     """
 
 rule combine_longindels:
@@ -129,7 +129,7 @@ rule combine_longindels:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      ( bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} ) > {log} 2>&1
     """
 
 ####### MUTECT2 ######
@@ -225,7 +225,7 @@ rule sort_short_indels_m2:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      ( bcftools sort {input} -o - | bcftools view -O z -o {output} ) > {log} 2>&1
     """
 
 rule index_short_indels_m2:
@@ -331,7 +331,7 @@ rule sort_aug_short_indels_m2:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      ( bcftools sort {input} -o - | bcftools view -O z -o {output} ) > {log} 2>&1
     """
 
 rule combine_aug_short_indels_m2:
@@ -347,7 +347,7 @@ rule combine_aug_short_indels_m2:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      ( bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} ) > {log} 2>&1
     """
 
 rule select_SNVs_m2:
@@ -401,7 +401,7 @@ rule sort_somatic_SNVs_m2:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      ( bcftools sort {input} -o - | bcftools view -O z -o {output} ) > {log} 2>&1
     """
 
 rule combine_somatic_SNVs_m2:
@@ -417,6 +417,6 @@ rule combine_somatic_SNVs_m2:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      ( bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output} ) > {log} 2>&1
     """
 

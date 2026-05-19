@@ -31,5 +31,5 @@ rule sort_custom_variants:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      ( bcftools sort {input} -o - | bcftools view -O z -o {output} ) > {log} 2>&1
     """

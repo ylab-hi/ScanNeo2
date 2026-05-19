@@ -20,8 +20,10 @@ rule filter_reads_mhcI_SE:
   threads: config['threads']
   shell:
     """
-      yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
-          {input.reads:q} | samtools view -h -F 4 -b1 - -o {output.reads:q} > {log} 2>&1
+      ( yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
+            {input.reads:q} \
+        | samtools view -h -F 4 -b1 - -o {output.reads:q} \
+      ) > {log} 2>&1
     """
 
 rule sort_reads_mhcI_SE:
@@ -126,8 +128,10 @@ rule filter_reads_mhcI_PE:
   threads: config['threads']
   shell:
     """
-      yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
-          {input.reads:q} | samtools view -h -F 4 -b1 - -o {output.reads:q} > {log} 2>&1
+      ( yara_mapper -t {threads} -e 3 -f bam -u resources/hla/yara_index/{wildcards.nartype} \
+            {input.reads:q} \
+        | samtools view -h -F 4 -b1 - -o {output.reads:q} \
+      ) > {log} 2>&1
     """
 
 rule sort_and_index_reads_mhcI_PE:

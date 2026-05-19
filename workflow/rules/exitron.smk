@@ -121,7 +121,7 @@ rule sort_exitron:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      ( bcftools sort {input} -o - | bcftools view -O z -o {output} ) > {log} 2>&1
     """
 
 rule combine_exitrons:
@@ -137,6 +137,6 @@ rule combine_exitrons:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive-force -O z {input} -o  - | bcftools sort -O z -o {output} > {log} 2>&1
+      ( bcftools concat --naive-force -O z {input} -o  - | bcftools sort -O z -o {output} ) > {log} 2>&1
     """
 

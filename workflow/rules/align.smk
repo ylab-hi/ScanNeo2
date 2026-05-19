@@ -135,9 +135,10 @@ rule rnaseq_postproc_fixmate:
     mapq=f"--min-MQ {config['mapq']}"
   shell:
     """
-      samtools view -h -F 4 {params.mapq} {input} -o - \
-      | samtools sort -n -@4 -m4g -O SAM - -o - \
-      | samtools fixmate -pcmu -O bam -@ {threads} - {output} > {log} 2>&1
+      ( samtools view -h -F 4 {params.mapq} {input} -o - \
+        | samtools sort -n -@4 -m4g -O SAM - -o - \
+        | samtools fixmate -pcmu -O bam -@ {threads} - {output} \
+      ) > {log} 2>&1
     """
 
 # sort and markdup needed to be separated (ensure no core dump for whatever reason)
@@ -208,10 +209,11 @@ rule realign:
   threads: config['threads']
   shell:
     """
-      samtools collate -Oun128 {input.bam} \
+      ( samtools collate -Oun128 {input.bam} \
         | samtools fastq -OT RG -@ {threads} - \
         | bwa mem -pt{threads} -CH <(cat {input.rg}) resources/refs/bwa/genome - - \
-        | samtools sort -@6 -m1g -o {output} > {log} 2>&1
+        | samtools sort -@6 -m1g -o {output} \
+      ) > {log} 2>&1
     """
 
 
@@ -232,9 +234,11 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
     threads: config['threads']
     shell:
       """
-        bwa mem -t{threads} resources/refs/bwa/genome \
-            -R '@RG\\tID:{wildcards.group}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:ILLUMINA' \
-            {input.reads} | samtools sort -@ 6 -n -m1g - -o {output} > {log} 2>&1
+        ( bwa mem -t{threads} resources/refs/bwa/genome \
+              -R '@RG\\tID:{wildcards.group}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:ILLUMINA' \
+              {input.reads} \
+          | samtools sort -@ 6 -n -m1g - -o {output} \
+        ) > {log} 2>&1
       """
 
   rule dnaseq_postproc:
@@ -254,9 +258,10 @@ if config['data']['dnaseq_filetype'] in ['.fq','.fastq']:
       mem_mb=20000
     shell:
       """
-        samtools fixmate -pcmu -O bam -@ 6 {input.aln} - \
-            | samtools sort -@ 4 -m1g -O bam -T tmp/ - -o - \
-            | samtools markdup -r -@ 6 - {output.bam} > {log} 2>&1
+        ( samtools fixmate -pcmu -O bam -@ 6 {input.aln} - \
+          | samtools sort -@ 4 -m1g -O bam -T tmp/ - -o - \
+          | samtools markdup -r -@ 6 - {output.bam} \
+        ) > {log} 2>&1
       """
 
 rule samtools_index_BWA_final:
