@@ -53,6 +53,13 @@ class Immunogenicity:
 
 
     def calc_immunogenicity_mhcI(self, seq):
+        # IEDB's predict_immunogenicity.py raises UnboundLocalError when given
+        # an empty peptide list — its `mask_out` is only bound inside the
+        # per-peptide loop. A variant type with no neoepitopes (e.g. only
+        # non-NMD-escaping frameshifts) produces an empty column here, so
+        # skip the call when there is nothing to score.
+        if len(seq) == 0:
+            return {}
         with tempfile.NamedTemporaryFile() as tmpsfile:
             seq.to_csv(tmpsfile, sep="\t", header=False, index=False)
 
