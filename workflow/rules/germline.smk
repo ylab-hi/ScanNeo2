@@ -100,7 +100,7 @@ rule sort_variants_htc_first_round:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      ( bcftools sort {input} -o - | bcftools view -O z -o {output} ) > {log} 2>&1
     """
 
 rule index_variants_htc_first_round:
@@ -133,7 +133,7 @@ rule merge_variants_htc_first_round:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools concat --naive-force -O z {input.vcf} -o - | bcftools sort -O z -o {output} > {log} 2>&1
+      ( bcftools concat --naive-force -O z {input.vcf} -o - | bcftools sort -O z -o {output} ) > {log} 2>&1
     """
 
 rule index_merged_variants_htc_first_round:
@@ -349,7 +349,7 @@ rule sort_variants_htc_final_round:
     "../envs/bcftools.yml"
   shell:
     """
-      bcftools sort {input} -o - | bcftools view -O z -o {output} > {log} 2>&1
+      ( bcftools sort {input} -o - | bcftools view -O z -o {output} ) > {log} 2>&1
     """
 
 rule index_variants_htc_final_round:
