@@ -41,7 +41,6 @@ rule index_mhcI_hla_panel:
 rule get_reads_hlatyping_BAM:
   input:
     reads=get_input_reads_hlatyping_BAM,
-    tmp="tmp/"
   output:
     "results/{sample}/hla/reads/{group}_{nartype}_BAM.fq"
   message:
@@ -53,7 +52,8 @@ rule get_reads_hlatyping_BAM:
   threads: 4
   shell:
     """
-      (samtools sort -@ {threads} -n {input.reads} -T tmp/ \
+      mkdir -p tmp/
+      (samtools sort -@ {threads} -n {input.reads} -T tmp/sort_{wildcards.sample}_{wildcards.group}_{wildcards.nartype}_ \
           | samtools fastq -@ {threads} > {output}) 2> {log}
     """
 
