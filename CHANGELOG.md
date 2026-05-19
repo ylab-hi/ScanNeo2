@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Remove broken-and-unused `$`-filter in `filtering.Immunogenicity.__init__`**: `wt_epitope_seq.str.contains("\$")` returns `NaN` for rows where the wildtype peptide didn't meet length requirements upstream, and `~NaN` raises `TypeError: bad operand type for unary ~: 'float'`. The result of the filter was also never used — the next line called `calc_immunogenicity_mhcI(wt_epitope_seq)` with the unfiltered original. The `$` marker is already stripped in `prediction.py` before reaching `filtering.py`, so the defensive filter was redundant too. Surfaced by the integration QC test for #87. ([#87](https://github.com/ylab-hi/ScanNeo2/pull/87))
+- **Fix two NaN crashes in `prioritization/filtering.py`**: (1) Removed a broken-and-unused `$`-filter in `Immunogenicity.__init__` — `wt_epitope_seq.str.contains("\$")` returns `NaN` for rows where the wildtype peptide didn't meet length requirements, and `~NaN` raises `TypeError: bad operand type for unary ~: 'float'`. The filter's result was also never used (next line called `calc_immunogenicity_mhcI(wt_epitope_seq)` with the unfiltered original) and the `$` marker is already stripped upstream in `prediction.py`. (2) Added a `pd.isna(wt_seq) or pd.isna(mt_seq)` guard to `SequenceSimilarity.self_similarity` — `'$' in NaN` raised `TypeError: argument of type 'float' is not iterable`. NaN entries now get -1 (matching the existing skip value for `$`-found entries). Both surfaced by the integration QC test for #87. ([#87](https://github.com/ylab-hi/ScanNeo2/pull/87))
 
 ### Changed
 
