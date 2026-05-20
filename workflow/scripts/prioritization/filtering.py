@@ -1,3 +1,10 @@
+"""Post-prediction scoring of neoepitopes.
+
+`Immunogenicity` adds IEDB immunogenicity scores; `SequenceSimilarity` adds self-similarity
+(wildtype vs mutant), pathogen similarity, and proteome similarity (both via blastp). Each appends
+columns to the per-variant-type neoepitope tables.
+"""
+
 import os
 import sys
 import pandas as pd

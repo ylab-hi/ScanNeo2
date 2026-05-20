@@ -1,3 +1,10 @@
+"""Entry point for the neoantigen prioritization stage, invoked by the `prioritization` Snakemake rule.
+
+For each variant source (SNVs, short/long indels, exitrons, alternative splicing, fusions, custom) it
+annotates variant effects, predicts MHC binding affinities, applies similarity/immunogenicity scoring,
+and combines the per-source neoepitope tables into the final output.
+"""
+
 import os
 import sys
 import configargparse

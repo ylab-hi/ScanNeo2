@@ -1,3 +1,10 @@
+"""Process VEP-annotated variants (SNVs and indels).
+
+Reads a VCF, resolves each VEP consequence (missense, frameshift, inframe insertion/deletion),
+reconstructs the wildtype/mutant peptide sequence, and registers each as a variant effect for
+downstream neoepitope prediction.
+"""
+
 from pathlib import Path
 import re
 import vcfpy
