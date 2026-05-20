@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Pin loose conda dependencies**: Pinned the remaining unpinned packages across 6 `workflow/envs/*.yml` files (`curl`, `bowtie2`, `pip`, `python`, `perl`, `perl-env`, `bwa`, `samtools`, `pysam`) to versions verified by dry-run solving each env. `realign.yml` also gained the `conda-forge` channel — without it the solver starved modern samtools of its dependencies and fell back to samtools 1.3.1 — and `manipulate_vcf.yml` had its channels reordered to `conda-forge, bioconda` (dropping `defaults`, which had resolved `pysam` to 0.9.1 and conflicted on `libdeflate`). ([#64](https://github.com/ylab-hi/ScanNeo2/issues/64), [#101](https://github.com/ylab-hi/ScanNeo2/pull/101))
+- **Improve documentation**: Fixed the self-contradictory Snakemake-version note and a `config.yml`→`config.yaml` typo in the README, and clarified that HLA-HD's `hlahd.sh` must be on `PATH`. Added inline comments to the previously-undocumented `config/config.yaml` options (`reference`, `data`, `preproc`, the STAR chimeric-alignment parameters, `quantification`, the HLA-HD reference-data paths, `prioritization` lengths). Added module-level docstrings to all 8 `workflow/scripts/prioritization/` modules. ([#71](https://github.com/ylab-hi/ScanNeo2/issues/71), [#102](https://github.com/ylab-hi/ScanNeo2/pull/102))
 
 ## [0.3.10] - 2026-05-20
 
