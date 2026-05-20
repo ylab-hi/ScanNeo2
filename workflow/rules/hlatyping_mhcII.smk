@@ -148,7 +148,7 @@ rule combine_all_mhcII_alleles:
   input:
     get_all_mhcII_alleles
   output:
-    protected("results/{sample}/hla/mhc-II.tsv")
+    "results/{sample}/hla/mhc-II.tsv"
   message:
     "Combining HLA mhc-II alleles from different sources"
   log:
