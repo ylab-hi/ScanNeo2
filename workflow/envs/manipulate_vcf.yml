@@ -1,11 +1,10 @@
 channels:
-  - bioconda
   - conda-forge
-  - defaults
+  - bioconda
 dependencies:
-  - python
+  - python=3.8
   - pyfaidx=0.7.0
-  - pysam
+  - pysam=0.22.0
   - configargparse=1.7
   - pip=24.3.1
   - pip:
