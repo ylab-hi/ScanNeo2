@@ -82,7 +82,7 @@ def main():
                         if seqmid > 10:
                             seqmid -= 10
                         # small overlap for reverse reads
-                        out_rev_fh.write(calc_revcomp(line[seqmid-10:]))
+                        out_rev_fh.write(calc_revcomp(line[seqmid-10:]) + "\n")
                     if i % 4 == 2: # +
                         out_fwd_fh.write("+\n")
                         out_rev_fh.write("+\n")
