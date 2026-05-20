@@ -1,3 +1,10 @@
+"""MHC binding-affinity prediction.
+
+Extracts candidate epitope subsequences from the variant-effects table, runs netMHCpan / netMHCIIpan
+(IEDB tools) in batches across the sample's HLA alleles and the configured epitope lengths, and writes
+the per-variant-type neoepitope tables with binding affinity, rank, and agretopicity.
+"""
+
 import tempfile
 import os
 import contextlib

@@ -39,7 +39,7 @@ To get started with ScanNeo2, follow the steps below:
     mamba activate scanneo2
     ```
 
-    Note: ScanNeo2 requires Snakemake >= 8.x.x is not compatible with Snakemake <= 8.x.x. 
+    Note: ScanNeo2 requires Snakemake >= 8.0 and is not compatible with earlier versions.
 
 2. Deploy ScanNeo2:
 
@@ -54,7 +54,8 @@ cd ScanNeo2
 
     ScanNeo2 employs HLA-HD for HLA Class II genotyping which is required when ScanNeo2 has been configured to predict class II neoantigens. 
     Due to license reasons it has to be installed manually (download request). Please follow the instructions on the official 
-    [website](https://w3.genome.med.kyoto-u.ac.jp/HLA-HD/). HLA-HD needs to be installed system-wide. In particular, ScanNeo2 calls `hlahd.sh`. 
+    [website](https://w3.genome.med.kyoto-u.ac.jp/HLA-HD/). ScanNeo2 invokes HLA-HD's `hlahd.sh` script directly, so the 
+    HLA-HD `bin/` directory must be on your `PATH` (i.e. running `hlahd.sh` from any directory must succeed). 
     ScanNeo2 has been tested using HLA-HD v1.7.1
 
 <!--
@@ -66,7 +67,7 @@ cd ScanNeo2
     ```
 -->
 
-3. Configure ScanNeo2 by editing the `config/config.yml` file. Make sure to adjust parameters to suit your needs and data. Note that the paths in the config file need to be relative to the directory from which you run snakemake.
+3. Configure ScanNeo2 by editing the `config/config.yaml` file. Make sure to adjust parameters to suit your needs and data. Note that the paths in the config file need to be relative to the directory from which you run snakemake.
 
 ### Running the Workflow
 

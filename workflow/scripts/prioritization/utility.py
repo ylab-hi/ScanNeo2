@@ -1,3 +1,5 @@
+"""Small shared helpers for the prioritization scripts (output formatting, sequence inspection)."""
+
 def format_output(field):
     if field == None:
         return '.'

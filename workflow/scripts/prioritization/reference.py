@@ -1,3 +1,9 @@
+"""Load reference data used throughout prioritization.
+
+`Proteome` indexes the reference peptide FASTA by transcript ID, `Annotation` parses the GTF into
+transcriptome and exome coordinate maps, and `Counts` loads the per-gene expression count table.
+"""
+
 import pyfaidx
 import re
 

@@ -2,42 +2,43 @@
 
 # General settings
 reference:
-  release: 111
-  nonchr: false
-threads: 30
-mapq: 30  # overall required mapping quality
-basequal: 20  # overall required base quality 
+  release: 111      # Ensembl release used to download the reference genome and annotation
+  nonchr: false     # whether (=true) to include non-chromosomal/scaffold contigs
+threads: 30         # maximum number of threads any single rule may use
+mapq: 30            # minimum read mapping quality (MAPQ, Phred-scaled)
+basequal: 20        # minimum base-call quality (Phred-scaled)
 
 data:
-  name:  samplename
-  dnaseq: 
-    dna_tumor: <path/to/reads>
-  rnaseq:
+  name:  samplename                    # run name; results are written to results/<name>/
+  dnaseq:                              # DNA-seq inputs; one entry per group (the key is the group name)
+    dna_tumor: <path/to/reads>         #   value: one path (single-end) or two space-separated paths (paired-end); .fastq/.fq/.bam
+  rnaseq:                              # RNA-seq inputs; same format as dnaseq
     rna_tumor: <path/to/to/reads>
-  normal: <normal/sample/identifier>
-  
+  normal: <normal/sample/identifier>   # group name of the matched normal/control sample (for somatic calling)
+
   custom:
-    variants:
-    hlatyping:
-      MHC-I:
-      MHC-II:
+    variants:                          # optional: path to a user-supplied VCF to prioritize directly
+    hlatyping:                         # optional: user-supplied HLA alleles (used when the *_mode below is 'custom')
+      MHC-I:                           #   path to a file listing MHC class I alleles
+      MHC-II:                          #   path to a file listing MHC class II alleles
 
 ### pre-processing (only applied on fastq reads)
 preproc: 
   activate: true  # whether (=true) or not (=false) to include pre-processing
-  minlen: 10
+  minlen: 10      # discard reads shorter than this (bp) after trimming
   slidingwindow:
     activate: true
-    wsize: 3
-    wqual: 20
+    wsize: 3      # sliding-window size (bp) for quality trimming
+    wqual: 20     # mean base quality required within the window (Phred-scaled)
 
-### alingment
+### alignment
+# STAR chimeric-alignment parameters (used for RNA-seq gene-fusion detection)
 align:
-  chimSegmentMin: 20
-  chimScoreMin: 10
-  chimJunctionOverhangMin: 10
-  chimScoreDropMax: 30
-  chimScoreSeparation: 10
+  chimSegmentMin: 20            # minimum length of each chimeric segment (0 disables chimeric detection)
+  chimScoreMin: 10              # minimum total score of a chimeric alignment
+  chimJunctionOverhangMin: 10   # minimum overhang length for a chimeric junction
+  chimScoreDropMax: 30          # maximum allowed drop of chimeric score below read length
+  chimScoreSeparation: 10       # minimum score separation between the best and next-best chimeric alignment
 
 ### variant calling
 # alternative splicing
@@ -82,22 +83,21 @@ indel:
   sliprate: 0.1  # frequency of slippage when it is supsected
 
 quantification:
-  mode: BOTH # RNA, RNA or BOTH
+  mode: BOTH  # quantify expression from DNA, RNA, or BOTH
 
 hlatyping:
   class: BOTH # I, II or BOTH
-  # specific path for class II hlatyping (only required when class: II, or BOTH)
   MHC-I_mode: DNA, RNA # DNA, RNA, or custom (if empty alleles have to be specified in custom)
   MHC-II_mode: DNA, RNA # DNA, RNA, or custom (if empty alleles have to be specified in custom)
-  
-  # specific path for class II hlatyping (only required when class: II, or BOTH)
-  freqdata: ./hlahd_files/freq_data/ 
-  split: ./hlahd_files/HLA_gene.split.txt
-  dict: ./hlahd_files/dictionary/
+
+  # HLA-HD reference data (only required when class: II or BOTH)
+  freqdata: ./hlahd_files/freq_data/        # HLA-HD frequency-data directory
+  split: ./hlahd_files/HLA_gene.split.txt   # HLA-HD gene-split file
+  dict: ./hlahd_files/dictionary/           # HLA-HD dictionary directory
 
 prioritization:
   class: I # I, II or BOTH
-  lengths:
+  lengths:                  # comma-separated epitope lengths (aa) to predict per MHC class
     MHC-I: 8,9,10,11
     MHC-II: 13,14,15
 

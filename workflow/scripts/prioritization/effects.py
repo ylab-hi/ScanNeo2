@@ -1,3 +1,10 @@
+"""Derive the protein-level effect of each variant.
+
+Reconstructs the wildtype/mutant peptide subsequence around each variant, determines NMD status and
+PTC location for frameshift events, attaches expression (TPM), and writes the per-variant-type
+`*_variant_effects.tsv` consumed by the binding-affinity prediction step.
+"""
+
 # classes
 import utility as ut
 import reference

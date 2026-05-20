@@ -1,3 +1,9 @@
+"""Process gene-fusion events.
+
+Reads arriba fusion calls, reconstructs the fusion transcript and its wildtype/mutant peptide
+sequences, and registers each as a variant effect for downstream neoepitope prediction.
+"""
+
 # classes
 import utility as ut
 import effects
