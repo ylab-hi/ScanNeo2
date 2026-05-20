@@ -3,6 +3,6 @@ channels:
  - bioconda
 dependencies:
  - python=3.8
- - pip
+ - pip=24.2
  - pip:
    - spladder==3.0.4
