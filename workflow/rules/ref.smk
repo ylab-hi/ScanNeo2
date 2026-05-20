@@ -57,7 +57,7 @@ rule genome_index:
   params:
     extra="",  # optional params string
   wrapper:
-    "v1.28.0/bio/samtools/faidx"
+    "v2.3.0/bio/samtools/faidx"
 
 rule annotation_sort_bgzip:
   input:
@@ -101,7 +101,7 @@ rule star_index:
   log:
       "logs/ref/star_index.log",
   wrapper:
-      "v1.26.0/bio/star/index"
+      "v2.2.1/bio/star/index"
 
 rule bwa_index:
   input:
