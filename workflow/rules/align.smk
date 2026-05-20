@@ -105,7 +105,7 @@ if config['data']['rnaseq_filetype'] == '.bam':
         --outSAMstrandField intronMotif"""
     threads: config['threads']
     wrapper:
-      "v1.26.0/bio/star/align"
+      "v2.2.1/bio/star/align"
 
   rule merge_alignment_results:
     input:
@@ -118,7 +118,7 @@ if config['data']['rnaseq_filetype'] == '.bam':
       extra="",  # optional additional parameters as string
     threads: config['threads']
     wrapper:
-      "v1.32.1/bio/samtools/merge"
+      "v2.3.0/bio/samtools/merge"
 
 # post-processingn and realignment
 rule rnaseq_postproc_fixmate:

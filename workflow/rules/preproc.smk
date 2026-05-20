@@ -12,7 +12,7 @@ rule fastqc_single_end:
     resources:
         mem_mb = 1024
     wrapper:
-        "v2.2.1/bio/fastqc"
+        "v9.8.0/bio/fastqc"
 
 rule preproc_single_end:
   input:
@@ -46,7 +46,7 @@ rule fastqc_forward:
     resources:
         mem_mb = 1024
     wrapper:
-        "v2.2.1/bio/fastqc"
+        "v9.8.0/bio/fastqc"
 
 rule fastqc_reverse:
     input:
@@ -62,7 +62,7 @@ rule fastqc_reverse:
     resources:
         mem_mb = 1024
     wrapper:
-        "v2.2.1/bio/fastqc"
+        "v9.8.0/bio/fastqc"
 
 rule preproc_paired_end:
     input:
@@ -108,7 +108,7 @@ rule fastqc_forward_after:
     resources:
         mem_mb = 1024
     wrapper:
-        "v2.2.1/bio/fastqc"
+        "v9.8.0/bio/fastqc"
 
 # fastqc after pre-processing (reverse)
 rule fastqc_reverse_after:
@@ -125,5 +125,5 @@ rule fastqc_reverse_after:
     resources:
         mem_mb = 1024
     wrapper:
-        "v2.2.1/bio/fastqc"
+        "v9.8.0/bio/fastqc"
 
