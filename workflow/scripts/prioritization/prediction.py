@@ -1,5 +1,6 @@
 import tempfile
 import os
+import contextlib
 import concurrent.futures
 import subprocess
 from pathlib import Path
@@ -26,89 +27,79 @@ class BindingAffinities:
             wt_cnt = {}
             mt_cnt = {}
 
-            # file handler for wt and mt sequences
-            fh_wt = {}
-            fh_mt = {}
-
             epilens = self.extract_epilens(epitope_lengths)
 
             for epilen in epilens:
                 wt_fname[epilen] = os.path.join(tmp_seqs, f'wt_{epilen}.fa')
                 mt_fname[epilen] = os.path.join(tmp_seqs, f'mt_{epilen}.fa')
 
-                fh_wt[epilen] = open(wt_fname[epilen], 'w')
-                fh_mt[epilen] = open(mt_fname[epilen], 'w')
-
                 # initialise counter
                 wt_cnt[epilen] = 1
                 mt_cnt[epilen] = 1
-            
+
             subseqs = []
-        
-            # iterate through the varianteffectsfile
-            fh = open(Path(output_dir, f"{vartype}_variant_effects.tsv"), 'r')
-            next(fh)   # skip header
-            for line in fh:
-                entries = line.rstrip().split('\t')
-                for epilen in epilens:
-                    aa_var_start = int(entries[12])
-                    aa_var_end = int(entries[13])
 
-                    wt_subseq = entries[9]
-                    mt_subseq = entries[10]
+            # Open all per-length write handles plus the variant effects input
+            # together; ExitStack closes (and flushes) them when the block
+            # exits, before the binding affinity subprocess reads them.
+            with contextlib.ExitStack() as stack:
+                fh_wt = {epilen: stack.enter_context(open(wt_fname[epilen], 'w')) for epilen in epilens}
+                fh_mt = {epilen: stack.enter_context(open(mt_fname[epilen], 'w')) for epilen in epilens}
+                fh = stack.enter_context(open(Path(output_dir, f"{vartype}_variant_effects.tsv"), 'r'))
+                next(fh)   # skip header
+                for line in fh:
+                    entries = line.rstrip().split('\t')
+                    for epilen in epilens:
+                        aa_var_start = int(entries[12])
+                        aa_var_end = int(entries[13])
 
-                    # adjust the length of the subsequence according to epilen
-                    if aa_var_start >= epilen + 1:
-                        left = aa_var_start - (epilen - 1)
-                    else:
-                        left = 0
+                        wt_subseq = entries[9]
+                        mt_subseq = entries[10]
 
-                    if aa_var_end + (epilen - 1) <= len(mt_subseq):
-                        right = aa_var_end + (epilen - 1)
-                    else:
-                        right = len(mt_subseq) - 1 
+                        # adjust the length of the subsequence according to epilen
+                        if aa_var_start >= epilen + 1:
+                            left = aa_var_start - (epilen - 1)
+                        else:
+                            left = 0
 
-                    """ IEDB requires the sequence to be at least the length
-                    of the epitope + 1 to function - if this is not satisfied
-                    try to extend it to the left """
-                    while left > 0 and right - left + 1 < epilen + 1:
-                        left -= 1
+                        if aa_var_end + (epilen - 1) <= len(mt_subseq):
+                            right = aa_var_end + (epilen - 1)
+                        else:
+                            right = len(mt_subseq) - 1
 
-                    wt_subseq_adj = wt_subseq[left:right+1]
-                    mt_subseq_adj = mt_subseq[left:right+1]
+                        """ IEDB requires the sequence to be at least the length
+                        of the epitope + 1 to function - if this is not satisfied
+                        try to extend it to the left """
+                        while left > 0 and right - left + 1 < epilen + 1:
+                            left -= 1
 
-                    # determine the epitope sequences
-                    if '$' in wt_subseq_adj:
-                        wt_epitope_seq = wt_subseq_adj.split('$')[0]
-                    else:
-                        wt_epitope_seq = wt_subseq_adj
-                    mt_epitope_seq = mt_subseq_adj
+                        wt_subseq_adj = wt_subseq[left:right+1]
+                        mt_subseq_adj = mt_subseq[left:right+1]
 
-                    if len(wt_epitope_seq) >= epilen+1:
-                        fh_wt[epilen].write(f'>{wt_cnt[epilen]}\n{wt_epitope_seq}\n')
-                        entries.append(wt_cnt[epilen])
-                        wt_cnt[epilen] += 1
+                        # determine the epitope sequences
+                        if '$' in wt_subseq_adj:
+                            wt_epitope_seq = wt_subseq_adj.split('$')[0]
+                        else:
+                            wt_epitope_seq = wt_subseq_adj
+                        mt_epitope_seq = mt_subseq_adj
 
-                    else:
-                        entries.append(0)
+                        if len(wt_epitope_seq) >= epilen+1:
+                            fh_wt[epilen].write(f'>{wt_cnt[epilen]}\n{wt_epitope_seq}\n')
+                            entries.append(wt_cnt[epilen])
+                            wt_cnt[epilen] += 1
 
-                    if len(mt_epitope_seq) >= epilen+1:
-                        fh_mt[epilen].write(f'>{mt_cnt[epilen]}\n{mt_epitope_seq}\n')
-                        entries.append(mt_cnt[epilen])
-                        mt_cnt[epilen] += 1
+                        else:
+                            entries.append(0)
 
-                    else:
-                        entries.append(0)
+                        if len(mt_epitope_seq) >= epilen+1:
+                            fh_mt[epilen].write(f'>{mt_cnt[epilen]}\n{mt_epitope_seq}\n')
+                            entries.append(mt_cnt[epilen])
+                            mt_cnt[epilen] += 1
 
-                    #print(entries)
+                        else:
+                            entries.append(0)
 
-                subseqs.append(entries)
-
-            # its necessary to close the files
-            fh.close() # variant_effects
-            for epilen in epilens:
-                fh_wt[epilen].close()
-                fh_mt[epilen].close()
+                    subseqs.append(entries)
 
             total_seqs = max((wt_cnt.get(epilens[0], 1),
                               mt_cnt.get(epilens[0], 1))) - 1
@@ -131,109 +122,108 @@ class BindingAffinities:
                                                             self.threads)
             print("Done", flush=True)
             
-            outfile = open(os.path.join(output_dir,
-                                        f"{vartype}_{mhc_class}_neoepitopes.txt"),"w")
-            BindingAffinities.write_header(outfile)
+            with open(os.path.join(output_dir,
+                                   f"{vartype}_{mhc_class}_neoepitopes.txt"), "w") as outfile:
+                BindingAffinities.write_header(outfile)
 
-            for entry in subseqs:
-                final = {}
-                final["chrom"] = entry[0]
-                final["start"] = entry[1]
-                final["end"] = entry[2]
-                final["gene_id"] = entry[3]
-                final["gene_name"] = entry[4]
-                final["transcript_id"] = entry[5]
-                final["source"] = entry[6]
-                final["group"] = entry[7]
-                final["var_type"] = entry[8]
-                final["var_start"] = entry[11]
-                final["vaf"] = float(entry[14])
-                final["supp"] = entry[15]
-                final["depth"] = entry[16]
-                final["TPM"] = entry[17]
-                final["NMD"] = entry[18]
-                final["PTC_dist_ejc"] = entry[19]
-                final["PTC_exon_number"] = entry[20]
-                final["NMD_escape_rule"] = entry[21]
+                for entry in subseqs:
+                    final = {}
+                    final["chrom"] = entry[0]
+                    final["start"] = entry[1]
+                    final["end"] = entry[2]
+                    final["gene_id"] = entry[3]
+                    final["gene_name"] = entry[4]
+                    final["transcript_id"] = entry[5]
+                    final["source"] = entry[6]
+                    final["group"] = entry[7]
+                    final["var_type"] = entry[8]
+                    final["var_start"] = entry[11]
+                    final["vaf"] = float(entry[14])
+                    final["supp"] = entry[15]
+                    final["depth"] = entry[16]
+                    final["TPM"] = entry[17]
+                    final["NMD"] = entry[18]
+                    final["PTC_dist_ejc"] = entry[19]
+                    final["PTC_exon_number"] = entry[20]
+                    final["NMD_escape_rule"] = entry[21]
 
-                aa_var_start = int(entry[12])
-                aa_var_end = int(entry[13])
+                    aa_var_start = int(entry[12])
+                    aa_var_end = int(entry[13])
 
-                # extract the subsequences (needed to determine the wt epitope)
-                wt_subseq = entry[9]
-                mt_subseq = entry[10]
+                    # extract the subsequences (needed to determine the wt epitope)
+                    wt_subseq = entry[9]
+                    mt_subseq = entry[10]
 
-                for epilen_idx in range(0, len(epilens)):
+                    for epilen_idx in range(0, len(epilens)):
 
-                    # the sequence number of each entry corresponds to the 
-                    # sequence number of the epitope in the fasta file
-                    wt_seqnum = int(entry[22:][epilen_idx*2])
-                    mt_seqnum = int(entry[22:][epilen_idx*2+1])
+                        # the sequence number of each entry corresponds to the
+                        # sequence number of the epitope in the fasta file
+                        wt_seqnum = int(entry[22:][epilen_idx*2])
+                        mt_seqnum = int(entry[22:][epilen_idx*2+1])
 
-                    wt = None
-                    if wt_seqnum in wt_affinities[epilens[epilen_idx]].keys():
-                        wt = wt_affinities[epilens[epilen_idx]][wt_seqnum]
-                    else:
-                        final["wt_epitope_ic50"] = None
-                        final["wt_epitope_rank"] = None
+                        wt = None
+                        if wt_seqnum in wt_affinities[epilens[epilen_idx]].keys():
+                            wt = wt_affinities[epilens[epilen_idx]][wt_seqnum]
+                        else:
+                            final["wt_epitope_ic50"] = None
+                            final["wt_epitope_rank"] = None
 
-                    if mt_seqnum in mt_affinities[epilens[epilen_idx]].keys():
-                        mt = mt_affinities[epilens[epilen_idx]][mt_seqnum]
-                    else:
-                        continue
+                        if mt_seqnum in mt_affinities[epilens[epilen_idx]].keys():
+                            mt = mt_affinities[epilens[epilen_idx]][mt_seqnum]
+                        else:
+                            continue
 
-                    for epitope in mt.keys():
-                        # (allele, start, end, ic50, rank)
-                        # determine by mhc_i (as determined by IEDB - 0 based)
-                        start_pos_in_subseq = int(mt[epitope][1])
-                        end_pos_in_subseq = int(mt[epitope][2])
+                        for epitope in mt.keys():
+                            # (allele, start, end, ic50, rank)
+                            # determine by mhc_i (as determined by IEDB - 0 based)
+                            start_pos_in_subseq = int(mt[epitope][1])
+                            end_pos_in_subseq = int(mt[epitope][2])
 
-                        # check if the mutation (aa_var_[start|end]) is either 
-                        # part of the epitope or upstream of it - this ensures 
-                        # that the sequence is mutated
-                        # if (aa_var_end < start_pos_in_subseq or
-                            # aa_var_start > end_pos_in_subseq):
-                            # continue
+                            # check if the mutation (aa_var_[start|end]) is either
+                            # part of the epitope or upstream of it - this ensures
+                            # that the sequence is mutated
+                            # if (aa_var_end < start_pos_in_subseq or
+                                # aa_var_start > end_pos_in_subseq):
+                                # continue
 
-                        final["mt_epitope_seq"] = epitope
-                        final["allele"] = mt[epitope][0]
-                        final["mt_epitope_ic50"] = mt[epitope][3]
-                        final["mt_epitope_rank"] = mt[epitope][4]
+                            final["mt_epitope_seq"] = epitope
+                            final["allele"] = mt[epitope][0]
+                            final["mt_epitope_ic50"] = mt[epitope][3]
+                            final["mt_epitope_rank"] = mt[epitope][4]
 
-                        """ search for corresponding WT by first searching for 
-                        the epitope in the mt_subseq and using this information
-                        to return the WT epitope sequence"""
-                        startpos_epitope_in_subseq = mt_subseq.find(epitope)
-                        startpos = startpos_epitope_in_subseq
-                        final["wt_epitope_seq"] = wt_subseq[startpos:startpos+len(epitope)]
+                            """ search for corresponding WT by first searching for
+                            the epitope in the mt_subseq and using this information
+                            to return the WT epitope sequence"""
+                            startpos_epitope_in_subseq = mt_subseq.find(epitope)
+                            startpos = startpos_epitope_in_subseq
+                            final["wt_epitope_seq"] = wt_subseq[startpos:startpos+len(epitope)]
 
-                        # search for binidng affinities of wildtype sequence
-                        final["wt_epitope_ic50"] = None
-                        final["wt_epitope_rank"] = None
-                        if wt is not None:
-                            if final["wt_epitope_seq"] in wt.keys():
-                                final["wt_epitope_ic50"] = wt[final["wt_epitope_seq"]][3]
-                                final["wt_epitope_rank"] = wt[final["wt_epitope_seq"]][4]
+                            # search for binidng affinities of wildtype sequence
+                            final["wt_epitope_ic50"] = None
+                            final["wt_epitope_rank"] = None
+                            if wt is not None:
+                                if final["wt_epitope_seq"] in wt.keys():
+                                    final["wt_epitope_ic50"] = wt[final["wt_epitope_seq"]][3]
+                                    final["wt_epitope_rank"] = wt[final["wt_epitope_seq"]][4]
 
-                        # calculate ranking calc_ranking_score 
-                        score = BindingAffinities.calc_ranking_score(final['vaf'], 
-                                                                     final['wt_epitope_ic50'], 
-                                                                     final['mt_epitope_ic50'])
-                        final['ranking_score'] = score
-                        final['agretopicity'] = BindingAffinities.calc_agretopicity(final["wt_epitope_ic50"],
-                                                                                    final["mt_epitope_ic50"])
+                            # calculate ranking calc_ranking_score
+                            score = BindingAffinities.calc_ranking_score(final['vaf'],
+                                                                         final['wt_epitope_ic50'],
+                                                                         final['mt_epitope_ic50'])
+                            final['ranking_score'] = score
+                            final['agretopicity'] = BindingAffinities.calc_agretopicity(final["wt_epitope_ic50"],
+                                                                                        final["mt_epitope_ic50"])
 
-                        BindingAffinities.write_entry(final, outfile)
-            outfile.close()
+                            BindingAffinities.write_entry(final, outfile)
 
 
 
     def get_alleles(self, allele_file):
         self.alleles = {}
-        fh_alleles = open(allele_file, 'r')
-        for allele in fh_alleles:
-            line = allele.rstrip().split('\t')
-            self.alleles[line[1]] = line[0]
+        with open(allele_file, 'r') as fh_alleles:
+            for allele in fh_alleles:
+                line = allele.rstrip().split('\t')
+                self.alleles[line[1]] = line[0]
 
     @staticmethod
     def extract_epilens(lengths):

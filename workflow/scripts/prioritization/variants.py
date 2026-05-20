@@ -8,179 +8,175 @@ import effects
 class Variants():
     def __init__(self, variants_input, options, vartype):
 
-        # create variant effects object
-        self.variant_effects = effects.VariantEffects(options, vartype)
+        # create variant effects object (context-managed so the output file
+        # is closed even if an exception occurs mid-loop)
+        with effects.VariantEffects(options, vartype) as variant_effects:
+            self.variant_effects = variant_effects
 
-        vcf_reader = vcfpy.Reader(open(variants_input, 'r'))
-        csq_format = self.parse_csq_format(vcf_reader.header)
+            with open(variants_input, 'r') as vcf_fh:
+                vcf_reader = vcfpy.Reader(vcf_fh)
+                csq_format = self.parse_csq_format(vcf_reader.header)
 
-        # anno.transcriptome and anno.ref are used
-        annotation = reference.Annotation(options.reference, options.anno)
+                # anno.transcriptome and anno.ref are used
+                annotation = reference.Annotation(options.reference, options.anno)
 
-        transcript_count = {}
-        for entry in vcf_reader:
+                transcript_count = {}
+                for entry in vcf_reader:
 
-            # FILTER (when applicable)
-            if (entry.INFO['SRC'] == 'snv' or
-                entry.INFO['SRC'] == 'short_indel'):
-                if 'PASS' not in entry.FILTER:
-                    continue
-        
-            # resolved alleles specific to vep
-            alleles_vep = self.resolve_alleles(entry)
-
-            chrom = entry.CHROM
-            start = entry.affected_start
-            stop = entry.affected_end
-            ref = entry.REF
-            alts = entry.ALT
-
-            for alt_i, alt_v in enumerate(alts):
-                csq_allele = alleles_vep[str(alt_v.value)]
-                csq_fields = self.parse_csq_entries(
-                        entry.INFO["CSQ"], 
-                        csq_format,
-                        csq_allele
-                )
-
-            for field in csq_fields:
-                gene_name = field["SYMBOL"]
-                gene_id = field["Gene"]
-                transcript_id = field['Feature']
-                transcript = None
-                transcript_bp = None
-
-                if transcript_id in transcript_count:
-                    transcript_count[transcript_id] += 1
-                else:
-                    transcript_count[transcript_id] = 1
-
-                nmd = None
-                csq = self.resolve_consequence(field['Consequence'])
-
-                if csq is None:
-                    continue
-                elif csq == "frameshift":
-                    if field["NMD"] != 'NMD_escaping_variant':
-                        continue
-
-                    elif field["NMD"] == "NMD_escaping_variant":
-                        nmd = "NMD_escaping_variant"
-
-                        if transcript_id in annotation.transcriptome:
-                            bnds = annotation.transcriptome[transcript_id]
-
-                            # extract sequence until variant start
-                            transcript = str(annotation.ref[chrom][bnds[0]+1:start+2])
-                            if field["Allele"] != '-':
-                                transcript += field["Allele"]
-                            transcript += str(annotation.ref[chrom][stop+1:bnds[1]+1])
-
-                            # extract sequence breakpoint (variant start)
-                            transcript_bp = (start - bnds[0]) + 1
-
-
-                        # if transcript_id in transcriptome:
-                            # transcript = transcriptome[transcript_id]
-
-                    if field["DownstreamProtein"] == "":
-                        continue
-                
-                vaf = self.determine_variant_allele_frequency(entry, alt_i)
-                # determine allele depth (number of reads)
-                mt_ad = self.determine_allele_depth(entry, alt_i)
-                dp = self.determine_read_depth(entry)
-                
-                if field["Amino_acids"]:
-                    aa_change = field["Amino_acids"]
-
-                    if '/' not in aa_change:
-                        continue
-                else:
-                    continue
-
-                if csq == "frameshift":
-                    var_start = self.get_variant_startpos(field['Protein_position'])
-                    wt_seq = field["WildtypeProtein"]
-                    # mutant/variant sequence is wt until mutation start
-                    mt_seq = wt_seq[:var_start] + field["DownstreamProtein"]
-                    # length of variant is length of downstream sequence
-#                        var_len = len(field["WildtypeProtein"])
-
-                    stop_pos = mt_seq.find('*')
-                    unknown_pos = mt_seq.find('X')
-
-                    if stop_pos != -1:
-                        mt_seq = mt_seq[:stop_pos]
-
-                    if unknown_pos != -1:
-                        mt_seq = mt_seq[:unknown_pos]
-
-
-                elif (csq == "missense" or
-                      csq == "inframe_INS" or 
-                      csq == "inframe_DEL"):
-
-                    
-                    # retrieve the start and end of the variant / initial variant start 
-                    var_start = self.get_variant_startpos(field["Protein_position"])
-                    # if "/" not in aa_change:
-                    #     continue # TODO: check if this is the right way to handle this
-                    wt_aa_change, mt_aa_change = self.determine_aa_change(aa_change)
-                    
-                    # scan for stop codons
-                    wt_aa_change, wt_stop_codon = self.scan_stop_codon(wt_aa_change)
-                    mt_aa_change, mt_stop_codon = self.scan_stop_codon(mt_aa_change)
-
-                    wt_seq = field["WildtypeProtein"] # wildtype peptide sequence
-                    # check if there are unknown amino Amino_acids
-                    if 'X' in wt_seq:
-                        # needs to occur before varstart...
-                        unknown_pos = wt_seq.find('X')
-                        if unknown_pos != -1 and unknown_pos < var_start:
-                            var_start = var_start - unknown_pos - 1
-                            wt_seq = wt_seq[unknown_pos+1:]
-                        else:
-                            # ...otherwise subsequence is altered - skip
+                    # FILTER (when applicable)
+                    if (entry.INFO['SRC'] == 'snv' or
+                        entry.INFO['SRC'] == 'short_indel'):
+                        if 'PASS' not in entry.FILTER:
                             continue
 
-                    mt_seq = wt_seq[:var_start] + mt_aa_change
-                    if not mt_stop_codon:
-                        mt_seq += wt_seq[var_start+len(wt_aa_change):]
-                    
+                    # resolved alleles specific to vep
+                    alleles_vep = self.resolve_alleles(entry)
 
-                    if (len(wt_aa_change) != 0 and len(mt_aa_change) != 0):
-                        if wt_aa_change[0] == mt_aa_change[0]:
-                            wt_aa_change = wt_aa_change[1:]
-                            mt_aa_change = mt_aa_change[1:]
-                            var_start += 1
-                    
+                    chrom = entry.CHROM
+                    start = entry.affected_start
+                    stop = entry.affected_end
+                    ref = entry.REF
+                    alts = entry.ALT
 
-                self.variant_effects.change_entry(chrom=chrom,
-                                           start=start,
-                                           end=stop,
-                                           gene_id=gene_id,
-                                           gene_name=gene_name,
-                                           transcript_id=transcript_id,
-                                           transcript=transcript,
-                                           transcript_bp=transcript_bp,
-                                           source=entry.INFO["SRC"],
-                                           group=entry.INFO["GRP"],
-                                           var_type=csq,
-                                           var_start=var_start,
-                                           wt_seq=wt_seq,
-                                           mt_seq=mt_seq,
-                                           vaf=vaf,
-                                           ao=mt_ad,
-                                           dp=dp,
-                                           nmd_event=nmd)
+                    for alt_i, alt_v in enumerate(alts):
+                        csq_allele = alleles_vep[str(alt_v.value)]
+                        csq_fields = self.parse_csq_entries(
+                                entry.INFO["CSQ"],
+                                csq_format,
+                                csq_allele
+                        )
 
-                # check if variant is self dissimilar
-                if self.variant_effects.self_dissimilarity():
-                    self.variant_effects.write_entry()
+                    for field in csq_fields:
+                        gene_name = field["SYMBOL"]
+                        gene_id = field["Gene"]
+                        transcript_id = field['Feature']
+                        transcript = None
+                        transcript_bp = None
 
-        self.variant_effects.close_file() 
-        #self.variant_effects.fh.close()
+                        if transcript_id in transcript_count:
+                            transcript_count[transcript_id] += 1
+                        else:
+                            transcript_count[transcript_id] = 1
+
+                        nmd = None
+                        csq = self.resolve_consequence(field['Consequence'])
+
+                        if csq is None:
+                            continue
+                        elif csq == "frameshift":
+                            if field["NMD"] != 'NMD_escaping_variant':
+                                continue
+
+                            elif field["NMD"] == "NMD_escaping_variant":
+                                nmd = "NMD_escaping_variant"
+
+                                if transcript_id in annotation.transcriptome:
+                                    bnds = annotation.transcriptome[transcript_id]
+
+                                    # extract sequence until variant start
+                                    transcript = str(annotation.ref[chrom][bnds[0]+1:start+2])
+                                    if field["Allele"] != '-':
+                                        transcript += field["Allele"]
+                                    transcript += str(annotation.ref[chrom][stop+1:bnds[1]+1])
+
+                                    # extract sequence breakpoint (variant start)
+                                    transcript_bp = (start - bnds[0]) + 1
+
+
+                                # if transcript_id in transcriptome:
+                                    # transcript = transcriptome[transcript_id]
+
+                            if field["DownstreamProtein"] == "":
+                                continue
+
+                        vaf = self.determine_variant_allele_frequency(entry, alt_i)
+                        # determine allele depth (number of reads)
+                        mt_ad = self.determine_allele_depth(entry, alt_i)
+                        dp = self.determine_read_depth(entry)
+
+                        if field["Amino_acids"]:
+                            aa_change = field["Amino_acids"]
+
+                            if '/' not in aa_change:
+                                continue
+                        else:
+                            continue
+
+                        if csq == "frameshift":
+                            var_start = self.get_variant_startpos(field['Protein_position'])
+                            wt_seq = field["WildtypeProtein"]
+                            # mutant/variant sequence is wt until mutation start
+                            mt_seq = wt_seq[:var_start] + field["DownstreamProtein"]
+
+                            stop_pos = mt_seq.find('*')
+                            unknown_pos = mt_seq.find('X')
+
+                            if stop_pos != -1:
+                                mt_seq = mt_seq[:stop_pos]
+
+                            if unknown_pos != -1:
+                                mt_seq = mt_seq[:unknown_pos]
+
+
+                        elif (csq == "missense" or
+                              csq == "inframe_INS" or
+                              csq == "inframe_DEL"):
+
+
+                            # retrieve the start and end of the variant / initial variant start
+                            var_start = self.get_variant_startpos(field["Protein_position"])
+                            wt_aa_change, mt_aa_change = self.determine_aa_change(aa_change)
+
+                            # scan for stop codons
+                            wt_aa_change, wt_stop_codon = self.scan_stop_codon(wt_aa_change)
+                            mt_aa_change, mt_stop_codon = self.scan_stop_codon(mt_aa_change)
+
+                            wt_seq = field["WildtypeProtein"] # wildtype peptide sequence
+                            # check if there are unknown amino Amino_acids
+                            if 'X' in wt_seq:
+                                # needs to occur before varstart...
+                                unknown_pos = wt_seq.find('X')
+                                if unknown_pos != -1 and unknown_pos < var_start:
+                                    var_start = var_start - unknown_pos - 1
+                                    wt_seq = wt_seq[unknown_pos+1:]
+                                else:
+                                    # ...otherwise subsequence is altered - skip
+                                    continue
+
+                            mt_seq = wt_seq[:var_start] + mt_aa_change
+                            if not mt_stop_codon:
+                                mt_seq += wt_seq[var_start+len(wt_aa_change):]
+
+
+                            if (len(wt_aa_change) != 0 and len(mt_aa_change) != 0):
+                                if wt_aa_change[0] == mt_aa_change[0]:
+                                    wt_aa_change = wt_aa_change[1:]
+                                    mt_aa_change = mt_aa_change[1:]
+                                    var_start += 1
+
+
+                        self.variant_effects.change_entry(chrom=chrom,
+                                                   start=start,
+                                                   end=stop,
+                                                   gene_id=gene_id,
+                                                   gene_name=gene_name,
+                                                   transcript_id=transcript_id,
+                                                   transcript=transcript,
+                                                   transcript_bp=transcript_bp,
+                                                   source=entry.INFO["SRC"],
+                                                   group=entry.INFO["GRP"],
+                                                   var_type=csq,
+                                                   var_start=var_start,
+                                                   wt_seq=wt_seq,
+                                                   mt_seq=mt_seq,
+                                                   vaf=vaf,
+                                                   ao=mt_ad,
+                                                   dp=dp,
+                                                   nmd_event=nmd)
+
+                        # check if variant is self dissimilar
+                        if self.variant_effects.self_dissimilarity():
+                            self.variant_effects.write_entry()
 
 
     @staticmethod

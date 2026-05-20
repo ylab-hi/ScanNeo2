@@ -55,8 +55,8 @@ def main():
     fext = Path(inputfile).suffix # determine file extension
     print("Detected File extension: ", fext)
     if fext == ".fq":
-        in_fh = open(inputfile, "r")
-        first_line = in_fh.readline()
+        with open(inputfile, "r") as in_fh:
+            first_line = in_fh.readline()
 
         # check if fq is interleaved (paired-end)
         if "/" in first_line:
@@ -67,32 +67,28 @@ def main():
             print(f"Single-end fastq file detected. Splitting into two files...")
             print(f"Forward reads: {out_fwd}")
             print(f"Reverse reads: {out_rev}")
-            in_fh = open(inputfile, "r")
-            out_fwd_fh = open(out_fwd, "w")
-            out_rev_fh = open(out_rev, "w")
+            with open(inputfile, "r") as in_fh, \
+                 open(out_fwd, "w") as out_fwd_fh, \
+                 open(out_rev, "w") as out_rev_fh:
 
-            for i, val in enumerate(in_fh):
-                line = val.strip()
-                if i % 4 == 0: # identifier
-                    out_fwd_fh.write(line+"/1\n")
-                    out_rev_fh.write(line+"/2\n")
-                if i % 4 == 1: # sequence
-                    seqmid = math.ceil(len(line)/2)
-                    out_fwd_fh.write(line[:seqmid+1] + "\n")
-                    if seqmid > 10: 
-                        seqmid -= 10
-                    # small overlap for reverse reads
-                    out_rev_fh.write(calc_revcomp(line[seqmid-10:]))
-                if i % 4 == 2: # +
-                    out_fwd_fh.write("+\n")
-                    out_rev_fh.write("+\n")
-                if i % 4 == 3: # quality
-                    out_fwd_fh.write(line[:seqmid+1] + "\n")
-                    out_rev_fh.write(line[seqmid-10:] + "\n")
-
-            in_fh.close()
-            out_fwd_fh.close()
-            out_rev_fh.close()
+                for i, val in enumerate(in_fh):
+                    line = val.strip()
+                    if i % 4 == 0: # identifier
+                        out_fwd_fh.write(line+"/1\n")
+                        out_rev_fh.write(line+"/2\n")
+                    if i % 4 == 1: # sequence
+                        seqmid = math.ceil(len(line)/2)
+                        out_fwd_fh.write(line[:seqmid+1] + "\n")
+                        if seqmid > 10:
+                            seqmid -= 10
+                        # small overlap for reverse reads
+                        out_rev_fh.write(calc_revcomp(line[seqmid-10:]) + "\n")
+                    if i % 4 == 2: # +
+                        out_fwd_fh.write("+\n")
+                        out_rev_fh.write("+\n")
+                    if i % 4 == 3: # quality
+                        out_fwd_fh.write(line[:seqmid+1] + "\n")
+                        out_rev_fh.write(line[seqmid-10:] + "\n")
 
 
     elif fext == ".bam": # bamfile is paired-end (at least in ScanNeo2)

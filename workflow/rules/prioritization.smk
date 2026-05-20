@@ -70,7 +70,7 @@ rule prioritization:
     mhcII_ba="workflow/scripts/mhc_ii/",
     mhcI_im="workflow/scripts/immunogenicity/",
   output:
-    protected(directory("results/{sample}/prioritization/")),
+    directory("results/{sample}/prioritization/"),
   message:
     "Prioritize on sample:{wildcards.sample}"
   conda:

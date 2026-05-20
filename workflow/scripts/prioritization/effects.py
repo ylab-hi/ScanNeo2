@@ -26,6 +26,13 @@ class VariantEffects:
         self.fh = open(self.variantEffectsFile, 'w')
         self.write_header()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.fh.close()
+        return False
+
 
     def change_entry(self, chrom, start, end, gene_id, gene_name, 
                      transcript_id, transcript, transcript_bp, source, 

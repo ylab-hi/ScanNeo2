@@ -18,32 +18,31 @@ def main():
         for idx, val in enumerate(options.input.split(' ')):
             groups.append(Path(val).stem.split('_counts')[0])
 
-            fh = open(val, 'r')
-            # skip header
-            next(fh)
-            next(fh)
+            with open(val, 'r') as fh:
+                # skip header
+                next(fh)
+                next(fh)
 
-            rpk_sum = 0
-            for line in fh:
-                val = line.rstrip().split('\t')
+                rpk_sum = 0
+                for line in fh:
+                    val = line.rstrip().split('\t')
 
-                gene_id = val[0]
-                chrom = val[1]
-                strand = val[4]
+                    gene_id = val[0]
+                    chrom = val[1]
+                    strand = val[4]
 
-                key = (gene_id, chrom, strand)
-                if key not in counts.keys():
-                    counts[key] = [0]*len(samples)
+                    key = (gene_id, chrom, strand)
+                    if key not in counts.keys():
+                        counts[key] = [0]*len(samples)
 
-                count = int(val[6])
-                gene_len = int(val[5])
+                    count = int(val[6])
+                    gene_len = int(val[5])
 
-                if count != 0:
-                    rpk = count/gene_len
-                    counts[key][idx] = count/gene_len
-                    rpk_sum += rpk
+                    if count != 0:
+                        rpk = count/gene_len
+                        counts[key][idx] = count/gene_len
+                        rpk_sum += rpk
 
-            fh.close()
             scale_factor = rpk_sum/1000000
 
             for el in counts.keys():
@@ -51,15 +50,14 @@ def main():
 
 
     # generate output (even if input is empty)
-    fh_output = open(options.output, 'w')
-    fh_output.write('gene_id\tchrom\tstrand\t' + '\t'.join(groups) + '\n')
+    with open(options.output, 'w') as fh_output:
+        fh_output.write('gene_id\tchrom\tstrand\t' + '\t'.join(groups) + '\n')
 
-    for key in counts:
-        fh_output.write(f'{key[0]}\t')
-        fh_output.write(f'{key[1]}\t')
-        fh_output.write(f'{key[2]}\t')
-        fh_output.write('\t'.join(map(str, counts[key])) + '\n')
-    fh_output.close()
+        for key in counts:
+            fh_output.write(f'{key[0]}\t')
+            fh_output.write(f'{key[1]}\t')
+            fh_output.write(f'{key[2]}\t')
+            fh_output.write('\t'.join(map(str, counts[key])) + '\n')
 
 def parse_arguments():
     p = configargparse.ArgParser()

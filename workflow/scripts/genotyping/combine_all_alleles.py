@@ -64,10 +64,9 @@ def main():
         per_file_stats.append((infile, size_bytes, lines_read, matched))
 
     outfile = sys.argv[3]
-    fh_out = open(outfile, 'w')
-    for allele in alleles:
-        fh_out.write(f'{alleles[allele]}\t{allele}\n')
-    fh_out.close()
+    with open(outfile, 'w') as fh_out:
+        for allele in alleles:
+            fh_out.write(f'{alleles[allele]}\t{allele}\n')
 
     if len(alleles) == 0:
         print("ERROR: No valid alleles collected from any input source.\n")
