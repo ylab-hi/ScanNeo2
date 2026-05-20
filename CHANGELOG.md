@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.10] - 2026-05-20
+
 ### Fixed
 
 - **Drop `tmp/` as rule input to stop spurious reruns**: Three rules (`rnaseq_postproc_markdup`, `dnaseq_postproc`, `get_reads_hlatyping_BAM`) declared `tmp="tmp/"` as input, but `samtools sort -T tmp/` and intermediate BAMs in those same rules wrote into the directory — bumping its mtime so Snakemake's mtime trigger re-fired the rules on every invocation. Each rule now `mkdir -p tmp/` itself, removing the input dependency entirely; the now-orphan `create_tmp_folder` rule and `workflow/rules/prelim.smk` are deleted, and the `include:` line in `workflow/Snakefile` is removed. Each `samtools sort -T` now uses a wildcard-tagged prefix (`tmp/sort_{sample}_{group}_`, `tmp/sort_{sample}_{group}_{nartype}_`) so concurrent jobs' shards are visibly attributable. ([#31](https://github.com/ylab-hi/ScanNeo2/issues/31), [#91](https://github.com/ylab-hi/ScanNeo2/pull/91))
