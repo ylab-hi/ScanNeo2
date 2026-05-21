@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.11] - 2026-05-21
+
 ### Changed
 
 - **Pin loose conda dependencies**: Pinned the remaining unpinned packages across 6 `workflow/envs/*.yml` files (`curl`, `bowtie2`, `pip`, `python`, `perl`, `perl-env`, `bwa`, `samtools`, `pysam`) to versions verified by dry-run solving each env. `realign.yml` also gained the `conda-forge` channel — without it the solver starved modern samtools of its dependencies and fell back to samtools 1.3.1 — and `manipulate_vcf.yml` had its channels reordered to `conda-forge, bioconda` (dropping `defaults`, which had resolved `pysam` to 0.9.1 and conflicted on `libdeflate`). ([#64](https://github.com/ylab-hi/ScanNeo2/issues/64), [#101](https://github.com/ylab-hi/ScanNeo2/pull/101))
