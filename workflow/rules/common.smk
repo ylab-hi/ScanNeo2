@@ -5,10 +5,10 @@ from pathlib import Path
 
 ########### CONFIG ##########
 def data_structure(data):
-  config['data']['dnaseq'], filetype, readtype  = handle_seqfiles(config['data']['dnaseq'])
+  config['data']['dnaseq'], filetype, readtype  = handle_seqfiles(config['data']['dnaseq'], 'dnaseq')
   config['data']['dnaseq_filetype'] = filetype
   config['data']['dnaseq_readtype'] = readtype
-  config['data']['rnaseq'], filetype, readtype  = handle_seqfiles(config['data']['rnaseq'])
+  config['data']['rnaseq'], filetype, readtype  = handle_seqfiles(config['data']['rnaseq'], 'rnaseq')
   config['data']['rnaseq_filetype'] = filetype
   config['data']['rnaseq_readtype'] = readtype
 
@@ -16,12 +16,12 @@ def data_structure(data):
   if len(config['data']['dnaseq']) == 0 and len(config['data']['rnaseq']) == 0:
     # if no data could be found - check if variants are provided (e.g., custom)
     if config['data']['custom']['variants'] is None:
-      print("No valid sequence files found and no custom variants provided")
+      print("[config error] No valid sequence files found and no custom variants provided -- nothing to run. Check the 'data:' section of your config file.", file=sys.stderr)
       sys.exit(1)
 
   return config['data']
 
-def handle_seqfiles(seqdata):
+def handle_seqfiles(seqdata, mode):
   readtype = []
   filetype = []
 
@@ -42,7 +42,10 @@ def handle_seqfiles(seqdata):
             filetype.append(f1_ext)
             readtype.append('SE')
           else:
-            print('{} is not a valid file'.format(files[0]))
+            print(f"[config error] data.{mode}.{rpl}: '{files[0]}' is not a valid "
+                  f"input file (expected .fq/.fastq/.bam -- this is likely an "
+                  f"unfilled placeholder from the default config/config.yaml).",
+                  file=sys.stderr)
         elif len(files) == 2:  # PE
           f1_ext = get_file_extension(files[0])
           f2_ext = get_file_extension(files[1])
@@ -56,7 +59,11 @@ def handle_seqfiles(seqdata):
             #else:
               #print('files not in valid PE format')
           else:
-            print('files do not have the same extension')
+            ext1 = f1_ext if f1_ext else '?'
+            ext2 = f2_ext if f2_ext else '?'
+            print(f"[config error] data.{mode}.{rpl}: paired-end files have "
+                  f"different extensions ({ext1} vs {ext2}).",
+                  file=sys.stderr)
             return mod_seqdata, None, None
 
         # check if filetype and readtype are the same
@@ -122,9 +129,100 @@ def all_identical(l):
     return False
 
 
+def print_run_summary(config):
+  """Print a one-time, human-readable summary of the resolved run configuration."""
+  d = config['data']
+  bar = "=" * 70
+
+  def seq_rows(seqdict, filetype, readtype):
+    if not seqdict:
+      return ["(none)"]
+    ft = filetype if filetype else '?'
+    rt = readtype if readtype else '?'
+    rows = []
+    for rpl, path in seqdict.items():
+      if isinstance(path, list):
+        loc = " , ".join(str(p) for p in path)
+      else:
+        loc = str(path)
+      rows.append(f"{rpl}  [{ft}, {rt}]  {loc}")
+    return rows
+
+  def mode_state(active, detail):
+    state = "on" if active else "off"
+    if detail:
+      return f"{state}  ({detail})"
+    return state
+
+  # resolve display values up front; the f-strings below only ever
+  # substitute a plain variable (Snakemake's .smk parser mishandles
+  # f-string replacement fields containing operators or nested quotes)
+  name = str(d['name'])
+  release = str(config['reference']['release'])
+  threads = str(config['threads'])
+  normal_disp = str(d['normal']) if d['normal'] else '(none)'
+  custom_disp = str(d['custom']['variants']) if d['custom']['variants'] else '(no custom variants)'
+  indel_type = str(config['indel']['type'])
+  indel_mode = str(config['indel']['mode'])
+  indel_detail = f"type {indel_type}, mode {indel_mode}"
+  hla_class = str(config['hlatyping']['class'])
+  mhc1_mode = str(config['hlatyping']['MHC-I_mode'])
+  mhc2_mode = str(config['hlatyping']['MHC-II_mode'])
+  pri_class = str(config['prioritization']['class'])
+  len1 = str(config['prioritization']['lengths']['MHC-I'])
+  len2 = str(config['prioritization']['lengths']['MHC-II'])
+
+  lines = [
+    bar,
+    f"  ScanNeo2 -- run: {name}",
+    bar,
+    f"  Reference        : Ensembl release {release}",
+    f"  Threads per rule : {threads}",
+    f"  Output directory : results/{name}/",
+    "",
+    "  Input data",
+  ]
+  for label, key in (("DNAseq", "dnaseq"), ("RNAseq", "rnaseq")):
+    ft_key = f"{key}_filetype"
+    rt_key = f"{key}_readtype"
+    rows = seq_rows(d[key], d.get(ft_key), d.get(rt_key))
+    pad = label.ljust(9)
+    first = rows[0]
+    lines.append(f"    {pad}: {first}")
+    for extra in rows[1:]:
+      lines.append(f"             {extra}")
+  npad = "Normal".ljust(9)
+  cpad = "Custom".ljust(9)
+  lines.append(f"    {npad}: {normal_disp}")
+  lines.append(f"    {cpad}: {custom_disp}")
+  lines.append("")
+  lines.append("  Variant calling")
+  variant_modes = [
+    ("Indels", config['indel']['activate'], indel_detail),
+    ("Alt. splicing", config['altsplicing']['activate'], ""),
+    ("Exitrons", config['exitronsplicing']['activate'], ""),
+    ("Gene fusion", config['genefusion']['activate'], ""),
+  ]
+  for label, active, detail in variant_modes:
+    pad = label.ljust(14)
+    state = mode_state(active, detail)
+    lines.append(f"    {pad}: {state}")
+  lines.append("")
+  lines.append(f"  HLA typing       : class {hla_class}  (MHC-I: {mhc1_mode} | MHC-II: {mhc2_mode})")
+  for cls in ("MHC-I", "MHC-II"):
+    custom_alleles = d['custom']['hlatyping'].get(cls)
+    if custom_alleles:
+      ca = str(custom_alleles)
+      lines.append(f"             custom {cls} alleles: {ca}")
+  lines.append(f"  Prioritization   : class {pri_class}  (epitope lengths -- MHC-I: {len1} | MHC-II: {len2})")
+  lines.append(bar)
+
+  print("\n".join(lines), file=sys.stderr)
+
+
 # load up the config
 config['data'] = data_structure(config['data'])
-print(config['data'])
+print_run_summary(config)
 
 
 
