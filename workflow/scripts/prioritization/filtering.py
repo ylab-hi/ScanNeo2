@@ -60,15 +60,22 @@ class Immunogenicity:
 
 
     def calc_immunogenicity_mhcI(self, seq):
-        # IEDB's predict_immunogenicity.py raises UnboundLocalError when given
-        # an empty peptide list — its `mask_out` is only bound inside the
-        # per-peptide loop. A variant type with no neoepitopes (e.g. only
-        # non-NMD-escaping frameshifts) produces an empty column here, so
-        # skip the call when there is nothing to score.
-        if len(seq) == 0:
+        # IEDB's predict_immunogenicity.py only accepts peptides of the 20
+        # standard amino acids: it sys.exit(1)s (reporting on stdout) on any
+        # other character, and raises UnboundLocalError when handed an empty
+        # peptide list. After the wt-padding strip in prediction.py a fully
+        # novel epitope yields an empty wt sequence, so keep only the entries
+        # the tool can score; the rest get the '.' fallback in assign_scores().
+        standard_aa = set("ACDEFGHIKLMNPQRSTVWY")
+
+        def scorable(s):
+            return isinstance(s, str) and len(s) > 0 and set(s.upper()) <= standard_aa
+
+        valid_seq = seq[seq.apply(scorable)]
+        if valid_seq.empty:
             return {}
         with tempfile.NamedTemporaryFile() as tmpsfile:
-            seq.to_csv(tmpsfile, sep="\t", header=False, index=False)
+            valid_seq.to_csv(tmpsfile, sep="\t", header=False, index=False)
 
             # run immunogenicity
             try:
@@ -82,7 +89,9 @@ class Immunogenicity:
                         check=True,
                 )
             except subprocess.CalledProcessError as e:
-                print(f"predict_immunogenicity.py failed: {e.stderr}", file=sys.stderr, flush=True)
+                # the IEDB tool reports errors on stdout, not stderr
+                print(f"predict_immunogenicity.py failed (exit {e.returncode}): "
+                      f"{e.stdout}{e.stderr}", file=sys.stderr, flush=True)
                 raise
             res = result.stdout.rstrip().split('\n')[4:]
 #            print(f'res: {res}')
@@ -165,8 +174,11 @@ class SequenceSimilarity:
                 selfsim.append(-1)
                 continue
 
-            # calculate the similarity
-            if '$' in wt_seq:
+            # corr_kernel compares positionally and needs equal-length
+            # sequences. A wt epitope shorter than its mt counterpart is the
+            # wt-padding region of an insertion/frameshift — there is no real
+            # wildtype to compare against, so skip it with the -1 sentinel.
+            if len(wt_seq) != len(mt_seq):
                 selfsim.append(-1)
             else:
                 # calculate the correlation kernel
