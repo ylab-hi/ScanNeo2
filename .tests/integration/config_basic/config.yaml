@@ -23,10 +23,9 @@ data:
       MHC-II:
 
 ### pre-processing (only applied on fastq reads)
-preproc: 
+preproc:
   activate: true  # whether (=true) or not (=false) to include pre-processing
   minlen: 10
-  qual: 20
   slidingwindow:
     activate: true
     wsize: 3

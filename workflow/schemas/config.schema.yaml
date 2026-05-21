@@ -1,0 +1,255 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+description: ScanNeo2 configuration file schema
+
+type: object
+
+properties:
+
+  reference:
+    type: object
+    properties:
+      release:
+        type: integer
+        description: Ensembl release used to download the reference genome and annotation
+      nonchr:
+        type: boolean
+        description: whether to include non-chromosomal/scaffold contigs
+    required: [release, nonchr]
+    additionalProperties: false
+
+  threads:
+    type: integer
+    description: maximum number of threads any single rule may use
+
+  mapq:
+    type: integer
+    description: minimum read mapping quality (MAPQ)
+
+  basequal:
+    type: integer
+    description: minimum base-call quality (Phred-scaled)
+
+  data:
+    type: object
+    properties:
+      name:
+        type: string
+        description: run name; results are written to results/<name>/
+      dnaseq:
+        type: ["object", "null"]
+        description: DNA-seq inputs, one entry per group (group name -> read path(s))
+        additionalProperties:
+          type: string
+      rnaseq:
+        type: ["object", "null"]
+        description: RNA-seq inputs, one entry per group (group name -> read path(s))
+        additionalProperties:
+          type: string
+      normal:
+        type: ["string", "null"]
+        description: group name(s) of the matched normal/control sample
+      custom:
+        type: object
+        properties:
+          variants:
+            type: ["string", "null"]
+            description: optional path to a user-supplied VCF to prioritize directly
+          hlatyping:
+            type: object
+            properties:
+              MHC-I:
+                type: ["string", "null"]
+              MHC-II:
+                type: ["string", "null"]
+            required: [MHC-I, MHC-II]
+            additionalProperties: false
+        required: [variants, hlatyping]
+        additionalProperties: false
+    required: [name, dnaseq, rnaseq, normal, custom]
+    additionalProperties: false
+
+  preproc:
+    type: object
+    properties:
+      activate:
+        type: boolean
+      minlen:
+        type: integer
+        description: discard reads shorter than this (bp) after trimming
+      slidingwindow:
+        type: object
+        properties:
+          activate:
+            type: boolean
+          wsize:
+            type: integer
+          wqual:
+            type: integer
+        required: [activate, wsize, wqual]
+        additionalProperties: false
+    required: [activate, minlen, slidingwindow]
+    additionalProperties: false
+
+  align:
+    type: object
+    properties:
+      chimSegmentMin:
+        type: integer
+      chimScoreMin:
+        type: integer
+      chimJunctionOverhangMin:
+        type: integer
+      chimScoreDropMax:
+        type: integer
+      chimScoreSeparation:
+        type: integer
+    required: [chimSegmentMin, chimScoreMin, chimJunctionOverhangMin, chimScoreDropMax, chimScoreSeparation]
+    additionalProperties: false
+
+  altsplicing:
+    type: object
+    properties:
+      activate:
+        type: boolean
+      confidence:
+        type: integer
+      iterations:
+        type: integer
+      edgelimit:
+        type: integer
+    required: [activate, confidence, iterations, edgelimit]
+    additionalProperties: false
+
+  exitronsplicing:
+    type: object
+    properties:
+      activate:
+        type: boolean
+      ao:
+        type: integer
+      pso:
+        type: number
+      strand:
+        type: integer
+    required: [activate, ao, pso, strand]
+    additionalProperties: false
+
+  genefusion:
+    type: object
+    properties:
+      activate:
+        type: boolean
+      maxevalue:
+        type: number
+      suppreads:
+        type: integer
+      maxsuppreads:
+        type: integer
+      maxidentity:
+        type: number
+      hpolymerlen:
+        type: integer
+      readthroughdist:
+        type: integer
+      minanchorlen:
+        type: integer
+      splicedevents:
+        type: integer
+      maxkmer:
+        type: number
+      fraglen:
+        type: integer
+      maxmismatch:
+        type: number
+    required: [activate, maxevalue, suppreads, maxsuppreads, maxidentity, hpolymerlen, readthroughdist, minanchorlen, splicedevents, maxkmer, fraglen, maxmismatch]
+    additionalProperties: false
+
+  indel:
+    type: object
+    properties:
+      activate:
+        type: boolean
+      type:
+        type: string
+        enum: [long, short, all]
+      mode:
+        type: string
+        enum: [DNA, RNA, BOTH]
+      strategy:
+        type: string
+        enum: [OPTIMAL_F_SCORE, FALSE_DISCOVERY_RATE, CONSTANT]
+      fscorebeta:
+        type: number
+      fdr:
+        type: number
+      sliplen:
+        type: integer
+      sliprate:
+        type: number
+    required: [activate, type, mode, strategy, fscorebeta, fdr, sliplen, sliprate]
+    additionalProperties: false
+
+  quantification:
+    type: object
+    properties:
+      mode:
+        type: string
+        enum: [DNA, RNA, BOTH]
+    required: [mode]
+    additionalProperties: false
+
+  hlatyping:
+    type: object
+    properties:
+      class:
+        type: string
+        enum: [I, II, BOTH]
+      MHC-I_mode:
+        type: string
+        description: "DNA, RNA, or custom (comma-separated combinations allowed)"
+      MHC-II_mode:
+        type: string
+      freqdata:
+        type: string
+      split:
+        type: string
+      dict:
+        type: string
+    required: [class, MHC-I_mode, MHC-II_mode, freqdata, split, dict]
+    additionalProperties: false
+
+  prioritization:
+    type: object
+    properties:
+      class:
+        type: string
+        enum: [I, II, BOTH]
+      lengths:
+        type: object
+        properties:
+          MHC-I:
+            type: string
+            description: comma-separated epitope lengths
+          MHC-II:
+            type: string
+        required: [MHC-I, MHC-II]
+        additionalProperties: false
+    required: [class, lengths]
+    additionalProperties: false
+
+required:
+  - reference
+  - threads
+  - mapq
+  - basequal
+  - data
+  - preproc
+  - align
+  - altsplicing
+  - exitronsplicing
+  - genefusion
+  - indel
+  - quantification
+  - hlatyping
+  - prioritization
+additionalProperties: false
