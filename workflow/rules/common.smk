@@ -16,9 +16,7 @@ def data_structure(data):
   if len(config['data']['dnaseq']) == 0 and len(config['data']['rnaseq']) == 0:
     # if no data could be found - check if variants are provided (e.g., custom)
     if config['data']['custom']['variants'] is None:
-      print("[config error] No valid sequence files found and no custom variants "
-            "provided -- nothing to run. Check the 'data:' section of your config file.",
-            file=sys.stderr)
+      print("[config error] No valid sequence files found and no custom variants provided -- nothing to run. Check the 'data:' section of your config file.", file=sys.stderr)
       sys.exit(1)
 
   return config['data']
@@ -147,23 +145,26 @@ def print_run_summary(config):
         loc = " , ".join(str(p) for p in path)
       else:
         loc = str(path)
-      rows.append(rpl + "  [" + ft + ", " + rt + "]  " + loc)
+      rows.append(f"{rpl}  [{ft}, {rt}]  {loc}")
     return rows
 
   def mode_state(active, detail):
     state = "on" if active else "off"
     if detail:
-      return state + "  (" + detail + ")"
+      return f"{state}  ({detail})"
     return state
 
-  # resolve display values up front (kept out of f-strings -- Snakemake's
-  # .smk parser mishandles complex f-string replacement fields)
+  # resolve display values up front; the f-strings below only ever
+  # substitute a plain variable (Snakemake's .smk parser mishandles
+  # f-string replacement fields containing operators or nested quotes)
   name = str(d['name'])
   release = str(config['reference']['release'])
   threads = str(config['threads'])
   normal_disp = str(d['normal']) if d['normal'] else '(none)'
   custom_disp = str(d['custom']['variants']) if d['custom']['variants'] else '(no custom variants)'
-  indel_detail = "type " + str(config['indel']['type']) + ", mode " + str(config['indel']['mode'])
+  indel_type = str(config['indel']['type'])
+  indel_mode = str(config['indel']['mode'])
+  indel_detail = f"type {indel_type}, mode {indel_mode}"
   hla_class = str(config['hlatyping']['class'])
   mhc1_mode = str(config['hlatyping']['MHC-I_mode'])
   mhc2_mode = str(config['hlatyping']['MHC-II_mode'])
@@ -173,21 +174,27 @@ def print_run_summary(config):
 
   lines = [
     bar,
-    "  ScanNeo2 -- run: " + name,
+    f"  ScanNeo2 -- run: {name}",
     bar,
-    "  Reference        : Ensembl release " + release,
-    "  Threads per rule : " + threads,
-    "  Output directory : results/" + name + "/",
+    f"  Reference        : Ensembl release {release}",
+    f"  Threads per rule : {threads}",
+    f"  Output directory : results/{name}/",
     "",
     "  Input data",
   ]
   for label, key in (("DNAseq", "dnaseq"), ("RNAseq", "rnaseq")):
-    rows = seq_rows(d[key], d.get(key + "_filetype"), d.get(key + "_readtype"))
-    lines.append("    " + label.ljust(9) + ": " + rows[0])
+    ft_key = f"{key}_filetype"
+    rt_key = f"{key}_readtype"
+    rows = seq_rows(d[key], d.get(ft_key), d.get(rt_key))
+    pad = label.ljust(9)
+    first = rows[0]
+    lines.append(f"    {pad}: {first}")
     for extra in rows[1:]:
-      lines.append("             " + extra)
-  lines.append("    " + "Normal".ljust(9) + ": " + normal_disp)
-  lines.append("    " + "Custom".ljust(9) + ": " + custom_disp)
+      lines.append(f"             {extra}")
+  npad = "Normal".ljust(9)
+  cpad = "Custom".ljust(9)
+  lines.append(f"    {npad}: {normal_disp}")
+  lines.append(f"    {cpad}: {custom_disp}")
   lines.append("")
   lines.append("  Variant calling")
   variant_modes = [
@@ -197,16 +204,17 @@ def print_run_summary(config):
     ("Gene fusion", config['genefusion']['activate'], ""),
   ]
   for label, active, detail in variant_modes:
-    lines.append("    " + label.ljust(14) + ": " + mode_state(active, detail))
+    pad = label.ljust(14)
+    state = mode_state(active, detail)
+    lines.append(f"    {pad}: {state}")
   lines.append("")
-  lines.append("  HLA typing       : class " + hla_class +
-               "  (MHC-I: " + mhc1_mode + " | MHC-II: " + mhc2_mode + ")")
+  lines.append(f"  HLA typing       : class {hla_class}  (MHC-I: {mhc1_mode} | MHC-II: {mhc2_mode})")
   for cls in ("MHC-I", "MHC-II"):
     custom_alleles = d['custom']['hlatyping'].get(cls)
     if custom_alleles:
-      lines.append("             custom " + cls + " alleles: " + str(custom_alleles))
-  lines.append("  Prioritization   : class " + pri_class +
-               "  (epitope lengths -- MHC-I: " + len1 + " | MHC-II: " + len2 + ")")
+      ca = str(custom_alleles)
+      lines.append(f"             custom {cls} alleles: {ca}")
+  lines.append(f"  Prioritization   : class {pri_class}  (epitope lengths -- MHC-I: {len1} | MHC-II: {len2})")
   lines.append(bar)
 
   print("\n".join(lines), file=sys.stderr)
