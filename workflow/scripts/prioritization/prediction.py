@@ -56,6 +56,10 @@ class BindingAffinities:
                 next(fh)   # skip header
                 for line in fh:
                     entries = line.rstrip().split('\t')
+                    # drop the wt-padding sentinel: '$' marks positions where
+                    # the wildtype has no residue (mt is longer). It is internal
+                    # to effects.py and must not reach epitope output or scoring.
+                    entries[9] = entries[9].split('$')[0]
                     for epilen in epilens:
                         aa_var_start = int(entries[12])
                         aa_var_end = int(entries[13])
@@ -83,11 +87,9 @@ class BindingAffinities:
                         wt_subseq_adj = wt_subseq[left:right+1]
                         mt_subseq_adj = mt_subseq[left:right+1]
 
-                        # determine the epitope sequences
-                        if '$' in wt_subseq_adj:
-                            wt_epitope_seq = wt_subseq_adj.split('$')[0]
-                        else:
-                            wt_epitope_seq = wt_subseq_adj
+                        # determine the epitope sequences ('$' was already
+                        # stripped from wt_subseq when the tsv line was parsed)
+                        wt_epitope_seq = wt_subseq_adj
                         mt_epitope_seq = mt_subseq_adj
 
                         if len(wt_epitope_seq) >= epilen+1:
