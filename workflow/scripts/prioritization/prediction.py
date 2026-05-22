@@ -116,19 +116,12 @@ class BindingAffinities:
                   f"({len(self.alleles)} alleles, epitope lengths: "
                   f"{','.join(map(str, epilens))})...", flush=True)
 
-            wt_affinities = self.collect_binding_affinities(self.alleles,
-                                                            wt_fname,
-                                                            epilens,
-                                                            'wt',
-                                                            mhc_class,
-                                                            self.threads)
-
-            mt_affinities = self.collect_binding_affinities(self.alleles,
-                                                            mt_fname,
-                                                            epilens,
-                                                            'mt',
-                                                            mhc_class,
-                                                            self.threads)
+            wt_affinities, mt_affinities = self.collect_binding_affinities(
+                self.alleles,
+                {'wt': wt_fname, 'mt': mt_fname},
+                epilens,
+                mhc_class,
+                self.threads)
             print("Done", flush=True)
             
             with open(os.path.join(output_dir,
@@ -255,54 +248,65 @@ class BindingAffinities:
         return epilens
     
     @staticmethod
-    def collect_binding_affinities(alleles,
-                                   fnames,
-                                   epilens,
-                                   group,
-                                   mhc_class,
-                                   threads):
-        affinities_results = {}
-        number_threads = int(threads)
+    def collect_binding_affinities(alleles, fnames, epilens, mhc_class, threads):
+        """Run binding-affinity prediction for wt and mt over every allele,
+        epitope length and FASTA batch in a single thread pool.
 
-        total_jobs = len(alleles) * len(epilens)
-        completed_jobs = 0
-        print(f"  submitting {total_jobs} jobs ({len(alleles)} alleles x "
-              f"{len(epilens)} epitope lengths) for {group} sequences",
-              flush=True)
+        fnames is {'wt': {epilen: path}, 'mt': {epilen: path}}. Returns
+        (wt_affinities, mt_affinities), each
+        {epilen: {global_seqnum: {epitope: tuple}}}.
+        """
+        affinities = {grp: {epilen: {} for epilen in epilens}
+                      for grp in ('wt', 'mt')}
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=number_threads) as executor:
-            futures = {}
-            for allele in alleles:
+        with contextlib.ExitStack() as stack:
+            # split every (group, epilen) FASTA up front and enumerate the
+            # individual (group, allele, epilen, batch) work units
+            units = []
+            for group in ('wt', 'mt'):
                 for epilen in epilens:
-                    future = executor.submit(BindingAffinities.calc_binding_affinities,
-                                             fnames[epilen],
-                                             allele,
-                                             epilen,
-                                             group,
-                                             mhc_class)
-                    futures[future] = (epilen, allele)
+                    fa_file = fnames[group][epilen]
+                    if os.stat(fa_file).st_size == 0:
+                        continue
+                    batch_dir = stack.enter_context(tempfile.TemporaryDirectory())
+                    batches = BindingAffinities.split_fasta_into_batches(
+                        fa_file, batch_dir)
+                    for allele in alleles:
+                        for batch_file, offset in batches:
+                            units.append(
+                                (group, allele, epilen, batch_file, offset))
 
-            for future in concurrent.futures.as_completed(futures):
-                epilen, allele = futures[future]
-                completed_jobs += 1
-                print(f"  [{completed_jobs}/{total_jobs}] completed "
-                      f"allele:{allele} epilen:{epilen} group:{group}",
-                      flush=True)
-                binding_affinities = future.result()
+            print(f"  submitting {len(units)} prediction jobs "
+                  f"({len(alleles)} alleles x {len(epilens)} epitope lengths "
+                  f"x wt/mt x FASTA batches)", flush=True)
 
-                # check epilen already present
-                if epilen not in affinities_results.keys():
-                    affinities_results[epilen] = {}
+            # one pool over all units -- the prediction tool numbers each batch
+            # file from 1, so offset translates that to a global seqnum
+            completed = 0
+            with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=int(threads)) as executor:
+                futures = {}
+                for group, allele, epilen, batch_file, offset in units:
+                    call = BindingAffinities._build_call(
+                        batch_file, allele, epilen, mhc_class)
+                    future = executor.submit(BindingAffinities._run_prediction,
+                                             call, batch_file, group, mhc_class)
+                    futures[future] = (group, epilen, offset)
 
-                for seqnum in binding_affinities.keys():
-                    if seqnum not in affinities_results[epilen].keys():
-                        affinities_results[epilen][seqnum] = binding_affinities[seqnum]
-                    else:
-                        for seq in binding_affinities[seqnum].keys():
-                            if seq not in affinities_results[epilen][seqnum].keys():
-                                affinities_results[epilen][seqnum][seq] = binding_affinities[seqnum][seq]
+                for future in concurrent.futures.as_completed(futures):
+                    group, epilen, offset = futures[future]
+                    completed += 1
+                    print(f"  [{completed}/{len(units)}] completed", flush=True)
+                    dest = affinities[group][epilen]
+                    for seqnum, epitopes in future.result().items():
+                        global_seqnum = offset + seqnum
+                        if global_seqnum not in dest:
+                            dest[global_seqnum] = epitopes
+                        else:
+                            for seq, val in epitopes.items():
+                                dest[global_seqnum].setdefault(seq, val)
 
-        return affinities_results
+        return affinities['wt'], affinities['mt']
     
     @staticmethod
     def split_fasta_into_batches(fa_file, batch_dir, batch_size=BATCH_SIZE):
@@ -412,37 +416,6 @@ class BindingAffinities:
             return ["python",
                     "workflow/scripts/mhc_ii/mhc_II_binding.py",
                     "netmhciipan_ba", allele, batch_file, str(epilen)]
-
-    @staticmethod
-    def calc_binding_affinities(fa_file, allele, epilen, group, mhc_class):
-        binding_affinities = {}
-
-        if os.stat(fa_file).st_size == 0:
-            return binding_affinities
-
-        with tempfile.TemporaryDirectory() as batch_dir:
-            batches = BindingAffinities.split_fasta_into_batches(
-                fa_file, batch_dir)
-            num_batches = len(batches)
-
-            for batch_idx, (batch_file, offset) in enumerate(batches):
-                if num_batches > 1:
-                    print(f'    batch {batch_idx + 1}/{num_batches} - '
-                          f'allele:{allele} epilen:{epilen} group:{group}',
-                          flush=True)
-
-                call = BindingAffinities._build_call(
-                    batch_file, allele, epilen, mhc_class)
-                batch_results = BindingAffinities._run_prediction(
-                    call, batch_file, group, mhc_class)
-
-                # the prediction tool numbers each batch file from 1; translate
-                # the per-batch sequence number to a global one. Global seqnums
-                # are unique across batches, so a plain assignment suffices.
-                for seqnum in batch_results:
-                    binding_affinities[offset + seqnum] = batch_results[seqnum]
-
-        return binding_affinities
     
     @staticmethod
     def calc_ranking_score(vaf, wt_ic50, mt_ic50):
