@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Re-enable the variant-overlap filter in prioritization output**: `prediction.py`'s output-assembly loop emitted every epitope of a variant subsequence — including ones lying entirely up-/downstream of the mutation, which are pure wildtype (`mt_epitope_seq == wt_epitope_seq`) and not neoantigens. The filter meant to drop them was commented out due to a coordinate-frame mismatch. It is re-enabled in the `mt_subseq` frame: every occurrence of the epitope in `mt_subseq` is enumerated, and the epitope is kept only if some occurrence spans `[aa_var_start, aa_var_end]` — that occurrence also feeds the `wt_epitope_seq` slice. Enumerating (rather than first-occurrence `find()`) correctly handles a k-mer that repeats within `mt_subseq`. ([#108](https://github.com/ylab-hi/ScanNeo2/issues/108), [#114](https://github.com/ylab-hi/ScanNeo2/pull/114))
+
 ## [0.3.12] - 2026-05-22
 
 ### Fixed

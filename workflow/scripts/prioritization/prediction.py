@@ -183,28 +183,34 @@ class BindingAffinities:
                             continue
 
                         for epitope in mt.keys():
-                            # (allele, start, end, ic50, rank)
-                            # determine by mhc_i (as determined by IEDB - 0 based)
-                            start_pos_in_subseq = int(mt[epitope][1])
-                            end_pos_in_subseq = int(mt[epitope][2])
+                            # find every position of the epitope within
+                            # mt_subseq -- the same k-mer can occur more than
+                            # once, and find() alone returns only the first
+                            positions = []
+                            pos = mt_subseq.find(epitope)
+                            while pos != -1:
+                                positions.append(pos)
+                                pos = mt_subseq.find(epitope, pos + 1)
 
-                            # check if the mutation (aa_var_[start|end]) is either
-                            # part of the epitope or upstream of it - this ensures
-                            # that the sequence is mutated
-                            # if (aa_var_end < start_pos_in_subseq or
-                                # aa_var_start > end_pos_in_subseq):
-                                # continue
+                            # keep the epitope only if some occurrence spans the
+                            # variant [aa_var_start, aa_var_end] -- one lying
+                            # entirely up-/downstream is pure wildtype, not a
+                            # neoepitope. Use that occurrence for the wt epitope.
+                            startpos = next((p for p in positions
+                                             if p <= aa_var_end
+                                             and p + len(epitope) - 1 >= aa_var_start),
+                                            None)
+                            if startpos is None:
+                                continue
 
+                            # mt[epitope] = (allele, start, end, ic50, rank)
                             final["mt_epitope_seq"] = epitope
                             final["allele"] = mt[epitope][0]
                             final["mt_epitope_ic50"] = mt[epitope][3]
                             final["mt_epitope_rank"] = mt[epitope][4]
 
-                            """ search for corresponding WT by first searching for
-                            the epitope in the mt_subseq and using this information
-                            to return the WT epitope sequence"""
-                            startpos_epitope_in_subseq = mt_subseq.find(epitope)
-                            startpos = startpos_epitope_in_subseq
+                            # the wt epitope occupies the same coordinates in
+                            # wt_subseq as the mt epitope does in mt_subseq
                             final["wt_epitope_seq"] = wt_subseq[startpos:startpos+len(epitope)]
 
                             # search for binidng affinities of wildtype sequence
