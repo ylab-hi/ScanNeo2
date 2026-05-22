@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.12] - 2026-05-22
+
 ### Fixed
 
 - **Fix epitope-to-variant mis-association from batched prediction FASTA**: `predict_binding.py` numbers the sequences of each FASTA file it receives starting from 1, ignoring the `>N` header. `split_fasta_into_batches` split the prediction FASTA into 500-sequence batches, so every batch was numbered independently and `calc_binding_affinities` collapsed every global record `K, K+500, …` onto key `K`. The output-assembly loop looks variants up by their global sequence number, so variants past the first 500 had their binding affinities — and epitope sequences — attached to the wrong variant. `split_fasta_into_batches` now returns each batch's global offset and `calc_binding_affinities` translates the per-batch sequence number to a global one (`offset + per-batch number`) before keying. ([#109](https://github.com/ylab-hi/ScanNeo2/issues/109), [#111](https://github.com/ylab-hi/ScanNeo2/pull/111))
