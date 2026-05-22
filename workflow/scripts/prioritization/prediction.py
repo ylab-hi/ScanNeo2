@@ -300,13 +300,17 @@ class BindingAffinities:
     
     @staticmethod
     def split_fasta_into_batches(fa_file, batch_dir, batch_size=BATCH_SIZE):
-        """Split a FASTA file into smaller batch files of at most batch_size
-        sequences each.  Returns a list of batch file paths.  Original
-        sequence IDs (the >N header lines) are preserved so results can be
-        merged back without remapping."""
+        """Split a FASTA file into batch files of at most batch_size sequences.
+
+        Returns a list of (batch_file, offset) tuples. The prediction tool
+        numbers the sequences in each file it receives starting from 1, so the
+        offset -- the count of sequences in all preceding batches -- is needed
+        to recover a global sequence number: global = offset + per-batch number.
+        """
         batches = []
         current_lines = []
-        seq_count = 0
+        seq_count = 0       # sequences in the batch currently being built
+        total_count = 0     # sequences already flushed to preceding batches
 
         with open(fa_file, 'r') as fh:
             for line in fh:
@@ -317,7 +321,8 @@ class BindingAffinities:
                             batch_dir, f'batch_{len(batches)}.fa')
                         with open(batch_file, 'w') as bf:
                             bf.writelines(current_lines)
-                        batches.append(batch_file)
+                        batches.append((batch_file, total_count))
+                        total_count += seq_count
                         current_lines = []
                         seq_count = 0
                     seq_count += 1
@@ -329,7 +334,7 @@ class BindingAffinities:
                 batch_dir, f'batch_{len(batches)}.fa')
             with open(batch_file, 'w') as bf:
                 bf.writelines(current_lines)
-            batches.append(batch_file)
+            batches.append((batch_file, total_count))
 
         return batches
 
@@ -414,7 +419,7 @@ class BindingAffinities:
                 fa_file, batch_dir)
             num_batches = len(batches)
 
-            for batch_idx, batch_file in enumerate(batches):
+            for batch_idx, (batch_file, offset) in enumerate(batches):
                 if num_batches > 1:
                     print(f'    batch {batch_idx + 1}/{num_batches} - '
                           f'allele:{allele} epilen:{epilen} group:{group}',
@@ -425,14 +430,11 @@ class BindingAffinities:
                 batch_results = BindingAffinities._run_prediction(
                     call, batch_file, group, mhc_class)
 
-                # merge batch results
+                # the prediction tool numbers each batch file from 1; translate
+                # the per-batch sequence number to a global one. Global seqnums
+                # are unique across batches, so a plain assignment suffices.
                 for seqnum in batch_results:
-                    if seqnum not in binding_affinities:
-                        binding_affinities[seqnum] = batch_results[seqnum]
-                    else:
-                        for seq in batch_results[seqnum]:
-                            if seq not in binding_affinities[seqnum]:
-                                binding_affinities[seqnum][seq] = batch_results[seqnum][seq]
+                    binding_affinities[offset + seqnum] = batch_results[seqnum]
 
         return binding_affinities
     
