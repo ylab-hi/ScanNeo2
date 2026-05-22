@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Parallelize binding-affinity prediction in one thread pool**: `collect_binding_affinities` previously ran `len(alleles) × len(epilens)` tasks — each processing its FASTA batches sequentially — and was called once for wt then once for mt, capping concurrency at `min(threads, alleles × epilens)` (e.g. 12 for a 3-allele, 4-length run) regardless of the allocated thread count. It and `calc_binding_affinities` are replaced by a single orchestrator that enumerates every `(group, allele, epitope-length, FASTA-batch)` unit and runs them all in one `ThreadPoolExecutor`, so concurrency scales with `min(threads, total_batches)`. The per-batch computation, global-seqnum keying and cross-allele merge are unchanged — output is identical, only the scheduling differs. ([#113](https://github.com/ylab-hi/ScanNeo2/issues/113), [#118](https://github.com/ylab-hi/ScanNeo2/pull/118))
+
 ### Fixed
 
 - **Re-enable the variant-overlap filter in prioritization output**: `prediction.py`'s output-assembly loop emitted every epitope of a variant subsequence — including ones lying entirely up-/downstream of the mutation, which are pure wildtype (`mt_epitope_seq == wt_epitope_seq`) and not neoantigens. The filter meant to drop them was commented out due to a coordinate-frame mismatch. It is re-enabled in the `mt_subseq` frame: every occurrence of the epitope in `mt_subseq` is enumerated, and the epitope is kept only if some occurrence spans `[aa_var_start, aa_var_end]` — that occurrence also feeds the `wt_epitope_seq` slice. Enumerating (rather than first-occurrence `find()`) correctly handles a k-mer that repeats within `mt_subseq`. ([#108](https://github.com/ylab-hi/ScanNeo2/issues/108), [#114](https://github.com/ylab-hi/ScanNeo2/pull/114))
