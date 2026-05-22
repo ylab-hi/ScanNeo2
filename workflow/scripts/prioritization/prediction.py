@@ -430,17 +430,11 @@ class BindingAffinities:
                 batch_results = BindingAffinities._run_prediction(
                     call, batch_file, group, mhc_class)
 
-                # merge batch results -- the prediction tool numbers each batch
-                # file from 1, so translate the per-batch sequence number to a
-                # global one before keying, otherwise batches collide
+                # the prediction tool numbers each batch file from 1; translate
+                # the per-batch sequence number to a global one. Global seqnums
+                # are unique across batches, so a plain assignment suffices.
                 for seqnum in batch_results:
-                    global_seqnum = offset + seqnum
-                    if global_seqnum not in binding_affinities:
-                        binding_affinities[global_seqnum] = batch_results[seqnum]
-                    else:
-                        for seq in batch_results[seqnum]:
-                            if seq not in binding_affinities[global_seqnum]:
-                                binding_affinities[global_seqnum][seq] = batch_results[seqnum][seq]
+                    binding_affinities[offset + seqnum] = batch_results[seqnum]
 
         return binding_affinities
     
