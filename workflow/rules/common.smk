@@ -17,7 +17,11 @@ def data_structure(data):
     # if no data could be found - check if variants are provided (e.g., custom)
     if config['data']['custom']['variants'] is None:
       print("[config error] No valid sequence files found and no custom variants provided -- nothing to run. Check the 'data:' section of your config file.", file=sys.stderr)
-      sys.exit(1)
+      # skip the abort under `snakemake --lint` so static rule analysis can
+      # still complete on a placeholder/empty default config (e.g. for the
+      # Snakemake Workflow Catalog re-scan)
+      if '--lint' not in sys.argv:
+        sys.exit(1)
 
   return config['data']
 
@@ -68,6 +72,8 @@ def handle_seqfiles(seqdata, mode):
 
         # check if filetype and readtype are the same
 #        if all_identical(filetype) and all_identical(readtype):
+    if not filetype:
+      return mod_seqdata, None, None
     return mod_seqdata, filetype[0], readtype[0]
 
   else:
