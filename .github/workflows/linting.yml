@@ -1,65 +1,46 @@
 name: Linting
 run-name: ${{ github.actor }} is testing ScanNeo2
-on: [push]
+on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   formatting:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout with submodules
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive
-        fetch-depth: 1
-    - name: Formatting
-      uses: github/super-linter@v5
-      env:
-        VALIDATE_ALL_CODEBASE: false
-        DEFAULT_BRANCH: master
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        VALIDATE_SNAKEMAKE_SNAKEFMT: true
+      - name: Checkout with full history
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install snakefmt (pinned)
+        run: pip install snakefmt==2.0.0
+      - name: snakefmt --check on changed Snakemake files
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref || github.event.repository.default_branch || 'main' }}
+        run: |
+          set -e
+          git fetch origin "$BASE_REF" --depth=1 || true
+          mapfile -t files < <(git diff --name-only "origin/${BASE_REF}...HEAD" -- 'workflow/Snakefile' '**/*.smk' 2>/dev/null || true)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No Snakemake files changed vs origin/${BASE_REF}; skipping snakefmt check."
+            exit 0
+          fi
+          echo "Checking:"
+          printf '  %s\n' "${files[@]}"
+          snakefmt --check "${files[@]}"
   linting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - run: pwd
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: snakemake/snakemake-github-action@v1
         with:
           directory: '.tests'
           snakefile: 'workflow/Snakefile'
           args: '--lint --configfile .tests/integration/config_basic/config.yaml'
-
-
-  #run-workflow:
-    #runs-on: ubuntu-latest
-    #needs:
-      #- linting
-      #- formatting
-    #steps:
-    #- name: Checkout repository with submodules
-      #uses: actions/checkout@v3
-      #with:
-        #submodules: recursive
-    #- name: Test workflow (basic model, no batch_effects)
-      #uses: snakemake/snakemake-github-action@v1.22.0
-      #with:
-        #directory: .test
-        #snakefile: workflow/Snakefile
-        #args: "--configfile .test/config_basic/config.yaml --use-conda --show-failed-logs --cores 2 --conda-cleanup-pkgs cache"
-    #- name: Test report (basic model, no batch_effects)
-      #uses: snakemake/snakemake-github-action@v1.22.0
-      #with:
-        #directory: .test
-        #snakefile: workflow/Snakefile
-        #args: "--configfile .test/config_basic/config.yaml --report report.zip"
-    #- name: Test workflow (multiple variables_of_interest, include batch_effects)
-      #uses: snakemake/snakemake-github-action@v1.22.0
-      #with:
-        #directory: .test
-        #snakefile: workflow/Snakefile
-        #args: "--configfile .test/config_complex/config.yaml --use-conda --show-failed-logs --cores 2 --conda-cleanup-pkgs cache"
-    #- name: Test report (multiple variables_of_interest, include batch_effects)
-      #uses: snakemake/snakemake-github-action@v1.22.0
-      #with:
-        #directory: .test
-        #snakefile: workflow/Snakefile
-        #args: "--configfile .test/config_complex/config.yaml --report report.zip"b
