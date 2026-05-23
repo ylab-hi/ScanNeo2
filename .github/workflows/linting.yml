@@ -1,6 +1,8 @@
 name: Linting
 run-name: ${{ github.actor }} is testing ScanNeo2
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   formatting:
     runs-on: ubuntu-latest
@@ -10,6 +12,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+          persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -34,6 +37,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: snakemake/snakemake-github-action@v1
         with:
           directory: '.tests'

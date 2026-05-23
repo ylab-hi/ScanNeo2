@@ -154,7 +154,7 @@ def valid_paired_end(path1, path2):
     # check if first file contains _R1, _1 or _fwd
     pattern = r"\_(R1|R2|1|2|fwd|rev)\.(fastq|fq){1}(\.gz)?$"
     f1_se = re.search(pattern, file1)
-    f2_se = re.search(pattern, file1)
+    f2_se = re.search(pattern, file2)
 
     # patterns needs to be found in both files
     if f1_se is not None and f2_se is not None:
