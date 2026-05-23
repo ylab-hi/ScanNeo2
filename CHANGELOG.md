@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.13] - 2026-05-22
+
 ### Changed
 
 - **Parallelize binding-affinity prediction in one thread pool**: `collect_binding_affinities` previously ran `len(alleles) × len(epilens)` tasks — each processing its FASTA batches sequentially — and was called once for wt then once for mt, capping concurrency at `min(threads, alleles × epilens)` (e.g. 12 for a 3-allele, 4-length run) regardless of the allocated thread count. It and `calc_binding_affinities` are replaced by a single orchestrator that enumerates every `(group, allele, epitope-length, FASTA-batch)` unit and runs them all in one `ThreadPoolExecutor`, so concurrency scales with `min(threads, total_batches)`. The per-batch computation, global-seqnum keying and cross-allele merge are unchanged — output is identical, only the scheduling differs. ([#113](https://github.com/ylab-hi/ScanNeo2/issues/113), [#118](https://github.com/ylab-hi/ScanNeo2/pull/118))
