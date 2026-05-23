@@ -11,10 +11,10 @@ basequal: 20        # minimum base-call quality (Phred-scaled)
 data:
   name:  samplename                    # run name; results are written to results/<name>/
   dnaseq:                              # DNA-seq inputs; one entry per group (the key is the group name)
-    dna_tumor: <path/to/reads>         #   value: one path (single-end) or two space-separated paths (paired-end); .fastq/.fq/.bam
+    # dna_tumor: /path/to/reads.fastq  #   value: one path (single-end) or two space-separated paths (paired-end); .fastq/.fq/.bam
   rnaseq:                              # RNA-seq inputs; same format as dnaseq
-    rna_tumor: <path/to/to/reads>
-  normal: <normal/sample/identifier>   # group name of the matched normal/control sample (for somatic calling)
+    # rna_tumor: /path/to/reads.fastq
+  normal:                              # group name of the matched normal/control sample (for somatic calling)
 
   custom:
     variants:                          # optional: path to a user-supplied VCF to prioritize directly
