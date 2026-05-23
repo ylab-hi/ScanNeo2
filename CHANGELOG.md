@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Make `snakemake --lint` pass on the default config**: the Snakemake Workflow Catalog reported a critical lint error — `IndexError` in `handle_seqfiles` on the default placeholder config — and the workflow could not be statically analysed. Four small changes together let `snakemake --lint --configfile config/config.yaml` exit 0 cleanly: a final-return guard in `handle_seqfiles` against an empty `filetype` list; `data_structure` skips its `sys.exit(1)` when `--lint` is in `sys.argv` (the friendly *"no valid sequence files"* message still prints; real-run UX unchanged); the misleading `<path/to/...>` placeholders in `config/config.yaml` are replaced with commented-out examples; and `wildcard_constraints no=r"\d+"` becomes `r"\d{1,}"` to avoid Snakemake's lint scanner falsely flagging the literal `+` as path composition. Part of #115. ([#115](https://github.com/ylab-hi/ScanNeo2/issues/115), [#122](https://github.com/ylab-hi/ScanNeo2/pull/122))
+
 ## [0.3.13] - 2026-05-22
 
 ### Changed
