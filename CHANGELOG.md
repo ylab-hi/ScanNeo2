@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Make ScanNeo2 catalog standardized-usage compliant**: `.snakemake-workflow-catalog.yml` was malformed (missing the top-level `usage:` key, deprecated `singularity` naming, `report:` at the wrong nesting level) — almost certainly the reason the Snakemake Workflow Catalog has been flagging us as non-compliant. Rewritten to the current schema with conservative `conda`-only deployment claims, and `desc:`/`flags:` populated. `config/README.md` rewritten from a wiki-pointer into a self-contained parameter reference (per-section tables for every block in `config.yaml`, example `data:` block, invocation snippets); the catalog scrapes this file as the workflow's *Configuration* section. Closes the description / standardized-usage part of #115. ([#115](https://github.com/ylab-hi/ScanNeo2/issues/115), [#125](https://github.com/ylab-hi/ScanNeo2/pull/125))
+
 ### Fixed
 
 - **Make `snakemake --lint` pass on the default config**: the Snakemake Workflow Catalog reported a critical lint error — `IndexError` in `handle_seqfiles` on the default placeholder config — and the workflow could not be statically analysed. Four small changes together let `snakemake --lint --configfile config/config.yaml` exit 0 cleanly: a final-return guard in `handle_seqfiles` against an empty `filetype` list; `data_structure` skips its `sys.exit(1)` when `--lint` is in `sys.argv` (the friendly *"no valid sequence files"* message still prints; real-run UX unchanged); the misleading `<path/to/...>` placeholders in `config/config.yaml` are replaced with commented-out examples; and `wildcard_constraints no=r"\d+"` becomes `r"\d{1,}"` to avoid Snakemake's lint scanner falsely flagging the literal `+` as path composition. Part of #115. ([#115](https://github.com/ylab-hi/ScanNeo2/issues/115), [#122](https://github.com/ylab-hi/ScanNeo2/pull/122))
