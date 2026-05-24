@@ -87,7 +87,7 @@ rule preproc_paired_end:
         "logs/{sample}/preproc/fastp_paired_end_{seqtype}_{group}.log",
     threads: config["threads"]
     params:
-        dapters="",
+        adapters="",
         extra=lambda wildcards: "-u 100 -e {0} -l {1} {2} ".format(
             config["basequal"],
             config["preproc"]["minlen"],
