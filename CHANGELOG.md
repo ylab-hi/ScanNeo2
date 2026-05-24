@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored
+
+- **Reformat the remaining 13 Snakemake files with `snakefmt 2.0.0`**: mechanical pass (indent 2→4 space, single→double quotes, directive sort, trailing commas, long-line wrap) across `workflow/Snakefile` and every rule file not already cleaned by #124. With this PR the whole 17-file workflow tree is `snakefmt --check` clean. No behavior change; verified end-to-end by `snakefmt --check workflow/`, `snakemake --lint`, and `snakemake --dry-run`. ([#123](https://github.com/ylab-hi/ScanNeo2/issues/123), [#126](https://github.com/ylab-hi/ScanNeo2/pull/126))
+
 ### Changed
 
 - **Make ScanNeo2 catalog standardized-usage compliant**: `.snakemake-workflow-catalog.yml` was malformed (missing the top-level `usage:` key, deprecated `singularity` naming, `report:` at the wrong nesting level) — almost certainly the reason the Snakemake Workflow Catalog has been flagging us as non-compliant. Rewritten to the current schema with conservative `conda`-only deployment claims, and `desc:`/`flags:` populated. `config/README.md` rewritten from a wiki-pointer into a self-contained parameter reference (per-section tables for every block in `config.yaml`, example `data:` block, invocation snippets); the catalog scrapes this file as the workflow's *Configuration* section. Closes the description / standardized-usage part of #115. ([#115](https://github.com/ylab-hi/ScanNeo2/issues/115), [#125](https://github.com/ylab-hi/ScanNeo2/pull/125))
