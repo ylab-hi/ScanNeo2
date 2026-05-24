@@ -254,32 +254,26 @@ rule index_short_indels_m2:
         ),
     log:
         "logs/{sample}/indel/index_short_indels_m2_{seqtype}_{group}_{chr}.log",
-    conda:
-        "../envs/bcftools.yml"
     message:
         "Indexing vcf file from somatic variant valling (mutect2) first round on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
-    shell:
-        """
-        bcftools index -t {input} >{log} 2>&1
-        """
+    wrapper:
+        "v4.0.0/bio/bcftools/index"
 
 
 rule merge_short_indels_m2:
     input:
-        vcf=aggregate_vcf_mutect2,
+        calls=aggregate_vcf_mutect2,
         idx=aggregate_idx_mutect2,
     output:
         "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz",
     log:
         "logs/{sample}/indel/merge_short_indels_m2_{seqtype}_{group}.log",
-    conda:
-        "../envs/bcftools.yml"
+    params:
+        extra="-a",
     message:
         "Merging vcf files from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
-    shell:
-        """
-        bcftools concat -O z -a {input.vcf} -o {output} >{log} 2>&1
-        """
+    wrapper:
+        "v4.0.0/bio/bcftools/concat"
 
 
 ######### POST-PROCESSING ########
@@ -292,14 +286,10 @@ rule index_merged_short_indels_m2:
         "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz.tbi",
     log:
         "logs/{sample}/indel/index_merged_short_indels_m2_{seqtype}_{group}.log",
-    conda:
-        "../envs/bcftools.yml"
     message:
         "Indexing vcf file from somatic variant valling (mutect2) on merged recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
-    shell:
-        """
-        bcftools index -t {input} >{log} 2>&1
-        """
+    wrapper:
+        "v4.0.0/bio/bcftools/index"
 
 
 rule select_short_indels_m2:

@@ -137,14 +137,10 @@ rule index_variants_htc_first_round:
         ),
     log:
         "logs/{sample}/germline/index_variants_htc_1rd_{seqtype}_{group}_{chr}.log",
-    conda:
-        "../envs/bcftools.yml"
     message:
         "Indexing vcf file from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
-    shell:
-        """
-        bcftools index -t {input} >{log} 2>&1
-        """
+    wrapper:
+        "v4.0.0/bio/bcftools/index"
 
 
 rule merge_variants_htc_first_round:
@@ -172,14 +168,10 @@ rule index_merged_variants_htc_first_round:
         "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.vcf.gz.tbi",
     log:
         "logs/{sample}/germline/index_merged_variants_htc_1rd_{seqtype}_{group}.log",
-    conda:
-        "../envs/bcftools.yml"
     message:
         "Indexing merged vcf file from first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
-    shell:
-        """
-        bcftools index -t {input} >{log} 2>&1
-        """
+    wrapper:
+        "v4.0.0/bio/bcftools/index"
 
 
 # recalibrate variants (SNP)
@@ -401,32 +393,26 @@ rule index_variants_htc_final_round:
         ),
     log:
         "logs/{sample}/germline/index_variants_htc_final_{seqtype}_{group}_{chr}.log",
-    conda:
-        "../envs/bcftools.yml"
     message:
         "Indexing vcf file from final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
-    shell:
-        """
-        bcftools index -t {input} >{log} 2>&1
-        """
+    wrapper:
+        "v4.0.0/bio/bcftools/index"
 
 
 rule merge_variants_htc_final_round:
     input:
-        vcf=aggregate_vcf_htc_final_round,
+        calls=aggregate_vcf_htc_final_round,
         idx=aggregate_idx_htc_final_round,
     output:
         "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final.vcf.gz",
     log:
         "logs/{sample}/germline/merge_variants_htc_final_{seqtype}_{group}.log",
-    conda:
-        "../envs/bcftools.yml"
+    params:
+        extra="-a",
     message:
         "Merging vcf files from final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
-    shell:
-        """
-        bcftools concat -O z -a {input.vcf} -o {output} >{log} 2>&1
-        """
+    wrapper:
+        "v4.0.0/bio/bcftools/concat"
 
 
 rule index_merged_variants_htc_final_round:
@@ -436,14 +422,10 @@ rule index_merged_variants_htc_final_round:
         "results/{sample}/{seqtype}/indel/htcaller/{group}_variants.final.vcf.gz.tbi",
     log:
         "logs/{sample}/germline/index_merged_variants_htc_final_{seqtype}_{group}.log",
-    conda:
-        "../envs/bcftools.yml"
     message:
         "Indexing merged vcf file from final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
-    shell:
-        """
-        bcftools index -t {input} >{log} 2>&1
-        """
+    wrapper:
+        "v4.0.0/bio/bcftools/index"
 
 
 # recalibrate variants
