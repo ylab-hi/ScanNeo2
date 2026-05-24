@@ -3,9 +3,13 @@ from snakemake.utils import min_version, validate
 ##### set minimum snakemake version #####
 min_version("8.0.0")
 
+
 #### setup #######
 configfile: "config/config.yaml"
+
+
 validate(config, schema="schemas/config.schema.yaml")
+
 
 wildcard_constraints:
     sample="[^/]+",
@@ -20,10 +24,11 @@ wildcard_constraints:
     rg="[^/]+",
     replicate="[^/]+",
 
+
 rule all:
-  input:
-    expand("results/{sample}/prioritization/", 
-           sample=config['data']['name'])
+    input:
+        expand("results/{sample}/prioritization/", sample=config["data"]["name"]),
+
 
 #### load rules ####
 include: "rules/ref.smk"
