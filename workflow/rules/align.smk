@@ -17,24 +17,26 @@ if (
             "logs/{sample}/align/star_align_fastq_{group}.log",
         threads: config["threads"]
         params:
-            extra=lambda wildcards: f"""--outSAMtype BAM Unsorted \
-          --genomeSAindexNbases 10 \
-          --outSAMattributes RG HI \
-          --outSAMattrRGline ID:{wildcards.group} \
-          --outFilterMultimapNmax 50 \
-          --peOverlapNbasesMin 15 \
-          --alignSplicedMateMapLminOverLmate 0.5 \
-          --alignSJstitchMismatchNmax 5 -1 5 5 \
-          --chimOutType WithinBAM HardClip \
-          --chimSegmentMin {config["align"]["chimSegmentMin"]} \
-          --chimJunctionOverhangMin {config["align"]["chimJunctionOverhangMin"]} \
-          --chimScoreDropMax {config["align"]["chimScoreDropMax"]} \
-          --chimScoreMin {config["align"]["chimScoreMin"]} \
-          --chimScoreJunctionNonGTAG 0 \
-          --chimScoreSeparation {config["align"]["chimScoreSeparation"]} \
-          --chimSegmentReadGapMax 3 \
-          --chimMultimapNmax 50 \
-          --outSAMstrandField intronMotif""",
+            extra=lambda wildcards: (
+                "--outSAMtype BAM Unsorted "
+                "--genomeSAindexNbases 10 "
+                "--outSAMattributes RG HI "
+                f"--outSAMattrRGline ID:{wildcards.group} "
+                "--outFilterMultimapNmax 50 "
+                "--peOverlapNbasesMin 15 "
+                "--alignSplicedMateMapLminOverLmate 0.5 "
+                "--alignSJstitchMismatchNmax 5 -1 5 5 "
+                "--chimOutType WithinBAM HardClip "
+                f"--chimSegmentMin {config['align']['chimSegmentMin']} "
+                f"--chimJunctionOverhangMin {config['align']['chimJunctionOverhangMin']} "
+                f"--chimScoreDropMax {config['align']['chimScoreDropMax']} "
+                f"--chimScoreMin {config['align']['chimScoreMin']} "
+                "--chimScoreJunctionNonGTAG 0 "
+                f"--chimScoreSeparation {config['align']['chimScoreSeparation']} "
+                "--chimSegmentReadGapMax 3 "
+                "--chimMultimapNmax 50 "
+                "--outSAMstrandField intronMotif"
+            ),
         message:
             "Aligning reads from {wildcards.group} to genome using STAR"
         wrapper:
@@ -95,22 +97,24 @@ if config["data"]["rnaseq_filetype"] == ".bam":
             "logs/{sample}/align/star_align_bamfile_{group}_{rg}.log",
         threads: config["threads"]
         params:
-            extra=lambda wildcards: f"""--outSAMtype BAM Unsorted --genomeSAindexNbases 10 \
-        --readFilesCommand zcat \
-        --outSAMattributes RG HI --outSAMattrRGline ID:{wildcards.rg} \
-        --outFilterMultimapNmax 50 \
-        --peOverlapNbasesMin 15 \
-        --alignSplicedMateMapLminOverLmate 0.5 \
-        --alignSJstitchMismatchNmax 5 -1 5 5 \
-        --chimOutType WithinBAM HardClip \
-        --chimSegmentMin {config["align"]["chimSegmentMin"]} \
-        --chimJunctionOverhangMin {config["align"]["chimJunctionOverhangMin"]} \
-        --chimScoreDropMax {config["align"]["chimScoreDropMax"]} \
-        --chimScoreMin {config["align"]["chimScoreMin"]} \
-        --chimScoreJunctionNonGTAG 0 \
-        --chimScoreSeparation {config["align"]["chimScoreSeparation"]} \
-        --chimSegmentReadGapMax 3 --chimMultimapNmax 50 \
-        --outSAMstrandField intronMotif""",
+            extra=lambda wildcards: (
+                "--outSAMtype BAM Unsorted --genomeSAindexNbases 10 "
+                "--readFilesCommand zcat "
+                f"--outSAMattributes RG HI --outSAMattrRGline ID:{wildcards.rg} "
+                "--outFilterMultimapNmax 50 "
+                "--peOverlapNbasesMin 15 "
+                "--alignSplicedMateMapLminOverLmate 0.5 "
+                "--alignSJstitchMismatchNmax 5 -1 5 5 "
+                "--chimOutType WithinBAM HardClip "
+                f"--chimSegmentMin {config['align']['chimSegmentMin']} "
+                f"--chimJunctionOverhangMin {config['align']['chimJunctionOverhangMin']} "
+                f"--chimScoreDropMax {config['align']['chimScoreDropMax']} "
+                f"--chimScoreMin {config['align']['chimScoreMin']} "
+                "--chimScoreJunctionNonGTAG 0 "
+                f"--chimScoreSeparation {config['align']['chimScoreSeparation']} "
+                "--chimSegmentReadGapMax 3 --chimMultimapNmax 50 "
+                "--outSAMstrandField intronMotif"
+            ),
         wrapper:
             "v2.2.1/bio/star/align"
 
