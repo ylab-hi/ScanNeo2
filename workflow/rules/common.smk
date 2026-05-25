@@ -41,6 +41,28 @@ def data_structure(data):
     config["data"]["rnaseq_filetype"] = filetype
     config["data"]["rnaseq_readtype"] = readtype
 
+    # check that any user-supplied non-fastq paths actually exist on disk
+    custom_paths = [
+        ("data.custom.variants", config["data"]["custom"]["variants"]),
+        (
+            "data.custom.hlatyping.MHC-I",
+            config["data"]["custom"]["hlatyping"].get("MHC-I"),
+        ),
+        (
+            "data.custom.hlatyping.MHC-II",
+            config["data"]["custom"]["hlatyping"].get("MHC-II"),
+        ),
+    ]
+    for label, path in custom_paths:
+        if path is not None and not Path(path).is_file():
+            print(
+                f"[config error] {label}: file not found: '{path}' "
+                f"(paths are case-sensitive on Linux — check for typos).",
+                file=sys.stderr,
+            )
+            if "--lint" not in sys.argv:
+                sys.exit(1)
+
     # abort if no data could be found
     if len(config["data"]["dnaseq"]) == 0 and len(config["data"]["rnaseq"]) == 0:
         # if no data could be found - check if variants are provided (e.g., custom)
@@ -72,7 +94,15 @@ def handle_seqfiles(seqdata, mode):
             # make sure to ignore keys with empty values
             if seqdata[rpl] is not None:
                 files = [Path(file) for file in seqdata[rpl].split(" ")]
-                if len(files) == 1:  # SE
+                missing = [str(f) for f in files if not f.is_file()]
+                if missing:
+                    print(
+                        f"[config error] data.{mode}.{rpl}: file(s) not found: "
+                        f"{', '.join(missing)} (paths are case-sensitive on Linux "
+                        f"— check for typos).",
+                        file=sys.stderr,
+                    )
+                elif len(files) == 1:  # SE
                     f1_ext = get_file_extension(files[0])
                     if f1_ext in [".fq", ".fastq", ".bam"]:
                         mod_seqdata[rpl] = files[0]
@@ -259,16 +289,24 @@ def print_run_summary(config):
         state = mode_state(active, detail)
         lines.append(f"    {pad}: {state}")
     lines.append("")
-    lines.append(
-        f"  HLA typing       : class {hla_class}  (MHC-I: {mhc1_mode} | MHC-II: {mhc2_mode})"
-    )
+    hla_parts = []
+    if hla_class in ("I", "BOTH"):
+        hla_parts.append(f"MHC-I: {mhc1_mode}")
+    if hla_class in ("II", "BOTH"):
+        hla_parts.append(f"MHC-II: {mhc2_mode}")
+    lines.append(f"  HLA typing       : class {hla_class}  ({' | '.join(hla_parts)})")
     for cls in ("MHC-I", "MHC-II"):
         custom_alleles = d["custom"]["hlatyping"].get(cls)
         if custom_alleles:
             ca = str(custom_alleles)
             lines.append(f"             custom {cls} alleles: {ca}")
+    pri_parts = []
+    if pri_class in ("I", "BOTH"):
+        pri_parts.append(f"MHC-I: {len1}")
+    if pri_class in ("II", "BOTH"):
+        pri_parts.append(f"MHC-II: {len2}")
     lines.append(
-        f"  Prioritization   : class {pri_class}  (epitope lengths -- MHC-I: {len1} | MHC-II: {len2})"
+        f"  Prioritization   : class {pri_class}  (epitope lengths -- {' | '.join(pri_parts)})"
     )
     lines.append(bar)
 
