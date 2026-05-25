@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.14] - 2026-05-24
+
 ### Refactored
 
 - **Reformat the remaining 13 Snakemake files with `snakefmt 2.0.0`**: mechanical pass (indent 2→4 space, single→double quotes, directive sort, trailing commas, long-line wrap) across `workflow/Snakefile` and every rule file not already cleaned by #124. With this PR the whole 17-file workflow tree is `snakefmt --check` clean. No behavior change; verified end-to-end by `snakefmt --check workflow/`, `snakemake --lint`, and `snakemake --dry-run`. ([#123](https://github.com/ylab-hi/ScanNeo2/issues/123), [#126](https://github.com/ylab-hi/ScanNeo2/pull/126))
