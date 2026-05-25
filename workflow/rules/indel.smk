@@ -211,14 +211,16 @@ rule filter_short_indels_m2:
     resources:
         mem_mb=1024,
     params:
-        extra=f"""--max-alt-allele-count 3 \
-      --min-median-base-quality {config['basequal']} \
-      --min-median-mapping-quality {config['mapq']} \
-      --threshold-strategy {config['indel']['strategy']} \
-      --f-score-beta {config['indel']['fscorebeta']} \
-      --false-discovery-rate {config['indel']['fdr']} \
-      --pcr-slippage-rate {config['indel']['sliprate']} \
-      --min-slippage-length {config['indel']['sliplen']}""",
+        extra=(
+            "--max-alt-allele-count 3 "
+            f"--min-median-base-quality {config['basequal']} "
+            f"--min-median-mapping-quality {config['mapq']} "
+            f"--threshold-strategy {config['indel']['strategy']} "
+            f"--f-score-beta {config['indel']['fscorebeta']} "
+            f"--false-discovery-rate {config['indel']['fdr']} "
+            f"--pcr-slippage-rate {config['indel']['sliprate']} "
+            f"--min-slippage-length {config['indel']['sliplen']}"
+        ),
         java_opts="",  # optional
     message:
         "Filtering somatic SNVs/Indels with FilterMutectCalls on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
