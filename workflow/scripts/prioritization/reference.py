@@ -70,9 +70,7 @@ class Counts:
         if countFile is not None and countFile != "":
             with open(countFile, 'r') as count_fh:
                 lines = count_fh.readlines()
-            print(lines[0].rstrip().split('\t'))
             groups = lines[0].rstrip().split('\t')[3:]
-            print(groups)
             for line in lines[1:]:
                 cols = line.rstrip().split('\t')
 

@@ -6,6 +6,7 @@ the per-variant-type neoepitope tables with binding affinity, rank, and agretopi
 """
 
 import tempfile
+import time
 import os
 import contextlib
 import concurrent.futures
@@ -23,6 +24,7 @@ class BindingAffinities:
 
     def start(self, allele_file, epitope_lengths, output_dir, mhc_class, vartype):
         # create temorary_directory
+        t_start = time.time()
         with tempfile.TemporaryDirectory() as tmp_seqs:
             self.get_alleles(allele_file)
 
@@ -112,7 +114,11 @@ class BindingAffinities:
 
             total_seqs = max((wt_cnt.get(epilens[0], 1),
                               mt_cnt.get(epilens[0], 1))) - 1
-            print(f"calculate binding affinities for {total_seqs} sequences "
+            bar = "=" * 70
+            print(bar, flush=True)
+            print(f"  {vartype}", flush=True)
+            print(bar, flush=True)
+            print(f"  calculate binding affinities for {total_seqs} sequences "
                   f"({len(self.alleles)} alleles, epitope lengths: "
                   f"{','.join(map(str, epilens))})...", flush=True)
 
@@ -122,8 +128,10 @@ class BindingAffinities:
                 epilens,
                 mhc_class,
                 self.threads)
-            print("Done", flush=True)
-            
+            elapsed = (time.time() - t_start) / 60
+            print(f"  [{vartype}] done in {elapsed:.1f} min", flush=True)
+            print("", flush=True)
+
             with open(os.path.join(output_dir,
                                    f"{vartype}_{mhc_class}_neoepitopes.txt"), "w") as outfile:
                 BindingAffinities.write_header(outfile)
@@ -283,6 +291,9 @@ class BindingAffinities:
             # one pool over all units -- the prediction tool numbers each batch
             # file from 1, so offset translates that to a global seqnum
             completed = 0
+            total = len(units)
+            # emit ~10 progress lines per vartype regardless of unit count
+            step = max(1, total // 10)
             with concurrent.futures.ThreadPoolExecutor(
                     max_workers=int(threads)) as executor:
                 futures = {}
@@ -296,7 +307,8 @@ class BindingAffinities:
                 for future in concurrent.futures.as_completed(futures):
                     group, epilen, offset = futures[future]
                     completed += 1
-                    print(f"  [{completed}/{len(units)}] completed", flush=True)
+                    if completed % step == 0 or completed == total:
+                        print(f"  [{completed}/{total}] completed", flush=True)
                     dest = affinities[group][epilen]
                     for seqnum, epitopes in future.result().items():
                         global_seqnum = offset + seqnum
