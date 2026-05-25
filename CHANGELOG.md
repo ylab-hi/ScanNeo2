@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Improve prioritization log readability per-vartype**: `BindingAffinities.start` / `collect_binding_affinities` in `workflow/scripts/prioritization/prediction.py` now print a banner header (`=== somatic.snvs ===`) at the start of each vartype, throttle the per-unit progress line to ~10 messages per vartype (`step = max(1, total // 10)`, always emits the final), and replace the bare `Done` with a closing summary line `[<vartype>] done in X.X min`. Reduces a ~2000-line prioritization log to ~30 useful lines plus 3 clean section boundaries. Closes #121. ([#121](https://github.com/ylab-hi/ScanNeo2/issues/121), [#140](https://github.com/ylab-hi/ScanNeo2/pull/140))
+- **Improve prioritization log readability per-vartype**: `BindingAffinities.start` / `collect_binding_affinities` in `workflow/scripts/prioritization/prediction.py` now print a banner header (`=== somatic.snvs ===`) at the start of each vartype, throttle the per-unit progress line to ~10 messages per vartype (`step = max(1, total // 10)`, always emits the final), and replace the bare `Done` with a closing summary line `[<vartype>] done in X.X min`. Reduces a ~2000-line prioritization log to ~30 useful lines plus 3 clean section boundaries. Also removes two leftover debug `print()` calls in `reference.py:Counts.__init__` that were dumping the count-table header columns and group slice on every run. Closes #121. ([#121](https://github.com/ylab-hi/ScanNeo2/issues/121), [#140](https://github.com/ylab-hi/ScanNeo2/pull/140))
 
 ### Fixed
 
