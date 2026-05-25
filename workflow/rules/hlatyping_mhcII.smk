@@ -15,7 +15,8 @@ rule filter_reads_mhcII_SE:
         "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_SE.bam",
     log:
         "logs/{sample}/hlatyping/filter_reads_mhcII_SE_{group}_{nartype}.log",
-    threads: config["threads"]  # Use at least two threads
+    # bowtie2 fails on threads=1; require at least two.
+    threads: max(2, config["threads"])
     params:
         extra="",  # optional parameters
     wrapper:
@@ -54,7 +55,8 @@ rule filter_reads_mhcII_PE:
         "results/{sample}/hla/mhc-II/reads/{group}_{nartype}_flt_PE.bam",
     log:
         "logs/{sample}/hlatyping/filter_reads_mhcII_PE_{group}_{nartype}.log",
-    threads: config["threads"]  # Use at least two threads
+    # bowtie2 fails on threads=1; require at least two.
+    threads: max(2, config["threads"])
     params:
         extra="",  # optional parameters
     wrapper:

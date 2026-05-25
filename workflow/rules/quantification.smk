@@ -8,7 +8,7 @@ rule countfeatures:
         "logs/{sample}/quantification/countfeatures_{seqtype}_{group}.log",
     conda:
         "../envs/subread.yml"
-    threads: 2
+    threads: 4
     params:
         mapq=f"""{config['mapq']}""",
     shell:
