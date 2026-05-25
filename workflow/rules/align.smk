@@ -53,7 +53,8 @@ if config["data"]["rnaseq_filetype"] == ".bam":
             "logs/{sample}/align/split_bamfile_RG_{group}.log",
         conda:
             "../envs/samtools.yml"
-        threads: 10
+        # samtools split is I/O-bound; per-thread gain plateaus past ~10.
+        threads: min(10, config["threads"])
         shell:
             """
             mkdir -p {output}
@@ -144,7 +145,7 @@ rule rnaseq_postproc_fixmate:
         """
         (
             samtools view -h -F 4 {params.mapq} {input} -o - \
-                | samtools sort -n -@4 -m4g -O SAM - -o - \
+                | samtools sort -n -@ {threads} -m4g -O SAM - -o - \
                 | samtools fixmate -pcmu -O bam -@ {threads} - {output}
         ) >{log} 2>&1
         """
@@ -166,9 +167,9 @@ rule rnaseq_postproc_markdup:
     shell:
         """
         mkdir -p tmp/
-        samtools sort -@4 -m4G -O BAM -T tmp/sort_{wildcards.sample}_{wildcards.group}_ {input.bam} \
+        samtools sort -@ {threads} -m4G -O BAM -T tmp/sort_{wildcards.sample}_{wildcards.group}_ {input.bam} \
             -o tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam >{log} 2>&1
-        samtools markdup -r -@4 tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam \
+        samtools markdup -r -@ {threads} tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam \
             {output} >>{log} 2>&1
         rm tmp/rnaseq_fixmate_sorted_{wildcards.sample}_{wildcards.group}.bam
         """
@@ -267,7 +268,7 @@ if config["data"]["dnaseq_filetype"] in [".fq", ".fastq"]:
             "logs/{sample}/align/dnaseq_postproc_{group}.log",
         conda:
             "../envs/samtools.yml"
-        threads: 6
+        threads: 4
         resources:
             mem_mb=20000,
         params:
@@ -276,9 +277,9 @@ if config["data"]["dnaseq_filetype"] in [".fq", ".fastq"]:
             """
             mkdir -p tmp/
             (
-                samtools fixmate -pcmu -O bam -@ 6 {input.aln} - \
-                    | samtools sort -@ 4 -m1g -O bam -T tmp/sort_{wildcards.sample}_{wildcards.group}_ - -o - \
-                    | samtools markdup -r -@ 6 - {output.bam}
+                samtools fixmate -pcmu -O bam -@ {threads} {input.aln} - \
+                    | samtools sort -@ {threads} -m1g -O bam -T tmp/sort_{wildcards.sample}_{wildcards.group}_ - -o - \
+                    | samtools markdup -r -@ {threads} - {output.bam}
             ) >{log} 2>&1
             """
 

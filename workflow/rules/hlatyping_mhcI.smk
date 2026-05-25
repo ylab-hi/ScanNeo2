@@ -94,7 +94,9 @@ rule hlatyping_mhcI_SE:
         "logs/{sample}/hlatyping/hlatyping_mhcI_SE_{group}_{nartype}_{no}.log",
     conda:
         "../envs/optitype.yml"
-    threads: 64
+    # OptiType is single-threaded (ILP solver); the wrapper does not
+    # parallelise across cores.
+    threads: 1
     message:
         "HLA typing from splitted BAM files"
     shell:
@@ -226,7 +228,9 @@ rule hlatyping_mhcI_PE:
         "logs/{sample}/hlatyping/hlatyping_mhcI_PE_{group}_{nartype}_{no}.log",
     conda:
         "../envs/optitype.yml"
-    threads: 64
+    # OptiType is single-threaded (ILP solver); the wrapper does not
+    # parallelise across cores.
+    threads: 1
     message:
         "HLA typing from splitted BAM files"
     shell:

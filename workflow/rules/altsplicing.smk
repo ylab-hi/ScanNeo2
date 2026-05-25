@@ -8,7 +8,7 @@ rule spladder:
         "logs/{sample}/altsplicing/spladder_{group}.log",
     conda:
         "../envs/spladder.yml"
-    threads: 20
+    threads: config["threads"]
     params:
         confidence=f"""{config["altsplicing"]["confidence"]}""",
         iteration=f"""{config["altsplicing"]["iterations"]}""",

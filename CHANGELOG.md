@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Audit hardcoded `threads:` values; cap and couple to `{threads}`** — 10 rules across `align.smk`, `altsplicing.smk`, `hlatyping_mhcI.smk`, `hlatyping_mhcII.smk`, `quantification.smk`. The most impactful change is **`hlatyping_mhcI_SE/PE` dropping from `threads: 64` to `threads: 1`** — OptiType is single-threaded (ILP solver; the wrapper does not parallelise across cores), so reserving 64 cores per invocation was serializing the downstream workflow for nothing. Other changes: `split_bamfile_RG` capped at `min(10, config["threads"])` (samtools split is I/O-bound; closes #127); `spladder` → `config["threads"]`; `filter_reads_mhcII_SE/PE` → `max(2, config["threads"])` to enforce bowtie2's two-thread minimum; `countfeatures` → `threads: 4`; `dnaseq_postproc` → `threads: 4` (samtools threading plateaus past ~4); and `rnaseq_postproc_fixmate` / `rnaseq_postproc_markdup` / `dnaseq_postproc` have their literal `-@N` shell arguments coupled to `-@ {threads}` so the directive value is what samtools actually receives. ([#127](https://github.com/ylab-hi/ScanNeo2/issues/127), [#138](https://github.com/ylab-hi/ScanNeo2/pull/138))
+
 ## [0.3.14] - 2026-05-24
 
 ### Refactored
