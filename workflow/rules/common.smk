@@ -102,6 +102,8 @@ def handle_seqfiles(seqdata, mode):
                         f"— check for typos).",
                         file=sys.stderr,
                     )
+                    if "--lint" not in sys.argv:
+                        sys.exit(1)
                 elif len(files) == 1:  # SE
                     f1_ext = get_file_extension(files[0])
                     if f1_ext in [".fq", ".fastq", ".bam"]:
