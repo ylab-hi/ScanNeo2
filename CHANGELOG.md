@@ -8,17 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.15] - 2026-05-25
+
 ### Changed
 
 - **Improve prioritization log readability per-vartype**: `BindingAffinities.start` / `collect_binding_affinities` in `workflow/scripts/prioritization/prediction.py` now print a banner header (`=== somatic.snvs ===`) at the start of each vartype, throttle the per-unit progress line to ~10 messages per vartype (`step = max(1, total // 10)`, always emits the final), and replace the bare `Done` with a closing summary line `[<vartype>] done in X.X min`. Reduces a ~2000-line prioritization log to ~30 useful lines plus 3 clean section boundaries. Also removes two leftover debug `print()` calls in `reference.py:Counts.__init__` that were dumping the count-table header columns and group slice on every run. Closes #121. ([#121](https://github.com/ylab-hi/ScanNeo2/issues/121), [#140](https://github.com/ylab-hi/ScanNeo2/pull/140))
+- **Audit hardcoded `threads:` values; cap and couple to `{threads}`** — 10 rules across `align.smk`, `altsplicing.smk`, `hlatyping_mhcI.smk`, `hlatyping_mhcII.smk`, `quantification.smk`. The most impactful change is **`hlatyping_mhcI_SE/PE` dropping from `threads: 64` to `threads: 1`** — OptiType is single-threaded (ILP solver; the wrapper does not parallelise across cores), so reserving 64 cores per invocation was serializing the downstream workflow for nothing. Other changes: `split_bamfile_RG` capped at `min(10, config["threads"])` (samtools split is I/O-bound; closes #127); `spladder` → `config["threads"]`; `filter_reads_mhcII_SE/PE` → `max(2, config["threads"])` to enforce bowtie2's two-thread minimum; `countfeatures` → `threads: 4`; `dnaseq_postproc` → `threads: 4` (samtools threading plateaus past ~4); and `rnaseq_postproc_fixmate` / `rnaseq_postproc_markdup` / `dnaseq_postproc` have their literal `-@N` shell arguments coupled to `-@ {threads}` so the directive value is what samtools actually receives. ([#127](https://github.com/ylab-hi/ScanNeo2/issues/127), [#138](https://github.com/ylab-hi/ScanNeo2/pull/138))
 
 ### Fixed
 
 - **Make multi-line `params: extra=...` blocks snakefmt-cross-version compatible**: the Snakemake Workflow Catalog pins `snakefmt 0.11.5` while our CI pins `2.0.0`, and the two versions indent backslash-continued multi-line strings inside `params:` differently — so a tree clean under one version fails the other's `--check`. Three rules (`star_align_fastq`, `star_align_bamfile`, `filter_short_indels_m2`) rewritten as adjacent string literals inside `(...)`, eliminating the multi-line continuation entirely; both snakefmt versions now agree the file is clean. The argument string passed to each wrapper is identical (modulo single-spacing between args). ([#139](https://github.com/ylab-hi/ScanNeo2/pull/139))
-
-### Changed
-
-- **Audit hardcoded `threads:` values; cap and couple to `{threads}`** — 10 rules across `align.smk`, `altsplicing.smk`, `hlatyping_mhcI.smk`, `hlatyping_mhcII.smk`, `quantification.smk`. The most impactful change is **`hlatyping_mhcI_SE/PE` dropping from `threads: 64` to `threads: 1`** — OptiType is single-threaded (ILP solver; the wrapper does not parallelise across cores), so reserving 64 cores per invocation was serializing the downstream workflow for nothing. Other changes: `split_bamfile_RG` capped at `min(10, config["threads"])` (samtools split is I/O-bound; closes #127); `spladder` → `config["threads"]`; `filter_reads_mhcII_SE/PE` → `max(2, config["threads"])` to enforce bowtie2's two-thread minimum; `countfeatures` → `threads: 4`; `dnaseq_postproc` → `threads: 4` (samtools threading plateaus past ~4); and `rnaseq_postproc_fixmate` / `rnaseq_postproc_markdup` / `dnaseq_postproc` have their literal `-@N` shell arguments coupled to `-@ {threads}` so the directive value is what samtools actually receives. ([#127](https://github.com/ylab-hi/ScanNeo2/issues/127), [#138](https://github.com/ylab-hi/ScanNeo2/pull/138))
 
 ## [0.3.14] - 2026-05-24
 
