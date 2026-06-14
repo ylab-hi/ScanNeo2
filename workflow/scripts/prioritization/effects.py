@@ -164,7 +164,7 @@ class VariantEffects:
                 return
             seg2_bp_0based = int(self.data["start"].split('|')[1]) - 1
             stop_coord = seg2_bp_0based + (stop_pos - cds_bp)
-            # Arriba doesn't expose strand here; assume + (existing behaviour).
+            # Arriba doesn't expose strand directly; assume +.
             strand = '+'
         else:
             tid = self.data["transcript_id"]
