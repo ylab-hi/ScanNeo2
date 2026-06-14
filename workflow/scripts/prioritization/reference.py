@@ -31,6 +31,7 @@ class Annotation:
         self.ref = pyfaidx.Fasta(fastaFile)
         self.transcriptome = self.parse_transcriptome(gtfFile)
         self.exome = self.parse_exome(gtfFile)
+        self.start_codons = self.parse_start_codons(gtfFile)
         self.exon_map_cache = {}
 
     # GTF coords are 1-based inclusive; we store 0-based half-open throughout
@@ -70,6 +71,37 @@ class Annotation:
                             exome[transcript_id][int(exon_number)] = [int(l[3])-1, int(l[4])]
 
         return exome
+
+
+    def parse_start_codons(self, gtfFile):
+        """Map transcript_id → 0-based genomic position of the canonical start
+        codon's A in transcript orientation.
+
+        On + strand the A sits at the leftmost genomic base of the 3-base span
+        (`int(l[3]) - 1`); on - strand it sits at the rightmost base
+        (`int(l[4]) - 1`) because the transcript reads in the opposite
+        genomic direction. Feeding this position into `genomic_to_mrna` gives
+        the canonical CDS start as an mRNA offset directly.
+
+        Some GTF transcripts (e.g. `cds_start_NF`-tagged partial CDSes) have
+        no start_codon row; they are simply absent from the returned dict.
+        """
+        start_codons = {}
+        with open(gtfFile, "r") as fh:
+            for line in fh:
+                if line.startswith("#"):
+                    continue
+                l = line.rstrip().split("\t")
+                if l[2] != "start_codon":
+                    continue
+                transcript_id = re.search(r'transcript_id "([^.\s]+)"', l[8]).group(1)
+                if transcript_id in start_codons:
+                    continue
+                if l[6] == '+':
+                    start_codons[transcript_id] = int(l[3]) - 1
+                else:
+                    start_codons[transcript_id] = int(l[4]) - 1
+        return start_codons
 
 
     def exon_map(self, transcript_id):
