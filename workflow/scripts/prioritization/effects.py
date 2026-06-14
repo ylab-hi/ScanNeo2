@@ -17,7 +17,8 @@ from pathlib import Path
 class VariantEffects:
     def __init__(self, options, vartype):
 
-        self.exome = reference.Annotation(options.reference, options.anno).exome
+        self.annotation = reference.Annotation(options.reference, options.anno)
+        self.exome = self.annotation.exome
         self.counts = reference.Counts(options.counts).counts
         self.data = {}
 
@@ -127,7 +128,6 @@ class VariantEffects:
         self.data["wt_subseq"] = self.data["wt_seq"][left:right+1]
         self.data["mt_subseq"] = self.data["mt_seq"][left:right+1]
 
-    # TODO: check for NMD out of VEP
     def determine_NMD(self, nmd_event):
         if nmd_event is not None:
             self.data["NMD"] = nmd_event
@@ -139,154 +139,141 @@ class VariantEffects:
         self.data["NMD_escape_rule"] = None
 
         transcript = self.data["transcript"]
-        # only need to be considered for framshift events
-        if "frameshift" in self.data["var_type"]:
-            # transcript is required to determine NMD
-            if transcript is not None: 
-                transcript_bp = int(self.data["transcript_bp"])
-                start = self.data["start"]
+        if "frameshift" not in self.data["var_type"] or transcript is None:
+            return
+        if self.data["transcript_id"] is None:
+            return
 
-                """ determine the coding sequence and adjust the breakpoint 
-                (considering the adjusted startpos, e.g., start codon)"""
-                cds, cds_bp = self.determine_cds(transcript,
-                                                 transcript_bp)
+        transcript_bp = int(self.data["transcript_bp"])
+        cds, cds_bp, start_codon_offset = self.determine_cds(transcript,
+                                                              transcript_bp)
+        if cds is None:
+            return
 
-                if cds is not None: # when the start codon could be found
-                    """determine the genomic coordinate of the breakpoint -
-                    consider start of segment 2 in fusion transcripts"""
-                    """determine the genomic coordinate of the cds breakpoint 
-                    - note: in fusion events this the start of the segment 2. 
-                    We can use this since self.data["transcript_bp"] corresponds 
-                    to seg2 in start"""
-                    if self.data["source"] == "fusion":
-                        bp_coord = int(start.split('|')[1])
-                    else:
-                        bp_coord = int(start) + transcript_bp + 1
+        stop_pos = self.find_stop_codon(cds, cds_bp)
+        if stop_pos == -1:
+            return
 
-                    # search for stop_codon
-                    stop_pos, stop_coord = self.find_stop_codon(cds,
-                                                                cds_bp,
-                                                                bp_coord)
+        if self.data["source"] == "fusion":
+            # Fusion: arriba reports segment-2's genomic breakpoint as a 1-based
+            # position; shift to 0-based to match the exon table convention.
+            # The transcript is already spliced by arriba so linear arithmetic
+            # past the breakpoint is correct within segment 2.
+            tid = self.data["transcript_id"].split('|')[1]
+            if tid == '.':
+                return
+            seg2_bp_0based = int(self.data["start"].split('|')[1]) - 1
+            stop_coord = seg2_bp_0based + (stop_pos - cds_bp)
+            # Arriba doesn't expose strand directly; assume +.
+            strand = '+'
+        else:
+            tid = self.data["transcript_id"]
+            # CDS position → mRNA position → genomic coord (strand-aware).
+            mrna_stop = stop_pos + start_codon_offset + 3
+            stop_coord = self.annotation.mrna_to_genomic(tid, mrna_stop)
+            if stop_coord is None:
+                return
+            strand = self.annotation.transcriptome[tid][2]
 
-                    # check of stop_codon is PTC
-                    if stop_pos != -1:
-                        if self.data["transcript_id"] is not None:
-                            if self.data["source"] == "fusion":
-                                """ needs to be tid in 2nd transcript - mainly
-                                because this is where the PTC is supposed to be"""
-                                tid = self.data["transcript_id"].split('|')[1]
-                                if tid == '.':
-                                    return
-                            else:
-                                tid = self.data["transcript_id"]
+        exoninfo = self.exome[tid]
+        exons = list(exoninfo.keys())
 
-                            exoninfo = self.exome[tid]
-                            exons = list(exoninfo.keys())
+        exon_num, dist_ejc = self.annotate_stop_codon(exoninfo, stop_coord, strand)
+        if exon_num == -1:
+            return
 
-                            exon_num, dist_ejc = self.annotate_stop_codon(exoninfo,
-                                                                          stop_coord)
+        self.data["PTC_exon_number"] = f'{exon_num}'
+        if max(exons) > 1:
+            self.data["PTC_dist_ejc"] = dist_ejc
 
-                            if exon_num != -1:
-                                self.data["PTC_exon_number"] = f'{exon_num}'
-                                if max(exons) > 1:
-                                    self.data["PTC_dist_ejc"] = dist_ejc
-
-                                nmd_escape = self.check_escape(exoninfo,
-                                                               stop_coord,
-                                                               exon_num,
-                                                               dist_ejc)
-
-                                if nmd_escape != -1:
-                                    self.data["NMD"] = "NMD_escaping_variant"
-                                    self.data["NMD_escape_rule"] = nmd_escape
-                                else:
-                                    self.data["NMD"] = "NMD_variant"
+        nmd_escape = self.check_escape(exoninfo, stop_coord, exon_num,
+                                       dist_ejc, strand)
+        if nmd_escape != -1:
+            self.data["NMD"] = "NMD_escaping_variant"
+            self.data["NMD_escape_rule"] = nmd_escape
+        else:
+            self.data["NMD"] = "NMD_variant"
 
 
     
     @staticmethod
     def determine_cds(transcript, transcript_bp):
-        """ determines the coding sequence of the transcript - 
-        return coding sequence (cds) and its breakpoint within the cds
-        (cds_bp) and its genomic coordinate (cds_bp_global)"""
+        """Locate the start codon in `transcript` and return the CDS plus the
+        breakpoint's position within it.
 
+        Returns (cds, cds_bp, start_codon_offset) where `start_codon_offset`
+        is the 0-based mRNA position of the ATG, so that
+        `mrna_pos == cds_pos + start_codon_offset + 3`. Returns
+        (None, None, None) if no usable start codon precedes the breakpoint.
+        """
         start_codon = re.search(r'ATG', transcript)
-        if start_codon:
-            """start codon has to occur before the breakpoint 
-            - note the breakpoint corresponds to the local site"""
-            if start_codon.start() < transcript_bp:
-                # determines the cds - start after start codon...
-                cds = transcript[start_codon.start()+3:]
-                # ... and the breakpoint position within the cds
-                cds_bp = transcript_bp - (start_codon.start() + 3)
-                # """determine the genomic coordinate of the cds breakpoint 
-                # - note: in fusion events this the start of the segment 2. 
-                # We can use this since self.data["transcript_bp"] corresponds to 
-                # start(seg1|seg2)"""
-                # start = self.data["start"]
-                # if self.data["source"] == "fusion":
-                    # # in fusion events this contains the starts of both segments
-                    # cds_bp_coord = start.split('|')[1]
-                # else:
-                    # cds_cp_coord = start + self.data["transcript_bp"] + 1
-                return cds, cds_bp
-            else:
-                return None, None
-        else:
-            return None, None
+        if start_codon and start_codon.start() < transcript_bp:
+            offset = start_codon.start()
+            cds = transcript[offset+3:]
+            cds_bp = transcript_bp - (offset + 3)
+            return cds, cds_bp, offset
+        return None, None, None
 
 
     @staticmethod
-    def find_stop_codon(cds, bp, bp_coord):
-        """search for stop codon in coding sequence returns 0-based index
-
-        the stop codon and 
-        genomic coordinate of the end of the second segment
-        """
+    def find_stop_codon(cds, bp):
+        """Return the 0-based CDS-relative position of the first in-frame stop
+        codon strictly downstream of bp, or -1 if none. The caller is
+        responsible for converting this CDS position into a genomic coordinate
+        (strand-aware for non-fusion; linear arithmetic for fusion)."""
         stop_pos = -1
         for i in range(0, len(cds), 3):
             codon = cds[i:i+3]
             if codon == "TAA" or codon == "TAG" or codon == "TGA":
-                stop_pos = i # stop codon has been found
+                stop_pos = i
                 break
 
-        # stop codon shouldn't be found before the actual mutant in transcript
         if stop_pos <= bp:
-            return -1, -1
-        else:
-            return stop_pos, bp_coord + (stop_pos - bp)  
+            return -1
+        return stop_pos
 
 
-    def annotate_stop_codon(self, exoninfo, stop_coord):
-        stop_exon = -1
+    def annotate_stop_codon(self, exoninfo, stop_coord, strand):
+        """Locate which exon holds the PTC and report `dist_ejc`, the number of
+        bases between the PTC and the 3' end of that exon in transcript
+        orientation. Coordinates are 0-based half-open."""
         for exon_number in exoninfo:
-            exon_start = int(exoninfo[exon_number][0])
-            exon_end = int(exoninfo[exon_number][1])
-            if stop_coord >= exon_start and stop_coord <= exon_end:
-                stop_exon = exon_number
-                dist_ejc = exon_end - stop_coord
-                return stop_exon, dist_ejc
+            exon_start, exon_end = exoninfo[exon_number]
+            if exon_start <= stop_coord < exon_end:
+                if strand == '+':
+                    dist_ejc = (exon_end - 1) - stop_coord
+                else:
+                    dist_ejc = stop_coord - exon_start
+                return exon_number, dist_ejc
 
-        # no exon information found for stop_codon
         return -1, -1
 
 
-    def check_escape(self, exoninfo, stop_coord, exon_num, dist_ejc):
-        """ 
-        1. If the variant is in an intronless transcript, meaning only one exon exist in the transcript.
-        2. The variant falls in the first 100 coding bases in the transcript.
-             vvv
-          ..ES...EE..I.ES...EE.I.ES....EE.I.ES....EE 
-        (ES= exon_start,EE = exon_end, I = intron, v = variant location)
-        3. The variant location falls 50 bases upstream of the penultimate (second to the last) exon.
-                                   vvv
-          ES...EE..I.ES...EE.I.ES....EE.I.ES....EE 
-        (ES= exon_start,EE = exon_end, I = intron, v = variant location)
-        4. The variant location  falls in the last exon of the transcript.
-                                                vvvv
-              ES...EE..I.ES...EE.I.ES....EE.I.ES....EE 
-         (ES= exon_start,EE = exon_end, I = intron, v = variant location)
+    def check_escape(self, exoninfo, stop_coord, exon_num, dist_ejc, strand):
+        """Determine whether a PTC escapes NMD. Returns one of:
 
+          1 — Intronless transcript (only one exon). No downstream
+              exon-exon junction → no EJC for the NMD machinery to recruit.
+          2 — Start-proximal PTC, within 100 nt of the 5' end of exon 1 in
+              transcript orientation. Translation re-initiation downstream
+              can rescue the transcript.
+          3 — PTC within 50 nt of the last exon-exon junction (i.e. close to
+              the 3' end of the penultimate exon in transcript orientation).
+              The downstream EJC is removed during the first round of
+              translation before NMD can act.
+          4 — PTC in the last exon — no downstream EJC at all.
+         -1 — None of the above; NMD targets the transcript.
+
+        ASCII layout (transcript orientation, 5'→3'):
+
+          rule 2:   vvv
+                ..ES...EE..I.ES...EE.I.ES....EE.I.ES....EE
+          rule 3:                       vvv
+                  ES...EE..I.ES...EE.I.ES....EE.I.ES....EE
+          rule 4:                                    vvvv
+                  ES...EE..I.ES...EE.I.ES....EE.I.ES....EE
+
+        (ES = exon 5' end, EE = exon 3' end, I = intron, v = PTC.)
         """
         exons = list(exoninfo.keys())
         last_exon = int(max(exons))
@@ -295,14 +282,19 @@ class VariantEffects:
             if last_exon == 1: # there is only one exon
                 return 1
             elif last_exon > 1:
-                exon_start = int(exoninfo[1][0])
-                # check if PTC is within 
-                if stop_coord - exon_start < 100:
+                exon_start, exon_end = exoninfo[1]
+                # rule 2: PTC within 100 nt of the 5' end of exon 1 in
+                # transcript orientation
+                if strand == '+':
+                    dist_from_5p = stop_coord - exon_start
+                else:
+                    dist_from_5p = (exon_end - 1) - stop_coord
+                if dist_from_5p < 100:
                     return 2
         if exon_num == last_exon-1:
-            exon_start = int(exoninfo[last_exon-1][0])
-            exon_end = int(exoninfo[last_exon-1][1])
-            if exon_end - stop_coord <= 50:
+            # rule 3: PTC within 50 nt of the 3' end of the penultimate exon
+            # in transcript orientation — i.e. close to the last EJC
+            if dist_ejc <= 50:
                 return 3
         elif exon_num == last_exon:
             return 4

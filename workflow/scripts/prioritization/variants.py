@@ -71,27 +71,10 @@ class Variants():
                         if csq is None:
                             continue
                         elif csq == "frameshift":
-                            if field["NMD"] != 'NMD_escaping_variant':
-                                continue
-
-                            elif field["NMD"] == "NMD_escaping_variant":
-                                nmd = "NMD_escaping_variant"
-
-                                if transcript_id in annotation.transcriptome:
-                                    bnds = annotation.transcriptome[transcript_id]
-
-                                    # extract sequence until variant start
-                                    transcript = str(annotation.ref[chrom][bnds[0]+1:start+2])
-                                    if field["Allele"] != '-':
-                                        transcript += field["Allele"]
-                                    transcript += str(annotation.ref[chrom][stop+1:bnds[1]+1])
-
-                                    # extract sequence breakpoint (variant start)
-                                    transcript_bp = (start - bnds[0]) + 1
-
-
-                                # if transcript_id in transcriptome:
-                                    # transcript = transcriptome[transcript_id]
+                            if transcript_id in annotation.transcriptome:
+                                transcript, transcript_bp = annotation.splice_with_variant(
+                                    transcript_id, chrom, start, stop, field["Allele"]
+                                )
 
                             if field["DownstreamProtein"] == "":
                                 continue
