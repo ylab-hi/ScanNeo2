@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Extend NMD detection to all frameshift variants via spliced mRNA**: non-fusion variants (SNV / short-indel / long-indel / exitron / alt-splicing) had `NMD`, `PTC_exon_number`, `PTC_dist_ejc`, `NMD_escape_rule` silently empty in `*_variant_effects.tsv`. The pre-existing `variants.py` constructed a "transcript" by genomic-slicing from transcript-start to transcript-end (introns included); `effects.py:find_stop_codon` then walked this pre-mRNA and typically hit a spurious in-frame stop in the first intron downstream of the variant, which `annotate_stop_codon` dropped as non-exonic — leaving the NMD columns blank. New strand-aware spliced-mRNA + genomic↔mRNA mapping layer on `Annotation` (`exon_map`, `splice_transcript`, `genomic_to_mrna`, `mrna_to_genomic`, `splice_with_variant`); `variants.py` uses it; `effects.py:find_stop_codon` / `annotate_stop_codon` / `check_escape` operate on mRNA-relative coords with strand awareness (rules 2 and 3 in `check_escape` were `+`-strand-only as written); the VEP `field["NMD"]` pre-filter is removed so every frameshift reaches `determine_NMD`. Both GTF parsers (`parse_transcriptome`, `parse_exome`) standardised on 0-based half-open coords; fusion path shifts the arriba 1-based seg2 breakpoint by -1 to compensate, preserving existing fusion behaviour. Verified on a real LNCaP run (`hlatest_PR130-131`): 2277/2277 short-indel frameshifts now reach `determine_NMD`; 1101 receive a meaningful NMD verdict with balanced `+`/`-` strand counts across escape rules 1/3/4; 48,436 mhc-I neoepitopes produced end-to-end. ([#116](https://github.com/ylab-hi/ScanNeo2/issues/116), [#142](https://github.com/ylab-hi/ScanNeo2/pull/142))
+
 ## [0.3.15] - 2026-05-25
 
 ### Changed
