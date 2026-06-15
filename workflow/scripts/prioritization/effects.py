@@ -226,7 +226,7 @@ class VariantEffects:
         Returns (cds, cds_bp). Returns (None, None) when the start codon is
         absent or sits at or beyond the variant breakpoint.
         """
-        if start_codon_offset is None or start_codon_offset >= transcript_bp:
+        if start_codon_offset is None or start_codon_offset + 3 > transcript_bp:
             return None, None
         cds = transcript[start_codon_offset+3:]
         cds_bp = transcript_bp - (start_codon_offset + 3)
