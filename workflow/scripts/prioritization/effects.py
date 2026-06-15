@@ -145,8 +145,27 @@ class VariantEffects:
             return
 
         transcript_bp = int(self.data["transcript_bp"])
-        cds, cds_bp, start_codon_offset = self.determine_cds(transcript,
-                                                              transcript_bp)
+
+        # Locate the canonical start codon's mRNA position. For non-fusion
+        # variants the GTF-derived start_codons table is authoritative; for
+        # fusions (arriba's pre-spliced chimeric peptide has no canonical GTF
+        # start codon) keep the leading-ATG heuristic on the fusion sequence.
+        if self.data["source"] == "fusion":
+            start_codon_offset = transcript.find('ATG')
+            if start_codon_offset == -1:
+                return
+        else:
+            canonical_pos = self.annotation.start_codons.get(
+                self.data["transcript_id"])
+            if canonical_pos is None:
+                return
+            start_codon_offset = self.annotation.genomic_to_mrna(
+                self.data["transcript_id"], canonical_pos)
+            if start_codon_offset is None:
+                return
+
+        cds, cds_bp = self.determine_cds(transcript, transcript_bp,
+                                          start_codon_offset)
         if cds is None:
             return
 
@@ -197,22 +216,21 @@ class VariantEffects:
 
     
     @staticmethod
-    def determine_cds(transcript, transcript_bp):
-        """Locate the start codon in `transcript` and return the CDS plus the
-        breakpoint's position within it.
+    def determine_cds(transcript, transcript_bp, start_codon_offset):
+        """Carve the CDS from the spliced mRNA given the known start codon
+        position. The caller (`determine_NMD`) computes `start_codon_offset`:
+        for non-fusion variants from the GTF-derived `Annotation.start_codons`
+        table (the canonical CDS start, not the first ATG); for fusions from
+        `transcript.find('ATG')` on arriba's already-spliced fusion peptide.
 
-        Returns (cds, cds_bp, start_codon_offset) where `start_codon_offset`
-        is the 0-based mRNA position of the ATG, so that
-        `mrna_pos == cds_pos + start_codon_offset + 3`. Returns
-        (None, None, None) if no usable start codon precedes the breakpoint.
+        Returns (cds, cds_bp). Returns (None, None) when the start codon is
+        absent or sits at or beyond the variant breakpoint.
         """
-        start_codon = re.search(r'ATG', transcript)
-        if start_codon and start_codon.start() < transcript_bp:
-            offset = start_codon.start()
-            cds = transcript[offset+3:]
-            cds_bp = transcript_bp - (offset + 3)
-            return cds, cds_bp, offset
-        return None, None, None
+        if start_codon_offset is None or start_codon_offset + 3 > transcript_bp:
+            return None, None
+        cds = transcript[start_codon_offset+3:]
+        cds_bp = transcript_bp - (start_codon_offset + 3)
+        return cds, cds_bp
 
 
     @staticmethod
