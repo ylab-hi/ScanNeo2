@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.16] - 2026-06-15
+
 ### Changed
 
 - **Use canonical CDS start codon instead of first ATG in `determine_cds`**: post-#142 the NMD path located the CDS via `re.search(r'ATG', transcript)` — the *first* ATG in the spliced mRNA. For transcripts with a 5'UTR uORF (or any upstream ATG) that pick was not the canonical start; the resulting "CDS" walked the wrong reading frame, `find_stop_codon` hit an early stop before the variant breakpoint, and the NMD columns ended up blank on **1174 of 2277 (52%) LNCaP short-indel frameshifts**. `Annotation` now parses GTF `start_codon` rows once at load (`parse_start_codons`) into `start_codons[tid] = genomic_pos_0based` (A of the ATG in transcript orientation, strand-aware). `effects.py:determine_cds` simplifies to take a precomputed `start_codon_offset` and slice; `determine_NMD` supplies the offset per source — non-fusion from `start_codons` + `genomic_to_mrna`, fusion via `transcript.find('ATG')` since arriba's chimeric peptide has no canonical GTF start codon. NMD coverage on the same LNCaP short-indel set rises from 48% → 98.7%; the remaining 29 blanks split cleanly into 16 `cds_start_NF`-tagged transcripts (no GTF start_codon row) and 13 variants with no in-frame stop downstream in the canonical reading frame. ([#143](https://github.com/ylab-hi/ScanNeo2/issues/143), [#144](https://github.com/ylab-hi/ScanNeo2/pull/144))
