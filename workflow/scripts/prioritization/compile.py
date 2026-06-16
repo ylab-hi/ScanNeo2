@@ -65,13 +65,13 @@ class Compile:
             vartype == "altsplicing" or
             vartype == "custom"):
 
-            vars = variants.Variants(inputfile, options, vartype)
+            variants.Variants(inputfile, options, vartype)
 
         elif vartype == "fusions":
-            fus = fusions.Fusions(inputfile, options, vartype)
+            fusions.Fusions(inputfile, options, vartype)
 
         elif vartype == "custom_protein":
-            prots = proteins.Proteins(inputfile, options, vartype)
+            proteins.Proteins(inputfile, options, vartype)
 
         binding = prediction.BindingAffinities(options.threads)
 

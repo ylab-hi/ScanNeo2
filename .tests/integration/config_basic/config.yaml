@@ -18,6 +18,7 @@ data:
   
   custom:
     variants:
+    proteins:
     hlatyping:
       MHC-I:
       MHC-II:
