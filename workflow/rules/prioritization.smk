@@ -65,6 +65,7 @@ rule prioritization:
         exitrons=get_prioritization_exitrons,
         fusions=get_fusions,
         custom=get_prioritization_custom,
+        proteins=get_prioritization_proteins,
         mhcI=get_prioritization_mhcI,
         mhcII=get_prioritization_mhcII,
         refgenome="resources/refs/genome.fasta",
@@ -97,6 +98,7 @@ rule prioritization:
             --altsplicing "{input.altsplicing}" \
             --fusions "{input.fusions}" \
             --custom "{input.custom}" \
+            --proteins "{input.proteins}" \
             --proteome {input.peptide} \
             --anno {input.annotation} \
             --confidence medium \

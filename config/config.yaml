@@ -18,6 +18,7 @@ data:
 
   custom:
     variants:                          # optional: path to a user-supplied VCF to prioritize directly
+    proteins:                          # optional: path to a TSV of (wildtype, mutant) protein pairs; bypasses VCF + VEP
     hlatyping:                         # optional: user-supplied HLA alleles (used when the *_mode below is 'custom')
       MHC-I:                           #   path to a file listing MHC class I alleles
       MHC-II:                          #   path to a file listing MHC class II alleles
