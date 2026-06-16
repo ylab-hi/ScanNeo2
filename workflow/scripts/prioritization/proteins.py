@@ -74,6 +74,20 @@ class Proteins:
                 f"Mutant-only rows have no variant region to detect and are rejected."
             )
 
+        # Truncate at stop-codon markers — same convention as the VEP-derived
+        # path uses on `wt_seq`/`mt_seq`. Without this, an X (or *) reaching the
+        # IEDB binding-affinity tool is rejected and the whole prediction batch
+        # is dropped, taking neighbouring valid rows with it.
+        wt_seq = self.truncate_at_stop(wt_seq)
+        mt_seq = self.truncate_at_stop(mt_seq)
+
+        if not wt_seq or not mt_seq:
+            sys.exit(
+                f"[proteins error] {source}:{row_num} (id={row_id!r}): "
+                f"truncation at stop-codon marker ('*' or 'X') left an empty "
+                f"sequence. There is no detectable variant region."
+            )
+
         vaf = self.as_float(row.get("vaf"), default=-1.0)
         ao = self.as_int(row.get("ao"), default=-1)
         dp = self.as_int(row.get("dp"), default=-1)
@@ -104,6 +118,18 @@ class Proteins:
 
         if self.variant_effects.self_dissimilarity():
             self.variant_effects.write_entry()
+
+    @staticmethod
+    def truncate_at_stop(sequence):
+        """Return the prefix of `sequence` before the first stop-codon marker
+        (`*` or `X`). Mirrors `variants.py:Variants.scan_stop_codon` so the
+        protein source produces sequences that flow cleanly into the same
+        binding-affinity prediction step."""
+        for marker in ("*", "X"):
+            sep = sequence.find(marker)
+            if sep != -1:
+                sequence = sequence[:sep]
+        return sequence
 
     @staticmethod
     def as_float(value, default):
