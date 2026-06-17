@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Allow direct protein-sequence input bypassing VCF + VEP**: new `data.custom.proteins` config key takes an optional TSV path of `(wildtype, mutant)` protein pairs and feeds them straight into `VariantEffects.change_entry`, skipping variant calling, VCF, and VEP. Required TSV columns are `id`, `wildtype_protein`, `mutant_protein`; optional columns `vaf`, `ao`, `dp`, `gene_id`, `gene_name`, `transcript_id`, `chrom`, `group`, `var_type`. New `workflow/scripts/prioritization/proteins.py` source module parallel to `variants.py` / `fusions.py` — the pre-existing `VariantEffects.determine_var_bnds` already diffs wt vs mt to locate the variant region, so the protein source just supplies the pair and lets that machinery do the rest. Mutant-only rows are rejected with a hard error citing the row id (no variant region to detect, no wildtype contrast for binding-affinity comparison or self-similarity). Genomic / transcript / expression columns (`chrom`, `gene_id`, `TPM`, `NMD`, `PTC_*`, `NMD_escape_rule`) are intentionally left empty for protein input — those aren't recoverable from a raw protein pair. Wires through: schema (`proteins` required key, nullable value), `common.smk` (existence-check, "nothing to run" guard, getter, run-banner row), `prioritization.smk` (`--proteins` arg), `compile.py` (`vartype == "custom_protein"` dispatch). Useful for neoantigen candidates from sources ScanNeo2 doesn't natively call (other variant callers, RNA editing, proteogenomics, hand-curated candidates) and for benchmarking with known peptides. ([#117](https://github.com/ylab-hi/ScanNeo2/issues/117), [#146](https://github.com/ylab-hi/ScanNeo2/pull/146))
+
 ## [0.3.16] - 2026-06-15
 
 ### Changed

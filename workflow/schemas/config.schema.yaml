@@ -54,6 +54,9 @@ properties:
           variants:
             type: ["string", "null"]
             description: optional path to a user-supplied VCF to prioritize directly
+          proteins:
+            type: ["string", "null"]
+            description: optional path to a TSV of (wildtype, mutant) protein pairs to prioritize directly, bypassing variant calling + VEP
           hlatyping:
             type: object
             properties:
@@ -63,7 +66,7 @@ properties:
                 type: ["string", "null"]
             required: [MHC-I, MHC-II]
             additionalProperties: false
-        required: [variants, hlatyping]
+        required: [variants, proteins, hlatyping]
         additionalProperties: false
     required: [name, dnaseq, rnaseq, normal, custom]
     additionalProperties: false

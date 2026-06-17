@@ -44,6 +44,7 @@ def data_structure(data):
     # check that any user-supplied non-fastq paths actually exist on disk
     custom_paths = [
         ("data.custom.variants", config["data"]["custom"]["variants"]),
+        ("data.custom.proteins", config["data"]["custom"]["proteins"]),
         (
             "data.custom.hlatyping.MHC-I",
             config["data"]["custom"]["hlatyping"].get("MHC-I"),
@@ -65,10 +66,13 @@ def data_structure(data):
 
     # abort if no data could be found
     if len(config["data"]["dnaseq"]) == 0 and len(config["data"]["rnaseq"]) == 0:
-        # if no data could be found - check if variants are provided (e.g., custom)
-        if config["data"]["custom"]["variants"] is None:
+        # if no data could be found - check if a custom source (VCF or protein pairs) is provided
+        if (
+            config["data"]["custom"]["variants"] is None
+            and config["data"]["custom"]["proteins"] is None
+        ):
             print(
-                "[config error] No valid sequence files found and no custom variants provided -- nothing to run. Check the 'data:' section of your config file.",
+                "[config error] No valid sequence files found and no custom variants or proteins provided -- nothing to run. Check the 'data:' section of your config file.",
                 file=sys.stderr,
             )
             # skip the abort under `snakemake --lint` so static rule analysis can
@@ -245,6 +249,11 @@ def print_run_summary(config):
         if d["custom"]["variants"]
         else "(no custom variants)"
     )
+    proteins_disp = (
+        str(d["custom"]["proteins"])
+        if d["custom"]["proteins"]
+        else "(no custom proteins)"
+    )
     indel_type = str(config["indel"]["type"])
     indel_mode = str(config["indel"]["mode"])
     indel_detail = f"type {indel_type}, mode {indel_mode}"
@@ -276,8 +285,10 @@ def print_run_summary(config):
             lines.append(f"             {extra}")
     npad = "Normal".ljust(9)
     cpad = "Custom".ljust(9)
+    ppad = "Proteins".ljust(9)
     lines.append(f"    {npad}: {normal_disp}")
     lines.append(f"    {cpad}: {custom_disp}")
+    lines.append(f"    {ppad}: {proteins_disp}")
     lines.append("")
     lines.append("  Variant calling")
     variant_modes = [
@@ -1097,6 +1108,14 @@ def get_prioritization_custom(wildcards):
         )
 
     return custom
+
+
+def get_prioritization_proteins(wildcards):
+    """User-supplied TSV of (wildtype, mutant) protein pairs, consumed
+    verbatim — no upstream rule, no VEP annotation."""
+    if config["data"]["custom"]["proteins"] is None:
+        return []
+    return [config["data"]["custom"]["proteins"]]
 
 
 def get_prioritization_mhcI(wildcards):

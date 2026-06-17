@@ -14,6 +14,7 @@ data:
   
   custom:
     variants: .tests/integration/data/variants/snvs.vcf
+    proteins:
     hlatyping:
       MHC-I: .tests/integration/data/hla/mhc-I.tsv
       MHC-II:

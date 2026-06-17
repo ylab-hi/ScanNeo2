@@ -1,0 +1,92 @@
+### General
+reference:
+  release: 111
+  nonchr: false
+threads: 30
+mapq: 30  # overall required mapping quality
+basequal: 20  # overall required base quality
+
+data:
+  name: protein-test
+  dnaseq:
+  rnaseq:
+  normal:
+
+  custom:
+    variants:
+    proteins: .tests/integration/data/proteins/proteins.tsv
+    hlatyping:
+      MHC-I: .tests/integration/data/hla/mhc-I.tsv
+      MHC-II:
+
+### pre-processing (only applied on fastq reads)
+preproc:
+  activate: true  # whether (=true) or not (=false) to include pre-processing
+  minlen: 10
+  slidingwindow:
+    activate: true
+    wsize: 3
+    wqual: 20
+
+### alingment
+align:
+  chimSegmentMin: 20
+  chimScoreMin: 10
+  chimJunctionOverhangMin: 10
+  chimScoreDropMax: 30
+  chimScoreSeparation: 10
+
+### variant calling — every native source is off; the only input is the protein TSV
+altsplicing:
+  activate: false
+  confidence: 3
+  iterations: 5
+  edgelimit: 250
+
+exitronsplicing:
+  activate: false
+  ao: 3
+  pso: 0.05
+  strand: 1
+
+genefusion:
+  activate: false
+  maxevalue: 0.3
+  suppreads: 2
+  maxsuppreads: 1000
+  maxidentity: 0.3
+  hpolymerlen: 6
+  readthroughdist: 10000
+  minanchorlen: 20
+  splicedevents: 4
+  maxkmer: 0.6
+  fraglen: 200
+  maxmismatch: 0.01
+
+indel:
+  activate: false
+  type: short
+  mode: BOTH
+  strategy: OPTIMAL_F_SCORE
+  fscorebeta: 1.0
+  fdr: 0.05
+  sliplen: 8
+  sliprate: 0.1
+
+quantification:
+  mode: RNA
+
+hlatyping:
+  class: I
+  MHC-I_mode: custom
+  MHC-II_mode: RNA
+
+  freqdata: ./hlahd_files/freq_data/
+  split: ./hlahd_files/HLA_gene.split.txt
+  dict: ./hlahd_files/dictionary/
+
+prioritization:
+  class: I
+  lengths:
+    MHC-I: 8,9,10,11
+    MHC-II: 13,14,15

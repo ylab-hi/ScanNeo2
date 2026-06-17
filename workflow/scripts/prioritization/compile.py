@@ -13,6 +13,7 @@ import configargparse
 import reference
 import variants
 import fusions
+import proteins
 import effects
 import prediction
 import filtering
@@ -38,6 +39,8 @@ class Compile:
             self.prioritize(options.custom, options, "custom")
         if options.fusions != "":
             self.prioritize(options.fusions, options, "fusions")
+        if options.proteins != "":
+            self.prioritize(options.proteins, options, "custom_protein")
 
         # combine neoepitopes per MHC class: take header from the first file,
         # strip header from subsequent ones.
@@ -55,17 +58,20 @@ class Compile:
                             out_fh.write(line)
 
     def prioritize(self, inputfile, options, vartype):
-        if (vartype == "somatic.snvs" or 
-            vartype == "somatic.short.indels" or 
-            vartype == "long.indels" or 
-            vartype == "exitrons" or 
-            vartype == "altsplicing" or 
+        if (vartype == "somatic.snvs" or
+            vartype == "somatic.short.indels" or
+            vartype == "long.indels" or
+            vartype == "exitrons" or
+            vartype == "altsplicing" or
             vartype == "custom"):
 
-            vars = variants.Variants(inputfile, options, vartype)
+            variants.Variants(inputfile, options, vartype)
 
         elif vartype == "fusions":
-            fus = fusions.Fusions(inputfile, options, vartype)
+            fusions.Fusions(inputfile, options, vartype)
+
+        elif vartype == "custom_protein":
+            proteins.Proteins(inputfile, options, vartype)
 
         binding = prediction.BindingAffinities(options.threads)
 
@@ -140,6 +146,7 @@ def parse_arguments():
     p.add("--altsplicing", required=False, help="alternative splicing file", default="")
     p.add("--custom", required=False, help="custom variants file", default="")
     p.add('-f', '--fusions', required=False, help='fusion file', default="")
+    p.add("--proteins", required=False, help="custom (wildtype, mutant) protein-pair TSV", default="")
     p.add('-c', '--confidence', required=False, choices=['high', 'medium', 'low'], 
           help='confidence level of fusion events') 
     p.add("--mhc_class", required=True, choices=['I', 'II', 'BOTH'], help='MHC class')
