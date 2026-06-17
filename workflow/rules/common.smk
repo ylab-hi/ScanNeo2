@@ -349,17 +349,23 @@ def check_vendored_scripts(config):
         p = Path("workflow/scripts/transindel/transIndel_build_DNA.py")
         if not p.is_file():
             missing.append(
-                (str(p),
-                 "git submodule not initialised — "
-                 "run `git submodule update --init --recursive`"))
+                (
+                    str(p),
+                    "git submodule not initialised — "
+                    "run `git submodule update --init --recursive`",
+                )
+            )
 
     if config["exitronsplicing"]["activate"]:
         p = Path("workflow/scripts/scanexitron/ScanExitron.py")
         if not p.is_file():
             missing.append(
-                (str(p),
-                 "git submodule not initialised — "
-                 "run `git submodule update --init --recursive`"))
+                (
+                    str(p),
+                    "git submodule not initialised — "
+                    "run `git submodule update --init --recursive`",
+                )
+            )
 
     iedb_targets = [
         Path("workflow/scripts/mhc_i/src/predict_binding.py"),
@@ -369,9 +375,12 @@ def check_vendored_scripts(config):
     for p in iedb_targets:
         if p.parent.is_dir() and not p.is_file():
             missing.append(
-                (str(p),
-                 f"IEDB tool directory exists but is incomplete — "
-                 f"remove `{p.parent}` to let Snakemake re-trigger the download rule"))
+                (
+                    str(p),
+                    f"IEDB tool directory exists but is incomplete — "
+                    f"remove `{p.parent}` to let Snakemake re-trigger the download rule",
+                )
+            )
 
     if not missing:
         return
