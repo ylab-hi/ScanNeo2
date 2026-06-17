@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-17
+
 ### Changed
 
 - **Cross-field config consistency checks at workflow-load time**: new `check_cross_field_consistency(config)` in `workflow/rules/common.smk`, called right after `check_hlahd_setup`. Two checks aggregated into one `[config error]` message: (1) `prioritization.class` must be a subset of `hlatyping.class` — every MHC class the user asks to prioritize must also be typed, otherwise the run finishes silently with no candidate alleles and nothing to look at; (2) if `hlatyping.MHC-{I,II}_mode` contains `custom`, the corresponding `data.custom.hlatyping.MHC-{I,II}` must be non-null — complementary to the existing `custom_paths` check in `data_structure`, which only validates "if a path is given, it exists". The custom-mode check is gated on the class actually covering the relevant MHC, so e.g. `MHC-II_mode: custom` with `hlatyping.class: I` is silently fine. Each error names the field, shows the offending value, and offers two ways to fix (typically: set X, or drop Y). Same `if "--lint" not in sys.argv: sys.exit(1)` guard preserved. Fourth and final PR against #135 — closes out the "imperative load-time checks" group alongside #150 (vendored scripts) and #151 (HLA-HD setup). ([#135](https://github.com/ylab-hi/ScanNeo2/issues/135), [#152](https://github.com/ylab-hi/ScanNeo2/pull/152))
