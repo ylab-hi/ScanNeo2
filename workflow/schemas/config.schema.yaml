@@ -10,6 +10,7 @@ properties:
     properties:
       release:
         type: integer
+        minimum: 1
         description: Ensembl release used to download the reference genome and annotation
       nonchr:
         type: boolean
@@ -19,14 +20,19 @@ properties:
 
   threads:
     type: integer
+    minimum: 1
     description: maximum number of threads any single rule may use
 
   mapq:
     type: integer
+    minimum: 0
+    maximum: 60
     description: minimum read mapping quality (MAPQ)
 
   basequal:
     type: integer
+    minimum: 0
+    maximum: 60
     description: minimum base-call quality (Phred-scaled)
 
   data:
@@ -78,6 +84,7 @@ properties:
         type: boolean
       minlen:
         type: integer
+        minimum: 1
         description: discard reads shorter than this (bp) after trimming
       slidingwindow:
         type: object
@@ -86,8 +93,11 @@ properties:
             type: boolean
           wsize:
             type: integer
+            minimum: 1
           wqual:
             type: integer
+            minimum: 0
+            maximum: 60
         required: [activate, wsize, wqual]
         additionalProperties: false
     required: [activate, minlen, slidingwindow]
@@ -116,10 +126,15 @@ properties:
         type: boolean
       confidence:
         type: integer
+        minimum: 0
+        maximum: 3
       iterations:
         type: integer
+        minimum: 5
+        description: SplAdder iterations to add intron edges; shouldn't be set below 5
       edgelimit:
         type: integer
+        minimum: 1
     required: [activate, confidence, iterations, edgelimit]
     additionalProperties: false
 
@@ -130,10 +145,15 @@ properties:
         type: boolean
       ao:
         type: integer
+        minimum: 0
       pso:
         type: number
+        minimum: 0
+        maximum: 1
       strand:
         type: integer
+        enum: [0, 1, 2]
+        description: library strand specificity (0=unstranded, 1=forward, 2=reverse)
     required: [activate, ao, pso, strand]
     additionalProperties: false
 
@@ -144,26 +164,41 @@ properties:
         type: boolean
       maxevalue:
         type: number
+        exclusiveMinimum: 0
+        exclusiveMaximum: 1
       suppreads:
         type: integer
+        minimum: 0
       maxsuppreads:
         type: integer
+        minimum: 1
       maxidentity:
         type: number
+        minimum: 0
+        maximum: 1
       hpolymerlen:
         type: integer
+        minimum: 1
       readthroughdist:
         type: integer
+        minimum: 0
       minanchorlen:
         type: integer
+        minimum: 1
       splicedevents:
         type: integer
+        minimum: 0
       maxkmer:
         type: number
+        minimum: 0
+        maximum: 1
       fraglen:
         type: integer
+        minimum: 1
       maxmismatch:
         type: number
+        minimum: 0
+        maximum: 1
     required: [activate, maxevalue, suppreads, maxsuppreads, maxidentity, hpolymerlen, readthroughdist, minanchorlen, splicedevents, maxkmer, fraglen, maxmismatch]
     additionalProperties: false
 
@@ -183,12 +218,18 @@ properties:
         enum: [OPTIMAL_F_SCORE, FALSE_DISCOVERY_RATE, CONSTANT]
       fscorebeta:
         type: number
+        exclusiveMinimum: 0
       fdr:
         type: number
+        exclusiveMinimum: 0
+        exclusiveMaximum: 1
       sliplen:
         type: integer
+        minimum: 1
       sliprate:
         type: number
+        minimum: 0
+        maximum: 1
     required: [activate, type, mode, strategy, fscorebeta, fdr, sliplen, sliprate]
     additionalProperties: false
 
