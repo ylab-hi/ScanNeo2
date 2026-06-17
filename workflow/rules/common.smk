@@ -326,8 +326,78 @@ def print_run_summary(config):
     print("\n".join(lines), file=sys.stderr)
 
 
+def check_vendored_scripts(config):
+    """Surface missing vendored entry-point scripts at workflow-load time so
+    the user gets a clear actionable message instead of a cryptic mid-run
+    failure deep inside indel / exitron / prioritization rules.
+
+    Two failure modes are covered:
+      (a) git submodule directory present but empty (clone without
+          `--recurse-submodules`) — applies to `workflow/scripts/transindel/`
+          and `workflow/scripts/scanexitron/`. Gated on the feature using
+          the submodule being active so a user who has indel/exitron
+          disabled isn't blocked.
+      (b) IEDB tool directory present but its entry-point script missing
+          (partial download). Snakemake's missing-output detection looks at
+          the directory only, so a half-populated dir doesn't re-trigger the
+          download rule. We only flag when the parent dir exists; if it's
+          absent the download rule will run cleanly.
+    """
+    missing = []
+
+    if config["indel"]["activate"] and config["indel"]["type"] in ("long", "all"):
+        p = Path("workflow/scripts/transindel/transIndel_build_DNA.py")
+        if not p.is_file():
+            missing.append(
+                (
+                    str(p),
+                    "git submodule not initialised — "
+                    "run `git submodule update --init --recursive`",
+                )
+            )
+
+    if config["exitronsplicing"]["activate"]:
+        p = Path("workflow/scripts/scanexitron/ScanExitron.py")
+        if not p.is_file():
+            missing.append(
+                (
+                    str(p),
+                    "git submodule not initialised — "
+                    "run `git submodule update --init --recursive`",
+                )
+            )
+
+    iedb_targets = [
+        Path("workflow/scripts/mhc_i/src/predict_binding.py"),
+        Path("workflow/scripts/mhc_ii/mhc_II_binding.py"),
+        Path("workflow/scripts/immunogenicity/predict_immunogenicity.py"),
+    ]
+    for p in iedb_targets:
+        if p.parent.is_dir() and not p.is_file():
+            missing.append(
+                (
+                    str(p),
+                    f"IEDB tool directory exists but is incomplete — "
+                    f"remove `{p.parent}` to let Snakemake re-trigger the download rule",
+                )
+            )
+
+    if not missing:
+        return
+
+    print("[config error] required vendored script(s) missing:", file=sys.stderr)
+    for path, hint in missing:
+        print(f"  {path}  ({hint})", file=sys.stderr)
+    # skip the abort under `snakemake --lint` so static rule analysis still
+    # completes on a fresh clone where the submodules / IEDB dirs are absent
+    # (e.g. for the Snakemake Workflow Catalog re-scan).
+    if "--lint" not in sys.argv:
+        sys.exit(1)
+
+
 # load up the config
 config["data"] = data_structure(config["data"])
+check_vendored_scripts(config)
 print_run_summary(config)
 
 
