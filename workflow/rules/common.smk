@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import glob
 from pathlib import Path
@@ -395,9 +396,77 @@ def check_vendored_scripts(config):
         sys.exit(1)
 
 
+def check_hlahd_setup(config):
+    """Surface missing HLA-HD prerequisites at workflow-load time so the user
+    gets a clear actionable message instead of a mid-run failure deep inside
+    the class-II HLA typing rules.
+
+    HLA-HD itself is installed by the user (not by conda — `hlahd.yml` only
+    carries bowtie2, HLA-HD's runtime dependency). The reference data files
+    are likewise downloaded out-of-band from the HLA-HD distribution.
+
+    All checks are gated on class-II typing being active via DNA or RNA
+    reads — if `MHC-II_mode` is purely `custom` (alleles supplied directly
+    by the user), HLA-HD isn't invoked and we don't block.
+    """
+    if config["hlatyping"]["class"] not in ("II", "BOTH"):
+        return
+    mhc2_mode = config["hlatyping"]["MHC-II_mode"]
+    if "DNA" not in mhc2_mode and "RNA" not in mhc2_mode:
+        return
+
+    errors = []
+
+    if shutil.which("hlahd.sh") is None:
+        errors.append(
+            "hlahd.sh not found on PATH — HLA-HD is not pulled in by "
+            "`hlahd.yml` (which only carries bowtie2). Install HLA-HD from "
+            "https://www.genome.med.kyoto-u.ac.jp/HLA-HD/ and ensure "
+            "`hlahd.sh` is on PATH."
+        )
+
+    freqdata = Path(config["hlatyping"]["freqdata"])
+    if not freqdata.is_dir():
+        errors.append(
+            f"hlatyping.freqdata: directory not found: '{freqdata}' — "
+            "expected the HLA-HD `freq_data/` directory shipped with the tool."
+        )
+
+    split = Path(config["hlatyping"]["split"])
+    if not split.is_file():
+        errors.append(
+            f"hlatyping.split: file not found: '{split}' — "
+            "expected HLA-HD's `HLA_gene.split.txt`."
+        )
+
+    dict_dir = Path(config["hlatyping"]["dict"])
+    if not dict_dir.is_dir():
+        errors.append(
+            f"hlatyping.dict: directory not found: '{dict_dir}' — "
+            "expected the HLA-HD `dictionary/` directory shipped with the tool."
+        )
+
+    if not errors:
+        return
+
+    print(
+        "[config error] HLA-HD prerequisites missing (class II hlatyping "
+        "is active via DNA/RNA mode):",
+        file=sys.stderr,
+    )
+    for err in errors:
+        print(f"  {err}", file=sys.stderr)
+    # skip the abort under `snakemake --lint` so static rule analysis still
+    # completes on a fresh clone where HLA-HD isn't installed (e.g. for the
+    # Snakemake Workflow Catalog re-scan).
+    if "--lint" not in sys.argv:
+        sys.exit(1)
+
+
 # load up the config
 config["data"] = data_structure(config["data"])
 check_vendored_scripts(config)
+check_hlahd_setup(config)
 print_run_summary(config)
 
 
