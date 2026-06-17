@@ -463,10 +463,80 @@ def check_hlahd_setup(config):
         sys.exit(1)
 
 
+def check_cross_field_consistency(config):
+    """Surface cross-field config inconsistencies that would otherwise produce
+    empty / nonsensical results (no crash) or a mid-run failure inside an HLA
+    typing rule. Both cases waste a full pipeline run before the user notices.
+
+    Two checks:
+      1. `prioritization.class` must be a subset of `hlatyping.class` — every
+         MHC class the user wants to prioritize must also be typed. Otherwise
+         the prioritization step finishes with no candidate alleles for the
+         missing class and the user sees nothing to look at.
+      2. If `hlatyping.MHC-{I,II}_mode` contains `custom`, the corresponding
+         `data.custom.hlatyping.MHC-{I,II}` must be non-null. The existing
+         `custom_paths` check in `data_structure` already validates "if a
+         path is given, it exists"; this one catches the complementary case
+         of "custom mode promised but no path given". Gated on the class
+         actually covering the relevant MHC, so e.g. `MHC-II_mode: custom`
+         with `hlatyping.class: I` is silently fine.
+    """
+    errors = []
+
+    p_class = config["prioritization"]["class"]
+    h_class = config["hlatyping"]["class"]
+
+    requires_I = p_class in ("I", "BOTH")
+    requires_II = p_class in ("II", "BOTH")
+    types_I = h_class in ("I", "BOTH")
+    types_II = h_class in ("II", "BOTH")
+
+    if requires_I and not types_I:
+        errors.append(
+            f"prioritization.class='{p_class}' asks for MHC-I neoepitopes "
+            f"but hlatyping.class='{h_class}' does not type MHC-I — set "
+            "hlatyping.class to 'I' or 'BOTH', or drop MHC-I from prioritization."
+        )
+    if requires_II and not types_II:
+        errors.append(
+            f"prioritization.class='{p_class}' asks for MHC-II neoepitopes "
+            f"but hlatyping.class='{h_class}' does not type MHC-II — set "
+            "hlatyping.class to 'II' or 'BOTH', or drop MHC-II from prioritization."
+        )
+
+    if types_I and "custom" in config["hlatyping"]["MHC-I_mode"]:
+        if config["data"]["custom"]["hlatyping"].get("MHC-I") is None:
+            errors.append(
+                "hlatyping.MHC-I_mode contains 'custom' but "
+                "data.custom.hlatyping.MHC-I is empty — provide a path to "
+                "a TSV of MHC-I alleles, or drop 'custom' from MHC-I_mode."
+            )
+    if types_II and "custom" in config["hlatyping"]["MHC-II_mode"]:
+        if config["data"]["custom"]["hlatyping"].get("MHC-II") is None:
+            errors.append(
+                "hlatyping.MHC-II_mode contains 'custom' but "
+                "data.custom.hlatyping.MHC-II is empty — provide a path to "
+                "a TSV of MHC-II alleles, or drop 'custom' from MHC-II_mode."
+            )
+
+    if not errors:
+        return
+
+    print("[config error] cross-field inconsistency:", file=sys.stderr)
+    for err in errors:
+        print(f"  {err}", file=sys.stderr)
+    # skip the abort under `snakemake --lint` so static rule analysis still
+    # completes on a fresh / placeholder config (e.g. for the Snakemake
+    # Workflow Catalog re-scan).
+    if "--lint" not in sys.argv:
+        sys.exit(1)
+
+
 # load up the config
 config["data"] = data_structure(config["data"])
 check_vendored_scripts(config)
 check_hlahd_setup(config)
+check_cross_field_consistency(config)
 print_run_summary(config)
 
 
