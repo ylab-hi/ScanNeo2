@@ -5,4 +5,4 @@ channels:
 dependencies:
   - optitype=1.3.5
   - pysam=0.22.0
-  - samtools=1.19.2
+  - samtools=1.20

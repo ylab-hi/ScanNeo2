@@ -1,5 +1,7 @@
 channels:
+  - conda-forge
   - bioconda
+  - nodefaults
 dependencies:
-  - yara=1.0.2
-  - samtools=1.9
+  - yara=1.0.5
+  - samtools=1.20
