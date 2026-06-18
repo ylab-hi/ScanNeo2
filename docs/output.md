@@ -26,34 +26,43 @@ Note: the final results are located in the prioritization folder. In addition, t
 
 ## PRE-PROCESSING
 
-
+Two pre-processing stages run per sample, both gated on `preproc.activate: true`:
 
 ### Quality Control
 
+[FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) reports land in `results/<sample>/{dnaseq,rnaseq}/qualitycontrol/` per read group, with separate forward / reverse reports for paired-end inputs. Use these to spot adapter contamination, GC bias, and per-base quality drop-off before trimming.
+
 ### Pre-processed reads
+
+[fastp](https://github.com/OpenGene/fastp) writes the trimmed reads to `results/<sample>/{dnaseq,rnaseq}/reads/` as `<group>_preproc.fq.gz` (single-end) or `<group>_preproc_r1.fq.gz` / `<group>_preproc_r2.fq.gz` (paired-end). Sliding-window trimming and minimum-length filtering follow the `preproc.slidingwindow` and `preproc.minlen` settings in the config.
 
 ## HLA
 
-This folder contains the results of the HLA genotyping. Here, the files `mhc-I.txt` and `mhc-II.txt` contain the alleles for MHC class I and class II, respectively.
+This folder contains the results of the HLA genotyping. The files `mhc-I.tsv` and `mhc-II.tsv` carry the typed alleles for MHC class I and class II respectively. Each row is `<source>\t<allele>`:
 
-e.g., 
 ```
+DNA       HLA-A*02:01
+RNA       HLA-A*02:01
 custom    HLA-A*68:01
 custom    HLA-B*15:07
-custom    HLA-C*07:04
-custom    HLA-A*02:01
-custom    HLA-C*03:03
-custom    HLA-B*44:02
 ```
 
-Note: `custom` corresponds to the 
+The first column records where the allele came from:
 
+- `DNA` — predicted from DNA-seq reads (OptiType for class I, HLA-HD for class II).
+- `RNA` — predicted from RNA-seq reads.
+- `custom` — user-supplied via `data.custom.hlatyping.MHC-{I,II}` in the config; useful when alleles are already known or when running on a sample where read-based typing isn't appropriate.
 
-This is the same format as in 
-
-
+Multiple sources for the same allele are kept (e.g. an allele typed independently from both DNA and RNA appears twice). Downstream binding-affinity prediction operates on the deduplicated allele set.
 
 ## ALIGNMENT
+
+Aligned BAMs land in `results/<sample>/dnaseq/align/` and `results/<sample>/rnaseq/align/`. The two paths use different aligners by design:
+
+- **DNA-seq** is aligned directly with **BWA-MEM** — sufficient for variant calling against a reference genome.
+- **RNA-seq** is first aligned with **STAR** in chimeric-aware mode (the `align.chim*` config parameters control chimeric-segment thresholds; see the STAR manual). The STAR BAM is then re-aligned with BWA via the `realign` rule because the downstream RNA-variant callers (transIndel, ScanExitron) need a BWA-style CIGAR. Both intermediates and the final BAM are kept.
+
+`postproc_bam_index` writes `.bai` index files alongside each BAM.
 
 ## VARIANT CALLING
 
@@ -61,11 +70,20 @@ ScanNeo2 calls different variants (according to the configuration) and then coll
 
 ### ALTERNATIVE SPLICING
 
+[SplAdder](https://spladder.readthedocs.io/) detects alternative-splicing events from the RNA-seq alignment; intermediate splice-graph files land in `results/<sample>/rnaseq/altsplicing/`. The `splicing_to_vcf` rule converts SplAdder's output to per-group VCFs that are then sorted, augmented with `GRP` / `SRC` INFO keys (same convention as the exitron path below), and merged into `results/<sample>/variants/altsplicing.vcf.gz`.
+
 ### EXITRON
 
 Exitron events are called using [ScanExitron](https://github.com/ylab-hi/ScanExitron) and the results are stored in `results/<name/of/sample>/rnaseq/exitron/`. Most importantly, ScanExitron generates the <group>.exitron file which contains all the predicted exitron events. Please consult [ScanExitron](https://github.com/ylab-hi/ScanExitron) for a detailed description of the data fields. In addition, the intermediate results (*.janno) are also kept. ScanNeo2 takes the output of ScanExitron and first converts it into VCF (`<group>_exitron.vcf`). In the next step, this file is augmented with information about the `<group>` and source (`exitron`), which is stored in the keys GRP and SRC of the INFO field, respectively. The file `<group>_exitrons_augmented.vcf` is generated for this. Finally, the files are sorted (`<group>_exitrons.vcf.gz`), and merged into `results/<name/of/sample>/variants/exitrons.vcf.gz`.
 
 ### INDEL/SNVs
+
+Two callers feed this path:
+
+- **transIndel** for long indels in RNA-seq. The `detect_long_indel_ti_*` rules build a remapped BAM and call indels; per-group VCFs are augmented with `GRP` / `SRC=long_indel` INFO and merged into `results/<sample>/variants/long.indels.vcf.gz`.
+- **GATK Mutect2** for short indels and SNVs in DNA-seq. The `detect_short_indels_m2` rule runs per split BAM (parallel across read-groups), then `filter_short_indels_m2` applies Mutect2's own learned filters. Results land in `results/<sample>/variants/somatic.short.indels.vcf.gz` and `results/<sample>/variants/somatic.snvs.vcf.gz`.
+
+The `indel.type` config key selects which callers run (`short`, `long`, or `all`); `indel.mode` selects the input modality (`DNA`, `RNA`, or `BOTH`).
 
 ## PRIORITIZATION
 

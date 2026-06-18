@@ -162,11 +162,23 @@ hlatyping:
   MHC-I_mode: RNA # DNA, RNA, custom (if empty alleles have to be specified in custom)
   MHC-II_mode: RNA # DNA, RNA, custom (if empty alleles have to be specified in custom)
   # specific path for class II hlatyping (only required when class: II, or BOTH)
-  freqdata: ./hlahd_files/freq_data/ 
+  freqdata: ./hlahd_files/freq_data/
   split: ./hlahd_files/HLA_gene.split.txt
   dict: ./hlahd_files/dictionary/
 
 ```
+
+`class` selects which MHC classes to type; this also gates the prioritization block below. The two `*_mode` entries take a comma-separated list of read sources used to predict alleles:
+
+| Mode | Behaviour |
+|---|---|
+| `DNA` | Type from DNA-seq reads (OptiType for class I, HLA-HD for class II) |
+| `RNA` | Type from RNA-seq reads (same tools) |
+| `custom` | Skip read-based typing; use the file at `data.custom.hlatyping.MHC-{I,II}` |
+
+Combinations are allowed (e.g. `DNA, RNA` runs typing from both sources and merges the alleles). Combining a read-based mode with `custom` (e.g. `DNA, custom`) keeps both sets.
+
+`freqdata`, `split`, and `dict` point at the [HLA-HD](https://www.genome.med.kyoto-u.ac.jp/HLA-HD/) reference data directories and are only required when class II is being typed via `DNA` or `RNA`. HLA-HD itself must be installed separately and accessible on `PATH` as `hlahd.sh` — the `hlahd.yml` conda env only carries its `bowtie2` dependency. ScanNeo2 checks for all of these at workflow-load time and emits a `[config error]` if anything is missing.
 
 ## PRIORITIZATION
 
@@ -177,6 +189,10 @@ prioritization:
     MHC-I: 8,9,10,11
     MHC-II: 13,14,15
 ```
+
+`class` selects which MHC classes go through binding-affinity prediction and downstream scoring. It must be a subset of `hlatyping.class` — you can't prioritize a class you haven't typed; ScanNeo2 catches that mismatch at workflow-load time.
+
+`lengths.MHC-I` / `lengths.MHC-II` set the epitope k-mer lengths submitted to the binding predictor (netMHCpan / netMHCIIpan), one prediction job per `(allele, length, wt|mt)` cell. The default ranges (`8,9,10,11` for class I, `13,14,15` for class II) cover the dominant binding-affinity windows for each class. Both discrete lists (`8,9,10,11`) and ranges (`8-11`) are accepted.
 
 
 
