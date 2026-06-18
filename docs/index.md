@@ -27,7 +27,7 @@ cd /path/to/working/directory/
 Now the workflow needs to be deployed which can be done using
 
 ```
-git clone recurse-submodules https://github.com/ylab-hi/scanneo2 
+git clone --recurse-submodules https://github.com/ylab-hi/ScanNeo2
 ```
 
 ## Configuration

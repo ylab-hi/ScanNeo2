@@ -1,7 +1,7 @@
 # Scripts
 
 
-## workflow/rules/filtering/
+## workflow/scripts/filtering/
 
 - pathogen-derived_epitopes_MHC-I.tsv 
 
