@@ -83,7 +83,7 @@ Note that snakemake currently does not support Mamba v2. We recommend to either 
 In addition, custom configfiles can be configured using `--configfile <path/to/configfile>`. In principle, this merely 
 overwrites the default config, and should include all key/value pairs of the valid config file.
 
-For more detailed instructions and explanations on how to use ScanNeo2, please consult the [wiki](https://github.com/ylab-hi/ScanNeo2/wiki).
+For more detailed instructions and explanations on how to use ScanNeo2, please consult the [documentation site](https://ylab-hi.github.io/ScanNeo2/) (the GitHub [wiki](https://github.com/ylab-hi/ScanNeo2/wiki) is kept in sync as a fallback).
 
 ## Docker Support
 
