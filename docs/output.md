@@ -80,10 +80,10 @@ Exitron events are called using [ScanExitron](https://github.com/ylab-hi/ScanExi
 
 Two callers feed this path:
 
-- **transIndel** for long indels in RNA-seq. The `detect_long_indel_ti_*` rules build a remapped BAM and call indels; per-group VCFs are augmented with `GRP` / `SRC=long_indel` INFO and merged into `results/<sample>/variants/long.indels.vcf.gz`.
-- **GATK Mutect2** for short indels and SNVs in DNA-seq. The `detect_short_indels_m2` rule runs per split BAM (parallel across read-groups), then `filter_short_indels_m2` applies Mutect2's own learned filters. Results land in `results/<sample>/variants/somatic.short.indels.vcf.gz` and `results/<sample>/variants/somatic.snvs.vcf.gz`.
+- **transIndel** for long indels. The `detect_long_indel_ti_build_DNA` and `detect_long_indel_ti_build_RNA` rules each build a remapped BAM (with redefined CIGAR) before `detect_long_indel_ti_call` extracts the indels; per-group VCFs are augmented with `GRP` / `SRC=long_indel` INFO and merged into `results/<sample>/variants/long.indels.vcf.gz`. Whether the DNA build, RNA build, or both run is set by `indel.mode`.
+- **GATK Mutect2** for short indels and SNVs. `detect_short_indels_m2` runs per split BAM (parallel across read-groups), `filter_short_indels_m2` applies Mutect2's own learned filters, and the augment / merge / select rules separate the per-VCF SNV / short-indel streams. Final results land in `results/<sample>/variants/somatic.short.indels.vcf.gz` and `results/<sample>/variants/somatic.snvs.vcf.gz`.
 
-The `indel.type` config key selects which callers run (`short`, `long`, or `all`); `indel.mode` selects the input modality (`DNA`, `RNA`, or `BOTH`).
+The `indel.type` config key selects which callers run (`short`, `long`, or `all`); `indel.mode` selects the input modality (`DNA`, `RNA`, or `BOTH`) where applicable.
 
 ## PRIORITIZATION
 
