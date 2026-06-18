@@ -8,7 +8,7 @@ Scanneo2 is a snakemake workflow for detecting neoantigens from multiple sources
 
 ## Install & Deploy Workflow
 
-Scanneo2 requires snakemake and snakedeploy which are most easily installed using the Mamba Package Manager (or by conda itself). If neither mamba nor conda is present, it is best to install it from [Mambaforge](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html). We provide an `environment.yml` which allows creating a mamba directory that includes the above-defined dependencies. 
+Scanneo2 requires snakemake and snakedeploy which are most easily installed using the Mamba Package Manager (or by conda itself). If neither mamba nor conda is present, it is best to install it from [Mambaforge](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html). We provide an `environment.yml` which allows creating a mamba environment that includes the above-defined dependencies. 
 
 Simply, run
 ```
