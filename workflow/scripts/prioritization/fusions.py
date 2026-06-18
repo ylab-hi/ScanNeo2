@@ -59,7 +59,7 @@ class Fusions:
                         transcript_id = tid1 + '|' + tid2
 
                         ao = str(len(cols[29]))
-                        dp = str(cols[12]+cols[13])
+                        dp = str(int(cols[12]) + int(cols[13]))
 
                         # get the fusion transcript
                         transcript = cols[27].upper()
