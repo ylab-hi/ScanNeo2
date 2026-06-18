@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Scaffold MkDocs Material docs site under `docs/` + GitHub Pages deploy workflow**: ports the existing GitHub-wiki content (Home, Configuration, Output, Developer, Troubleshooting, Scripts-&-Resources) into `docs/` with URL-friendly slugs, seeds `mkdocs.yml` with the Material theme + pymdownx extensions, pins `mkdocs==1.6.1` / `mkdocs-material==9.7.6` in `docs/requirements.txt`, and adds `.github/workflows/docs.yml` that runs `mkdocs build --strict` on every PR touching docs/ + deploys to GitHub Pages on push to main via the modern `upload-pages-artifact` / `deploy-pages` pattern (no `gh-pages` branch). GitHub Pages over Read the Docs because the maintainer doesn't have org-admin for the RTD account import. Also fixes four wiki-inherited issues caught in review on the way over (`git clone` flag typo + wrong-case repo URL, wrong filtering-script directory path, empty Troubleshooting H1). README points at the new site as primary, with the wiki kept as fallback. First PR against #147. ([#147](https://github.com/ylab-hi/ScanNeo2/issues/147), [#154](https://github.com/ylab-hi/ScanNeo2/pull/154))
+
 ## [0.4.0] - 2026-06-17
 
 ### Changed
