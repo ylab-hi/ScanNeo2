@@ -1,0 +1,48 @@
+site_name: ScanNeo2
+site_description: Snakemake workflow for detecting neoantigens from DNA / RNA-seq data
+site_url: https://ylab-hi.github.io/ScanNeo2/
+repo_url: https://github.com/ylab-hi/ScanNeo2
+repo_name: ylab-hi/ScanNeo2
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.tracking
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Configuration: configuration.md
+  - Output: output.md
+  - Troubleshooting: troubleshooting.md
+  - Developer: developer.md
+  - Resources: resources.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
