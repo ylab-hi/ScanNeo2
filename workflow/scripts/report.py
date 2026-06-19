@@ -36,9 +36,9 @@ from typing import Dict, List, Optional
 
 try:
     import yaml  # type: ignore
-    _HAVE_YAML = True
+    HAVE_YAML = True
 except ImportError:
-    _HAVE_YAML = False
+    HAVE_YAML = False
 
 
 RE_TS = re.compile(
@@ -91,7 +91,7 @@ class ResultsInfo:
     combined_files: Dict[str, bool] = field(default_factory=dict)
 
 
-class _Pending:
+class Pending:
     __slots__ = ("kind", "rule", "jobid", "log_path", "sample")
 
     def __init__(self, kind: str, rule: Optional[str] = None) -> None:
@@ -102,7 +102,7 @@ class _Pending:
         self.sample: Optional[str] = None
 
 
-def _parse_sample_from_wildcards(wc: str) -> Optional[str]:
+def parse_sample_from_wildcards(wc: str) -> Optional[str]:
     for kv in wc.split(", "):
         if "=" in kv:
             k, v = kv.split("=", 1)
@@ -114,9 +114,9 @@ def _parse_sample_from_wildcards(wc: str) -> Optional[str]:
 def parse_master_log(path: Path) -> List[JobBlock]:
     """Parse a single Snakemake master log into a list of ``JobBlock``s."""
     jobs: Dict[int, JobBlock] = {}
-    pending: Optional[_Pending] = None
+    pending: Optional[Pending] = None
 
-    def flush(p: Optional[_Pending]) -> None:
+    def flush(p: Optional[Pending]) -> None:
         if p is None or p.jobid is None:
             return
         jb = jobs.get(p.jobid)
@@ -146,13 +146,13 @@ def parse_master_log(path: Path) -> List[JobBlock]:
             m = RE_RULE_OPEN.match(line)
             if m:
                 flush(pending)
-                pending = _Pending(kind="rule", rule=m.group(2))
+                pending = Pending(kind="rule", rule=m.group(2))
                 continue
 
             m = RE_ERROR_OPEN.match(line)
             if m:
                 flush(pending)
-                pending = _Pending(kind="error", rule=m.group(1))
+                pending = Pending(kind="error", rule=m.group(1))
                 continue
 
             m = RE_COMPACT.match(line)
@@ -199,7 +199,7 @@ def parse_master_log(path: Path) -> List[JobBlock]:
 
             m = RE_WILDCARDS.match(line)
             if m:
-                pending.sample = _parse_sample_from_wildcards(m.group(1))
+                pending.sample = parse_sample_from_wildcards(m.group(1))
                 continue
 
         flush(pending)
@@ -228,7 +228,7 @@ def load_prioritization_class(
     silently absorbed and surfaced as ``None`` so the caller can warn once
     and fall back to the looser completion check.
     """
-    if config_path is None or not config_path.exists() or not _HAVE_YAML:
+    if config_path is None or not config_path.exists() or not HAVE_YAML:
         return None
     try:
         with open(config_path, encoding="utf-8") as fh:
@@ -270,7 +270,7 @@ def scan_results_dir(
     return info
 
 
-def _is_complete(info: Optional[ResultsInfo], required: List[str]) -> bool:
+def is_complete(info: Optional[ResultsInfo], required: List[str]) -> bool:
     if info is None or not info.marker_present:
         return False
     if not required:
@@ -285,7 +285,7 @@ def classify(
     required_combined: List[str],
 ) -> SampleStatus:
     """Apply the locked decision tree (#94)."""
-    if _is_complete(results_info, required_combined):
+    if is_complete(results_info, required_combined):
         return SampleStatus(sample=sample, status="complete")
 
     errored = [j for j in jobs_for_sample if j.errored]
@@ -325,7 +325,7 @@ def tail_log(path: Optional[Path], n: int) -> List[str]:
     return lines if lines else ["<log file empty>"]
 
 
-def _ascii_table(rows: List[List[str]]) -> str:
+def ascii_table(rows: List[List[str]]) -> str:
     if not rows:
         return ""
     widths = [max(len(r[i]) for r in rows) for i in range(len(rows[0]))]
@@ -339,7 +339,7 @@ def _ascii_table(rows: List[List[str]]) -> str:
     return "\n".join(out)
 
 
-def _md_table(rows: List[List[str]]) -> str:
+def md_table(rows: List[List[str]]) -> str:
     if not rows:
         return ""
     out = ["| " + " | ".join(rows[0]) + " |"]
@@ -349,7 +349,7 @@ def _md_table(rows: List[List[str]]) -> str:
     return "\n".join(out)
 
 
-def _summary_line(statuses: List[SampleStatus]) -> str:
+def summary_line(statuses: List[SampleStatus]) -> str:
     n_complete = sum(1 for s in statuses if s.status == "complete")
     n_error = sum(1 for s in statuses if s.status == "error")
     n_incomplete = sum(1 for s in statuses if s.status == "incomplete")
@@ -360,7 +360,7 @@ def _summary_line(statuses: List[SampleStatus]) -> str:
     )
 
 
-def _notes(s: SampleStatus) -> str:
+def notes_for(s: SampleStatus) -> str:
     if s.status == "incomplete" and s.total_jobs:
         return f"{s.finished_jobs}/{s.total_jobs} jobs finished"
     return ""
@@ -381,7 +381,7 @@ def render(
                 s.status,
                 s.failed_rule or "",
                 s.failed_log or "",
-                _notes(s),
+                notes_for(s),
             ]
         )
 
@@ -401,9 +401,9 @@ def render(
         if prioritization_class
         else "Prioritization class: <unknown - fell back to any-one combined output>"
     )
-    parts.append(f"Summary: {_summary_line(statuses)}")
+    parts.append(f"Summary: {summary_line(statuses)}")
     parts.append("")
-    parts.append(_md_table(header_rows) if markdown else _ascii_table(header_rows))
+    parts.append(md_table(header_rows) if markdown else ascii_table(header_rows))
 
     if show_excerpts:
         errored = [s for s in statuses if s.status == "error" and s.excerpt]
@@ -431,7 +431,7 @@ def render(
     return "\n".join(parts) + "\n"
 
 
-def _expected_samples(
+def expected_samples(
     results_info: Dict[str, ResultsInfo],
     jobs: List[JobBlock],
     explicit: Optional[List[str]],
@@ -445,7 +445,14 @@ def _expected_samples(
     return sorted(discovered)
 
 
-def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def non_negative_int(value: str) -> int:
+    n = int(value)
+    if n < 0:
+        raise argparse.ArgumentTypeError(f"must be >= 0, got {value}")
+    return n
+
+
+def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="Per-sample status report for a ScanNeo2 run (issue #94)."
     )
@@ -487,7 +494,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     )
     p.add_argument(
         "--excerpt-lines",
-        type=int,
+        type=non_negative_int,
         default=15,
         help="lines to print from each errored per-rule log (default: 15)",
     )
@@ -506,7 +513,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    args = _parse_args(argv)
+    args = parse_args(argv)
 
     master_log = args.master_log
     if master_log is None:
@@ -534,7 +541,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     results_info = scan_results_dir(args.results_dir, scan_targets)
 
-    samples = _expected_samples(results_info, jobs, args.samples)
+    samples = expected_samples(results_info, jobs, args.samples)
     if args.samples:
         samples = [s for s in samples if s in set(args.samples)]
 

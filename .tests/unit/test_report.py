@@ -314,6 +314,16 @@ def test_class_BOTH_requires_both_files(tmp_path):
     assert "0 complete" in r.stdout
 
 
+def test_negative_excerpt_lines_rejected(tmp_path):
+    write_config(tmp_path, "I")
+    write_log(tmp_path, "2026-06-16T120000.0.snakemake.log", "")
+
+    r = run_report(tmp_path, "--excerpt-lines", "-1")
+
+    assert r.returncode != 0
+    assert "excerpt-lines" in r.stderr or "must be >= 0" in r.stderr
+
+
 def test_fallback_when_config_missing(tmp_path):
     """No config/config.yaml — script warns, falls back to any-one-combined."""
     write_results(tmp_path, "S1", marker=True, mhc_i=True)  # only mhc-I present
