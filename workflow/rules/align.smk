@@ -1,141 +1,145 @@
 ### align reads to genome using STAR (when reads are in FASTQ)
-if (
-    config["data"]["rnaseq_filetype"] == ".fastq"
-    or config["data"]["rnaseq_filetype"] == ".fq"
-):
-
-    rule star_align_fastq:
-        input:
-            unpack(get_star_input),
-            faidx="resources/refs/genome.fasta.fai",
-            idx="resources/refs/star/",
-        output:
-            aln=temp("results/{sample}/rnaseq/align/{group}_aligned_STAR.bam"),
-            log="results/{sample}/rnaseq/align/{group}_aligned_STAR.log",
-            sj="results/{sample}/rnaseq/align/{group}_aligned_STAR.tab",
-        log:
-            "logs/{sample}/align/star_align_fastq_{group}.log",
-        threads: config["threads"]
-        params:
-            extra=lambda wildcards: (
-                "--outSAMtype BAM Unsorted "
-                "--genomeSAindexNbases 10 "
-                "--outSAMattributes RG HI "
-                f"--outSAMattrRGline ID:{wildcards.group} "
-                "--outFilterMultimapNmax 50 "
-                "--peOverlapNbasesMin 15 "
-                "--alignSplicedMateMapLminOverLmate 0.5 "
-                "--alignSJstitchMismatchNmax 5 -1 5 5 "
-                "--chimOutType WithinBAM HardClip "
-                f"--chimSegmentMin {config['align']['chimSegmentMin']} "
-                f"--chimJunctionOverhangMin {config['align']['chimJunctionOverhangMin']} "
-                f"--chimScoreDropMax {config['align']['chimScoreDropMax']} "
-                f"--chimScoreMin {config['align']['chimScoreMin']} "
-                "--chimScoreJunctionNonGTAG 0 "
-                f"--chimScoreSeparation {config['align']['chimScoreSeparation']} "
-                "--chimSegmentReadGapMax 3 "
-                "--chimMultimapNmax 50 "
-                "--outSAMstrandField intronMotif"
-            ),
-        message:
-            "Aligning reads from {wildcards.group} to genome using STAR"
-        wrapper:
-            "v2.2.1/bio/star/align"
+# Rule definitions are unconditional (issue #93): which alignment path runs
+# for any given sample is decided by get_star_input / get_dna_align_input,
+# which consult that sample's filetype in SAMPLES[wildcards.sample] and wire
+# the upstream accordingly. Samples with a non-matching filetype simply don't
+# request the rule's output.
+rule star_align_fastq:
+    input:
+        unpack(get_star_input),
+        faidx="resources/refs/genome.fasta.fai",
+        idx="resources/refs/star/",
+    output:
+        aln=temp("results/{sample}/rnaseq/align/{group}_aligned_STAR.bam"),
+        log="results/{sample}/rnaseq/align/{group}_aligned_STAR.log",
+        sj="results/{sample}/rnaseq/align/{group}_aligned_STAR.tab",
+    log:
+        "logs/{sample}/align/star_align_fastq_{group}.log",
+    threads: config["threads"]
+    params:
+        extra=lambda wildcards: (
+            "--outSAMtype BAM Unsorted "
+            "--genomeSAindexNbases 10 "
+            "--outSAMattributes RG HI "
+            f"--outSAMattrRGline ID:{wildcards.group} "
+            "--outFilterMultimapNmax 50 "
+            "--peOverlapNbasesMin 15 "
+            "--alignSplicedMateMapLminOverLmate 0.5 "
+            "--alignSJstitchMismatchNmax 5 -1 5 5 "
+            "--chimOutType WithinBAM HardClip "
+            f"--chimSegmentMin {config['align']['chimSegmentMin']} "
+            f"--chimJunctionOverhangMin {config['align']['chimJunctionOverhangMin']} "
+            f"--chimScoreDropMax {config['align']['chimScoreDropMax']} "
+            f"--chimScoreMin {config['align']['chimScoreMin']} "
+            "--chimScoreJunctionNonGTAG 0 "
+            f"--chimScoreSeparation {config['align']['chimScoreSeparation']} "
+            "--chimSegmentReadGapMax 3 "
+            "--chimMultimapNmax 50 "
+            "--outSAMstrandField intronMotif"
+        ),
+    message:
+        "Aligning reads from {wildcards.group} to genome using STAR"
+    wrapper:
+        "v2.2.1/bio/star/align"
 
 
 ### align reads to genome using STAR (when reads are in BAM - no preprocessing performed)
-if config["data"]["rnaseq_filetype"] == ".bam":
+checkpoint split_bamfile_RG:
+    input:
+        unpack(get_star_input),
+    output:
+        directory("results/{sample}/rnaseq/reads/{group}/bam/"),
+    log:
+        "logs/{sample}/align/split_bamfile_RG_{group}.log",
+    conda:
+        "../envs/samtools.yml"
+    # samtools split is I/O-bound; per-thread gain plateaus past ~10.
+    threads: min(10, config["threads"])
+    shell:
+        """
+        mkdir -p {output}
+        samtools split -@ {threads} \
+            -u {output}/noRG.bam \
+            -h {input} -f {output}/%!.%. {input} >{log} 2>&1
+        """
 
-    checkpoint split_bamfile_RG:
-        input:
-            unpack(get_star_input),
-        output:
-            directory("results/{sample}/rnaseq/reads/{group}/bam/"),
-        log:
-            "logs/{sample}/align/split_bamfile_RG_{group}.log",
-        conda:
-            "../envs/samtools.yml"
-        # samtools split is I/O-bound; per-thread gain plateaus past ~10.
-        threads: min(10, config["threads"])
-        shell:
-            """
-            mkdir -p {output}
-            samtools split -@ {threads} \
-                -u {output}/noRG.bam \
-                -h {input} -f {output}/%!.%. {input} >{log} 2>&1
-            """
 
-    rule bamfile_RG_to_fastq:
-        input:
-            "results/{sample}/rnaseq/reads/{group}/bam/{rg}.bam",
-        output:
-            "results/{sample}/rnaseq/reads/{group}/fastq/{rg}.fastq",
-        log:
-            "logs/{sample}/align/bamfile_RG_to_fastq_{group}_{rg}.log",
-        conda:
-            "../envs/samtools.yml"
-        threads: config["threads"]
-        message:
-            "Converting group:{wildcards.group} BAM file to FASTQ for readgroup:{wildcards.rg}"
-        shell:
-            """
-            (samtools collate -Oun128 -@ {threads} {input} \
-                | samtools fastq -OT RG -@ {threads} - \
-                | gzip -c - >{output}) 2>{log}
-            """
+rule bamfile_RG_to_fastq:
+    input:
+        "results/{sample}/rnaseq/reads/{group}/bam/{rg}.bam",
+    output:
+        "results/{sample}/rnaseq/reads/{group}/fastq/{rg}.fastq",
+    log:
+        "logs/{sample}/align/bamfile_RG_to_fastq_{group}_{rg}.log",
+    conda:
+        "../envs/samtools.yml"
+    threads: config["threads"]
+    message:
+        "Converting group:{wildcards.group} BAM file to FASTQ for readgroup:{wildcards.rg}"
+    shell:
+        """
+        (samtools collate -Oun128 -@ {threads} {input} \
+            | samtools fastq -OT RG -@ {threads} - \
+            | gzip -c - >{output}) 2>{log}
+        """
 
-    rule star_align_bamfile:
-        input:
-            fq1="results/{sample}/rnaseq/reads/{group}/fastq/{rg}.fastq",
-            faidx="resources/refs/genome.fasta.fai",
-            idx="resources/refs/star/",
-        output:
-            aln="results/{sample}/rnaseq/align/{group}/{rg}.bam",
-            log="results/{sample}/rnaseq/align/{group}/{rg}.log",
-            sj="results/{sample}/rnaseq/align/{group}/{rg}.tab",
-        log:
-            "logs/{sample}/align/star_align_bamfile_{group}_{rg}.log",
-        threads: config["threads"]
-        params:
-            extra=lambda wildcards: (
-                "--outSAMtype BAM Unsorted --genomeSAindexNbases 10 "
-                "--readFilesCommand zcat "
-                f"--outSAMattributes RG HI --outSAMattrRGline ID:{wildcards.rg} "
-                "--outFilterMultimapNmax 50 "
-                "--peOverlapNbasesMin 15 "
-                "--alignSplicedMateMapLminOverLmate 0.5 "
-                "--alignSJstitchMismatchNmax 5 -1 5 5 "
-                "--chimOutType WithinBAM HardClip "
-                f"--chimSegmentMin {config['align']['chimSegmentMin']} "
-                f"--chimJunctionOverhangMin {config['align']['chimJunctionOverhangMin']} "
-                f"--chimScoreDropMax {config['align']['chimScoreDropMax']} "
-                f"--chimScoreMin {config['align']['chimScoreMin']} "
-                "--chimScoreJunctionNonGTAG 0 "
-                f"--chimScoreSeparation {config['align']['chimScoreSeparation']} "
-                "--chimSegmentReadGapMax 3 --chimMultimapNmax 50 "
-                "--outSAMstrandField intronMotif"
-            ),
-        wrapper:
-            "v2.2.1/bio/star/align"
 
-    rule merge_alignment_results:
-        input:
-            aggregate_aligned_rg,
-        output:
-            temp("results/{sample}/rnaseq/align/{group}_aligned_STAR.bam"),
-        log:
-            "logs/{sample}/align/merge_alignment_results_{group}.log",
-        threads: config["threads"]
-        params:
-            extra="",  # optional additional parameters as string
-        wrapper:
-            "v2.3.0/bio/samtools/merge"
+rule star_align_bamfile:
+    input:
+        fq1="results/{sample}/rnaseq/reads/{group}/fastq/{rg}.fastq",
+        faidx="resources/refs/genome.fasta.fai",
+        idx="resources/refs/star/",
+    output:
+        aln="results/{sample}/rnaseq/align/{group}/{rg}.bam",
+        log="results/{sample}/rnaseq/align/{group}/{rg}.log",
+        sj="results/{sample}/rnaseq/align/{group}/{rg}.tab",
+    log:
+        "logs/{sample}/align/star_align_bamfile_{group}_{rg}.log",
+    threads: config["threads"]
+    params:
+        extra=lambda wildcards: (
+            "--outSAMtype BAM Unsorted --genomeSAindexNbases 10 "
+            "--readFilesCommand zcat "
+            f"--outSAMattributes RG HI --outSAMattrRGline ID:{wildcards.rg} "
+            "--outFilterMultimapNmax 50 "
+            "--peOverlapNbasesMin 15 "
+            "--alignSplicedMateMapLminOverLmate 0.5 "
+            "--alignSJstitchMismatchNmax 5 -1 5 5 "
+            "--chimOutType WithinBAM HardClip "
+            f"--chimSegmentMin {config['align']['chimSegmentMin']} "
+            f"--chimJunctionOverhangMin {config['align']['chimJunctionOverhangMin']} "
+            f"--chimScoreDropMax {config['align']['chimScoreDropMax']} "
+            f"--chimScoreMin {config['align']['chimScoreMin']} "
+            "--chimScoreJunctionNonGTAG 0 "
+            f"--chimScoreSeparation {config['align']['chimScoreSeparation']} "
+            "--chimSegmentReadGapMax 3 --chimMultimapNmax 50 "
+            "--outSAMstrandField intronMotif"
+        ),
+    wrapper:
+        "v2.2.1/bio/star/align"
+
+
+rule merge_alignment_results:
+    input:
+        aggregate_aligned_rg,
+    output:
+        # Distinct from star_align_fastq's output so the two STAR-input paths
+        # can coexist as always-defined rules (issue #93). The downstream
+        # rnaseq_postproc_fixmate picks the right one via get_rnaseq_star_bam.
+        temp("results/{sample}/rnaseq/align/{group}_aligned_STAR.from_bam.bam"),
+    log:
+        "logs/{sample}/align/merge_alignment_results_{group}.log",
+    threads: config["threads"]
+    params:
+        extra="",  # optional additional parameters as string
+    wrapper:
+        "v2.3.0/bio/samtools/merge"
 
 
 # post-processingn and realignment
 rule rnaseq_postproc_fixmate:
     input:
-        "results/{sample}/rnaseq/align/{group}_aligned_STAR.bam",
+        get_rnaseq_star_bam,
     output:
         temp("results/{sample}/rnaseq/align/{group}_fixmate_STAR.bam"),
     log:
@@ -235,57 +239,57 @@ rule realign:
         """
 
 
-### workflow when aligning paired-end fastq files for DNAseq
-if config["data"]["dnaseq_filetype"] in [".fq", ".fastq"]:
+### align DNAseq reads to genome using BWA (FASTQ input). Rule is unconditional
+### per issue #93; get_dna_align_input decides per-sample which upstream to wire.
+rule bwa_align_dnaseq:
+    input:
+        reads=get_dna_align_input,
+        idx=multiext(
+            "resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"
+        ),
+    output:
+        "results/{sample}/dnaseq/align/{group}_aligned_BWA.bam",
+    log:
+        "logs/{sample}/align/bwa_align_dnaseq_{group}.log",
+    conda:
+        "../envs/basic.yml"
+    threads: config["threads"]
+    params:
+        extra="",
+    shell:
+        """
+        (
+            bwa mem -t{threads} resources/refs/bwa/genome \
+                -R '@RG\\tID:{wildcards.group}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:ILLUMINA' \
+                {input.reads} \
+                | samtools sort -@ 6 -n -m1g - -o {output}
+        ) >{log} 2>&1
+        """
 
-    rule bwa_align_dnaseq:
-        input:
-            reads=get_dna_align_input,
-            idx=multiext(
-                "resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"
-            ),
-        output:
-            "results/{sample}/dnaseq/align/{group}_aligned_BWA.bam",
-        log:
-            "logs/{sample}/align/bwa_align_dnaseq_{group}.log",
-        conda:
-            "../envs/basic.yml"
-        threads: config["threads"]
-        params:
-            extra="",
-        shell:
-            """
-            (
-                bwa mem -t{threads} resources/refs/bwa/genome \
-                    -R '@RG\\tID:{wildcards.group}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:ILLUMINA' \
-                    {input.reads} \
-                    | samtools sort -@ 6 -n -m1g - -o {output}
-            ) >{log} 2>&1
-            """
 
-    rule dnaseq_postproc:
-        input:
-            aln="results/{sample}/dnaseq/align/{group}_aligned_BWA.bam",
-        output:
-            bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
-        log:
-            "logs/{sample}/align/dnaseq_postproc_{group}.log",
-        conda:
-            "../envs/samtools.yml"
-        threads: 4
-        resources:
-            mem_mb=20000,
-        params:
-            extra="",
-        shell:
-            """
-            mkdir -p tmp/
-            (
-                samtools fixmate -pcmu -O bam -@ {threads} {input.aln} - \
-                    | samtools sort -@ {threads} -m1g -O bam -T tmp/sort_{wildcards.sample}_{wildcards.group}_ - -o - \
-                    | samtools markdup -r -@ {threads} - {output.bam}
-            ) >{log} 2>&1
-            """
+rule dnaseq_postproc:
+    input:
+        aln="results/{sample}/dnaseq/align/{group}_aligned_BWA.bam",
+    output:
+        bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
+    log:
+        "logs/{sample}/align/dnaseq_postproc_{group}.log",
+    conda:
+        "../envs/samtools.yml"
+    threads: 4
+    resources:
+        mem_mb=20000,
+    params:
+        extra="",
+    shell:
+        """
+        mkdir -p tmp/
+        (
+            samtools fixmate -pcmu -O bam -@ {threads} {input.aln} - \
+                | samtools sort -@ {threads} -m1g -O bam -T tmp/sort_{wildcards.sample}_{wildcards.group}_ - -o - \
+                | samtools markdup -r -@ {threads} - {output.bam}
+        ) >{log} 2>&1
+        """
 
 
 rule samtools_index_BWA_final:

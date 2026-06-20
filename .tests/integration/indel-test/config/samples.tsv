@@ -1,0 +1,2 @@
+sample	dnaseq_tumor	dnaseq_normal	rnaseq	custom_variants	custom_proteins	custom_hla_I	custom_hla_II
+indel-test_SE			.tests/integration/data/reads/LNCaP_001_25K.fq			.tests/integration/data/hla/mhc-I.tsv

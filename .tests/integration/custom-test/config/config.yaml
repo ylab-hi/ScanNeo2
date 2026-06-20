@@ -6,18 +6,7 @@ threads: 30
 mapq: 30  # overall required mapping quality
 basequal: 20  # overall required base quality 
 
-data:
-  name: custom-test
-  dnaseq: 
-  rnaseq:
-  normal: 
-  
-  custom:
-    variants: .tests/integration/data/variants/snvs.vcf
-    proteins:
-    hlatyping:
-      MHC-I: .tests/integration/data/hla/mhc-I.tsv
-      MHC-II:
+samples: .tests/integration/custom-test/config/samples.tsv
 
 ### pre-processing (only applied on fastq reads)
 preproc: 

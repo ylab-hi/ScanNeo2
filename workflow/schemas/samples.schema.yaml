@@ -1,0 +1,34 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+description: ScanNeo2 sample sheet schema (validated per-row by snakemake.utils.validate)
+
+type: object
+
+properties:
+  sample:
+    type: string
+    minLength: 1
+    description: sample name; results are written to results/<sample>/ and used as the {sample} wildcard
+  dnaseq_tumor:
+    type: string
+    description: DNA-seq tumor reads; one path (.fq/.fastq/.bam) or two space-separated paths for paired-end. Empty when no DNA-seq tumor data is provided.
+  dnaseq_normal:
+    type: string
+    description: DNA-seq normal reads (matched normal/control); same format as dnaseq_tumor. Empty when no matched normal is provided.
+  rnaseq:
+    type: string
+    description: RNA-seq reads; same format as dnaseq_tumor. Empty when no RNA-seq data is provided.
+  custom_variants:
+    type: string
+    description: optional path to a user-supplied VCF to prioritize directly
+  custom_proteins:
+    type: string
+    description: optional path to a TSV of (wildtype, mutant) protein pairs; bypasses VCF + VEP
+  custom_hla_I:
+    type: string
+    description: optional path to a file listing MHC class I alleles (used when hlatyping.MHC-I_mode contains 'custom')
+  custom_hla_II:
+    type: string
+    description: optional path to a file listing MHC class II alleles (used when hlatyping.MHC-II_mode contains 'custom')
+
+required: [sample]
+additionalProperties: false

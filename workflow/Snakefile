@@ -1,4 +1,5 @@
 from snakemake.utils import min_version, validate
+import pandas as pd
 
 ##### set minimum snakemake version #####
 min_version("8.0.0")
@@ -9,6 +10,14 @@ configfile: "config/config.yaml"
 
 
 validate(config, schema="schemas/config.schema.yaml")
+
+
+##### load sample sheet (issue #93) #####
+# Wide format: one row per sample, columns described in schemas/samples.schema.yaml.
+# .fillna("") gives empty-string sentinels for missing cells so per_sample_data()
+# can treat them as "not provided" without juggling NaN vs None.
+SHEET = pd.read_csv(config["samples"], sep="\t", dtype=str).fillna("")
+validate(SHEET, schema="schemas/samples.schema.yaml")
 
 
 wildcard_constraints:
@@ -25,12 +34,10 @@ wildcard_constraints:
     replicate="[^/]+",
 
 
-rule all:
-    input:
-        expand("results/{sample}/prioritization/", sample=config["data"]["name"]),
-
-
 #### load rules ####
+# common.smk builds the SAMPLES map from SHEET and runs the workflow-load
+# validators; it must be included before rule all so SAMPLES.keys() is in
+# scope when rule all evaluates its expand().
 include: "rules/ref.smk"
 include: "rules/common.smk"
 include: "rules/hlatyping_prep.smk"
@@ -47,3 +54,8 @@ include: "rules/custom.smk"
 include: "rules/germline.smk"
 include: "rules/annotation.smk"
 include: "rules/prioritization.smk"
+
+
+rule all:
+    input:
+        expand("results/{sample}/prioritization/", sample=SAMPLES.keys()),
