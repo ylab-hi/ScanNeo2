@@ -215,7 +215,10 @@ rule get_readgroups:
         """
 
 
-# realign RNAseq and align DNAseq
+# BWA-realign RNAseq alignments. {seqtype} is constrained to rnaseq so it
+# doesn't compete with realign_dnaseq_bam / dnaseq_postproc for the
+# canonical dnaseq output path (issue #93). The wildcard itself is kept
+# because get_readgroups_input reads it.
 rule realign:
     input:
         bam=get_readgroups_input,
@@ -228,6 +231,8 @@ rule realign:
     conda:
         "../envs/basic.yml"
     threads: config["threads"]
+    wildcard_constraints:
+        seqtype="rnaseq",
     shell:
         """
         (
@@ -237,6 +242,51 @@ rule realign:
                 | samtools sort -@6 -m1g -o {output}
         ) >{log} 2>&1
         """
+
+
+# DNA-from-BAM input is BWA-realigned directly from the raw BAM (the OLD
+# `realign` rule handled this via its {seqtype} wildcard; split out here so
+# its output can carry a filetype tag). Output goes under bam/; the
+# dnaseq_final_BWA_stage rule symlinks it to the canonical path that
+# downstream consumers expect (issue #93).
+rule realign_dnaseq_bam:
+    input:
+        bam=lambda wc: str(SAMPLES[wc.sample]["dnaseq"][wc.group]),
+        rg="results/{sample}/dnaseq/reads/{group}_readgroups.txt",
+        idx=multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+    output:
+        bam="results/{sample}/dnaseq/align/bam/{group}_final_BWA.bam",
+    log:
+        "logs/{sample}/align/realign_dnaseq_bam_{group}.log",
+    conda:
+        "../envs/basic.yml"
+    threads: config["threads"]
+    shell:
+        """
+        (
+            samtools collate -Oun128 {input.bam} \
+                | samtools fastq -OT RG -@ {threads} - \
+                | bwa mem -pt{threads} -CH <(cat {input.rg}) resources/refs/bwa/genome - - \
+                | samtools sort -@6 -m1g -o {output}
+        ) >{log} 2>&1
+        """
+
+
+# Materialize the canonical dnaseq _final_BWA.bam path from the filetype-tagged
+# producer output (fq/ from dnaseq_postproc, bam/ from realign_dnaseq_bam) so
+# downstream consumers (germline.smk, indel.smk, samtools_index_BWA_final)
+# don't need a dispatcher of their own (issue #93).
+rule dnaseq_final_BWA_stage:
+    input:
+        bam=get_dnaseq_final_bam_tagged,
+    output:
+        bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
+    log:
+        "logs/{sample}/align/dnaseq_final_BWA_stage_{group}.log",
+    conda:
+        "../envs/basic.yml"
+    shell:
+        "ln -sfr {input.bam} {output.bam} 2>{log}"
 
 
 ### align DNAseq reads to genome using BWA (FASTQ input). Rule is unconditional
@@ -271,7 +321,10 @@ rule dnaseq_postproc:
     input:
         aln="results/{sample}/dnaseq/align/{group}_aligned_BWA.bam",
     output:
-        bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
+        # `fq/` sub-path differentiates this from realign_dnaseq_bam so both
+        # can always be defined; dnaseq_final_BWA_stage symlinks to the
+        # canonical path per sample (issue #93).
+        bam="results/{sample}/dnaseq/align/fq/{group}_final_BWA.bam",
     log:
         "logs/{sample}/align/dnaseq_postproc_{group}.log",
     conda:

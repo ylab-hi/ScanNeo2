@@ -911,6 +911,24 @@ def get_all_mhcII_alleles(wildcards):
 
 
 ########### ALIGNMENT ##########
+def get_dnaseq_final_bam_tagged(wildcards):
+    """Return the filetype-tagged dnaseq final BWA BAM path.
+
+    Mirror of get_rnaseq_star_bam for the DNA side (issue #93). The canonical
+    output path `dnaseq/align/{group}_final_BWA.bam` would be produced by
+    two rules (dnaseq_postproc for FASTQ; realign for BAM input), triggering
+    AmbiguousRuleException. Each producer is therefore tagged with a
+    filetype sub-path, and a tiny `dnaseq_final_BWA_stage` rule symlinks the
+    tagged path to the canonical path so downstream consumers don't change.
+    """
+    ft = SAMPLES[wildcards.sample]["dnaseq_filetype"]
+    sub = "bam" if ft == ".bam" else "fq"
+    return (
+        f"results/{wildcards.sample}/dnaseq/align/"
+        f"{sub}/{wildcards.group}_final_BWA.bam"
+    )
+
+
 def get_rnaseq_star_bam(wildcards):
     """Return the STAR-aligned BAM path for a sample's rnaseq filetype.
 
