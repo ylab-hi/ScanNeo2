@@ -914,21 +914,22 @@ def get_all_mhcII_alleles(wildcards):
 def get_rnaseq_star_bam(wildcards):
     """Return the STAR-aligned BAM path for a sample's rnaseq filetype.
 
-    Lets star_align_fastq and merge_alignment_results coexist as
-    always-defined rules with distinct outputs (issue #93). The downstream
-    rnaseq_postproc_fixmate rule reads through this helper instead of a
-    hard-coded path; the helper consults SAMPLES[sample]['rnaseq_filetype']
-    and returns the corresponding rule's output.
+    Snakemake matches rules by output pattern, so two always-defined rules
+    producing identical paths trigger AmbiguousRuleException regardless of
+    input availability. To support mixed filetypes across samples, the two
+    STAR-input paths emit into filetype-tagged subdirectories:
+
+      fq/  -- star_align_fastq output (FASTQ-input samples)
+      bam/ -- merge_alignment_results output (BAM-input samples)
+
+    rnaseq_postproc_fixmate consumes through this helper; the per-sample
+    filetype decides which sub-path is wired (issue #93).
     """
     ft = SAMPLES[wildcards.sample]["rnaseq_filetype"]
-    if ft == ".bam":
-        return (
-            f"results/{wildcards.sample}/rnaseq/align/"
-            f"{wildcards.group}_aligned_STAR.from_bam.bam"
-        )
+    sub = "bam" if ft == ".bam" else "fq"
     return (
         f"results/{wildcards.sample}/rnaseq/align/"
-        f"{wildcards.group}_aligned_STAR.bam"
+        f"{sub}/{wildcards.group}_aligned_STAR.bam"
     )
 
 

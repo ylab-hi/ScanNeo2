@@ -1,18 +1,18 @@
 ### align reads to genome using STAR (when reads are in FASTQ)
-# Rule definitions are unconditional (issue #93): which alignment path runs
-# for any given sample is decided by get_star_input / get_dna_align_input,
-# which consult that sample's filetype in SAMPLES[wildcards.sample] and wire
-# the upstream accordingly. Samples with a non-matching filetype simply don't
-# request the rule's output.
+# Rule definitions are unconditional (issue #93): both this rule and the
+# BAM-input chain (split_bamfile_RG -> ... -> merge_alignment_results) are
+# always parsed, and they emit into filetype-tagged subdirectories (fq/ vs
+# bam/) to avoid an AmbiguousRuleException. rnaseq_postproc_fixmate reads
+# through get_rnaseq_star_bam to dispatch on the sample's filetype.
 rule star_align_fastq:
     input:
         unpack(get_star_input),
         faidx="resources/refs/genome.fasta.fai",
         idx="resources/refs/star/",
     output:
-        aln=temp("results/{sample}/rnaseq/align/{group}_aligned_STAR.bam"),
-        log="results/{sample}/rnaseq/align/{group}_aligned_STAR.log",
-        sj="results/{sample}/rnaseq/align/{group}_aligned_STAR.tab",
+        aln=temp("results/{sample}/rnaseq/align/fq/{group}_aligned_STAR.bam"),
+        log="results/{sample}/rnaseq/align/fq/{group}_aligned_STAR.log",
+        sj="results/{sample}/rnaseq/align/fq/{group}_aligned_STAR.tab",
     log:
         "logs/{sample}/align/star_align_fastq_{group}.log",
     threads: config["threads"]
@@ -123,10 +123,10 @@ rule merge_alignment_results:
     input:
         aggregate_aligned_rg,
     output:
-        # Distinct from star_align_fastq's output so the two STAR-input paths
-        # can coexist as always-defined rules (issue #93). The downstream
-        # rnaseq_postproc_fixmate picks the right one via get_rnaseq_star_bam.
-        temp("results/{sample}/rnaseq/align/{group}_aligned_STAR.from_bam.bam"),
+        # `bam/` sub-path differentiates this from star_align_fastq so both
+        # can always be defined; get_rnaseq_star_bam dispatches per sample
+        # (issue #93).
+        temp("results/{sample}/rnaseq/align/bam/{group}_aligned_STAR.bam"),
     log:
         "logs/{sample}/align/merge_alignment_results_{group}.log",
     threads: config["threads"]
