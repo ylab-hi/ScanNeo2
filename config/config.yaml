@@ -8,20 +8,9 @@ threads: 30         # maximum number of threads any single rule may use
 mapq: 30            # minimum read mapping quality (MAPQ, Phred-scaled)
 basequal: 20        # minimum base-call quality (Phred-scaled)
 
-data:
-  name:  samplename                    # run name; results are written to results/<name>/
-  dnaseq:                              # DNA-seq inputs; one entry per group (the key is the group name)
-    # dna_tumor: /path/to/reads.fastq  #   value: one path (single-end) or two space-separated paths (paired-end); .fastq/.fq/.bam
-  rnaseq:                              # RNA-seq inputs; same format as dnaseq
-    # rna_tumor: /path/to/reads.fastq
-  normal:                              # group name of the matched normal/control sample (for somatic calling)
-
-  custom:
-    variants:                          # optional: path to a user-supplied VCF to prioritize directly
-    proteins:                          # optional: path to a TSV of (wildtype, mutant) protein pairs; bypasses VCF + VEP
-    hlatyping:                         # optional: user-supplied HLA alleles (used when the *_mode below is 'custom')
-      MHC-I:                           #   path to a file listing MHC class I alleles
-      MHC-II:                          #   path to a file listing MHC class II alleles
+samples: config/samples.tsv   # path to the sample sheet; one row per sample, columns:
+                              #   sample, dnaseq_tumor, dnaseq_normal, rnaseq,
+                              #   custom_variants, custom_proteins, custom_hla_I, custom_hla_II
 
 ### pre-processing (only applied on fastq reads)
 preproc: 

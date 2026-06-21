@@ -1,0 +1,2 @@
+sample	dnaseq_tumor	dnaseq_normal	rnaseq	custom_variants	custom_proteins	custom_hla_I	custom_hla_II
+protein-test					.tests/integration/data/proteins/proteins.tsv	.tests/integration/data/hla/mhc-I.tsv

@@ -6,22 +6,7 @@ threads: 30
 mapq: 30  # overall required mapping quality
 basequal: 20  # overall required base quality 
 
-### data
-data:
-  name:  basic_sample
-  dnaseq: 
-    dna_normal: TESLA_testdata/patient2/WES/TESLA_9_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_9_2.fastq.gz
-    dna_tumor: TESLA_testdata/patient2/WES/TESLA_10_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_10_2.fastq.gz
-  rnaseq:
-    rna_tumor: TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz
-  normal: dna_normal
-  
-  custom:
-    variants:
-    proteins:
-    hlatyping:
-      MHC-I:
-      MHC-II:
+samples: .tests/integration/config_basic/samples.tsv
 
 ### pre-processing (only applied on fastq reads)
 preproc:

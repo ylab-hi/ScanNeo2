@@ -11,39 +11,51 @@ mapq: 30
 basequal: 20
 ```
 
-## DATA
+## SAMPLES
 
-The `data` block contains the sequencing reads specified as the indented blocks `name`, `dnaseq`, and `rnaseq`. 
-
-```
-data:
-  name: <name/of/sample> 
-  dnaseq:
-    <group1>: <path/to/dnaseq/reads1> [path/to/dnaseq/reads2]
-    <group2>: <path/to/dnaseq/reads1> [path/to/dnaseq/reads2]
-  rnaseq:
-    <group1>: <path/to/rnaseq/reads1> [path/to/rnaseq/reads2]
-  normal: <group2>
-
-  custom:
-    variants:
-    proteins:
-    hlatyping:
-      MHC-I:
-      MHC-II:
+Per-sample inputs live in a separate **sample sheet** (TSV), referenced by `config.yaml`:
 
 ```
-The `name` key-value pair contains the name of the sample. This is also the name of the folder in which the analysis results are stored (e.g., `results/<name/of/sample>`). The blocks `dnaseq` and `rnaseq` specify the paths to the sequencing reads. In the `<group1>:<path/to/dnaseq/data>` key-value pair, the path to the DNA-seq data is defined. This can be either in `.bam` or `.fastq`. In the case of paired-end reads, forward and reverse read need to be separated by space. Similarly, `rnaseq: <path/to/rnaseq/data>` defines the RNA-seq data. `Scanneo2` allows to specify multiple samples, using the same identation within the `dnaseq` or `rnaseq` blocks (e.g., <group1>). These can correspond to readgroups or conditions. However, these need to be unique. In addition, `normal` allows to specify normal samples but is not used currently. Multiple `normal` samples can be separated by spaces. `Scanneo2` operates on both RNA-seq and DNA-seq, but in principle also works with either DNA-seq or RNA-seq data. However, providing only DNA-seq data is restricted to detecting indels and SNVs. 
+samples: config/samples.tsv
+```
 
-In addition, the `custom` block allows the (optional) specification of user-defined data. 
+This pattern lets one `snakemake` invocation process **many samples in parallel** — Snakemake fans out the per-sample DAGs automatically (issue [#93](https://github.com/ylab-hi/ScanNeo2/issues/93)). For a single sample, use a one-row sheet.
 
-In `variants` predefined variants in VCF format can be provided. When available ScanNeo2 utilizes specific INFO keys, which are used in the [results](https://github.com/ylab-hi/ScanNeo2/wiki/Output#prioritization). These include `AO`, `DP`, `AF` which correspond to the observed alleles (supporting reads), the depth of the variant, and the variant allele frequency, respectively.
+The sheet is wide-format, one row per sample. Columns (TAB-separated):
 
-In `proteins` a TSV of `(wildtype, mutant)` protein pairs can be provided, bypassing variant calling and VEP entirely. This is useful for neoantigen candidates from sources ScanNeo2 does not natively call — other variant callers, RNA editing, proteogenomics, or hand-curated candidates — and for benchmarking with known peptides. The TSV needs a header line. **Required columns**: `id`, `wildtype_protein`, `mutant_protein`. **Optional columns** (each defaults sensibly if absent): `vaf`, `ao`, `dp`, `gene_id`, `gene_name`, `transcript_id`, `chrom`, `group`, `var_type`. Column order is not fixed. Both `wildtype_protein` and `mutant_protein` must be non-empty per row — mutant-only rows are rejected with a clear error because there is no variant region to detect and no wildtype contrast for binding-affinity comparison or self-similarity scoring. Both sequences are truncated at the first `*` or `X` (project convention for a stop codon) before downstream processing. The genomic / transcript / expression output columns (`chrom`, `gene_id`, `TPM`, `NMD`, `PTC_*`, `NMD_escape_rule`) are intentionally left empty for protein input, since they are not recoverable from a raw protein pair. An example TSV ships at [`.tests/integration/data/proteins/proteins.tsv`](https://github.com/ylab-hi/ScanNeo2/blob/main/.tests/integration/data/proteins/proteins.tsv).
+| Column | Required | Description |
+| --- | --- | --- |
+| `sample` | yes | sample name; results are written to `results/<sample>/` and used as the `{sample}` wildcard |
+| `dnaseq_tumor` | no | DNA-seq tumor reads — one path (single-end) or two space-separated paths (paired-end); `.fq` / `.fastq` / `.bam` |
+| `dnaseq_normal` | no | DNA-seq matched normal/control reads — same format |
+| `rnaseq` | no | RNA-seq reads — same format |
+| `custom_variants` | no | path to a user-supplied VCF |
+| `custom_proteins` | no | path to a TSV of `(wildtype, mutant)` protein pairs |
+| `custom_hla_I` | no | path to a file listing MHC-I alleles (used when `hlatyping.MHC-I_mode` is `custom`) |
+| `custom_hla_II` | no | same, for MHC-II |
 
-In the `hlatyping` property, user-defined class I (`MHC-I`) and class II (`MHC-II`) alleles can be provided in tab-delimited format. See the [hla section](https://github.com/ylab-hi/ScanNeo2/wiki/Output#hla) in the output wiki page for more information.
+Leave a cell empty when not applicable. Empty cells become `None` in the per-sample data dict.
 
-It is to be noted that the `custom` block allows to specify *additional* information for the analysis. In other words, ScanNeo2 utilizes these files to augment the actual analysis, unless other options are deactivated (e.g., hlatyping, indel,...)
+```
+sample	dnaseq_tumor	dnaseq_normal	rnaseq	custom_variants	custom_proteins	custom_hla_I	custom_hla_II
+sampleA	tumor_R1.fq.gz tumor_R2.fq.gz	normal_R1.fq.gz normal_R2.fq.gz	rna.bam				
+sampleB	tumorB.bam			vcfB.vcf.gz			
+sampleC				proteins.tsv		hlaC.tsv	
+```
+
+The previous single-sample `data:` block is removed in v0.5.0. To migrate an existing config:
+
+1. Create `config/samples.tsv` (or another path) with one row keyed on what was previously `data.name`.
+2. Map old keys to columns: `data.dnaseq.<group>` → `dnaseq_tumor` / `dnaseq_normal`; `data.rnaseq.<group>` → `rnaseq`; `data.custom.{variants,proteins}` → `custom_variants` / `custom_proteins`; `data.custom.hlatyping.MHC-{I,II}` → `custom_hla_I` / `custom_hla_II`.
+3. Replace the entire `data:` block in `config.yaml` with `samples: config/samples.tsv`.
+
+In `custom_variants`, predefined variants in VCF format can be provided. When available ScanNeo2 utilizes specific INFO keys, which are used in the [results](https://github.com/ylab-hi/ScanNeo2/wiki/Output#prioritization). These include `AO`, `DP`, `AF` which correspond to the observed alleles (supporting reads), the depth of the variant, and the variant allele frequency, respectively.
+
+In `custom_proteins` a TSV of `(wildtype, mutant)` protein pairs can be provided, bypassing variant calling and VEP entirely. This is useful for neoantigen candidates from sources ScanNeo2 does not natively call — other variant callers, RNA editing, proteogenomics, or hand-curated candidates — and for benchmarking with known peptides. The TSV needs a header line. **Required columns**: `id`, `wildtype_protein`, `mutant_protein`. **Optional columns** (each defaults sensibly if absent): `vaf`, `ao`, `dp`, `gene_id`, `gene_name`, `transcript_id`, `chrom`, `group`, `var_type`. Column order is not fixed. Both `wildtype_protein` and `mutant_protein` must be non-empty per row — mutant-only rows are rejected with a clear error because there is no variant region to detect and no wildtype contrast for binding-affinity comparison or self-similarity scoring. Both sequences are truncated at the first `*` or `X` (project convention for a stop codon) before downstream processing. The genomic / transcript / expression output columns (`chrom`, `gene_id`, `TPM`, `NMD`, `PTC_*`, `NMD_escape_rule`) are intentionally left empty for protein input, since they are not recoverable from a raw protein pair. An example TSV ships at [`.tests/integration/data/proteins/proteins.tsv`](https://github.com/ylab-hi/ScanNeo2/blob/main/.tests/integration/data/proteins/proteins.tsv).
+
+In `custom_hla_I` / `custom_hla_II`, user-defined class I and class II alleles can be provided in tab-delimited format. See the [hla section](https://github.com/ylab-hi/ScanNeo2/wiki/Output#hla) in the output wiki page for more information.
+
+These columns are *additive* — ScanNeo2 augments the standard analysis with the user-supplied data unless the corresponding pipeline component (hlatyping, indel, ...) is deactivated.
 
 
 ## PRE-PROCESSING

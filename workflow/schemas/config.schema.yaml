@@ -35,47 +35,9 @@ properties:
     maximum: 60
     description: minimum base-call quality (Phred-scaled)
 
-  data:
-    type: object
-    properties:
-      name:
-        type: string
-        description: run name; results are written to results/<name>/
-      dnaseq:
-        type: ["object", "null"]
-        description: DNA-seq inputs, one entry per group (group name -> read path(s))
-        additionalProperties:
-          type: string
-      rnaseq:
-        type: ["object", "null"]
-        description: RNA-seq inputs, one entry per group (group name -> read path(s))
-        additionalProperties:
-          type: string
-      normal:
-        type: ["string", "null"]
-        description: group name(s) of the matched normal/control sample
-      custom:
-        type: object
-        properties:
-          variants:
-            type: ["string", "null"]
-            description: optional path to a user-supplied VCF to prioritize directly
-          proteins:
-            type: ["string", "null"]
-            description: optional path to a TSV of (wildtype, mutant) protein pairs to prioritize directly, bypassing variant calling + VEP
-          hlatyping:
-            type: object
-            properties:
-              MHC-I:
-                type: ["string", "null"]
-              MHC-II:
-                type: ["string", "null"]
-            required: [MHC-I, MHC-II]
-            additionalProperties: false
-        required: [variants, proteins, hlatyping]
-        additionalProperties: false
-    required: [name, dnaseq, rnaseq, normal, custom]
-    additionalProperties: false
+  samples:
+    type: string
+    description: path to the sample sheet (TSV) listing one sample per row; see workflow/schemas/samples.schema.yaml
 
   preproc:
     type: object
@@ -286,7 +248,7 @@ required:
   - threads
   - mapq
   - basequal
-  - data
+  - samples
   - preproc
   - align
   - altsplicing
