@@ -15,7 +15,7 @@ basequal: 20
 
 Per-sample inputs live in a separate **sample sheet** (TSV), referenced by `config.yaml`:
 
-```
+```yaml
 samples: config/samples.tsv
 ```
 
@@ -31,12 +31,12 @@ The sheet is wide-format, one row per sample. Columns (TAB-separated):
 | `rnaseq` | no | RNA-seq reads — same format |
 | `custom_variants` | no | path to a user-supplied VCF |
 | `custom_proteins` | no | path to a TSV of `(wildtype, mutant)` protein pairs |
-| `custom_hla_I` | no | path to a file listing MHC-I alleles (used when `hlatyping.MHC-I_mode` is `custom`) |
-| `custom_hla_II` | no | same, for MHC-II |
+| `custom_hla_I` | no | path to a file listing MHC-I alleles (used when `hlatyping.MHC-I_mode` contains `custom`) |
+| `custom_hla_II` | no | same for MHC-II (when `hlatyping.MHC-II_mode` contains `custom`) |
 
 Leave a cell empty when not applicable. Empty cells become `None` in the per-sample data dict.
 
-```
+```tsv
 sample	dnaseq_tumor	dnaseq_normal	rnaseq	custom_variants	custom_proteins	custom_hla_I	custom_hla_II
 sampleA	tumor_R1.fq.gz tumor_R2.fq.gz	normal_R1.fq.gz normal_R2.fq.gz	rna.bam				
 sampleB	tumorB.bam			vcfB.vcf.gz			

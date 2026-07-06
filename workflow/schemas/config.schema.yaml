@@ -37,6 +37,7 @@ properties:
 
   samples:
     type: string
+    minLength: 1
     description: path to the sample sheet (TSV) listing one sample per row; see workflow/schemas/samples.schema.yaml
 
   preproc:

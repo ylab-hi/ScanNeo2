@@ -685,7 +685,7 @@ def get_input_filtering_hlatyping_PE(wildcards):
         )
     else:
         seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
-        return SAMPLES[wildcards.sample][f"{wildcards.seqtype}"][wildcards.group]
+        return SAMPLES[wildcards.sample][seqtype][wildcards.group]
 
 
 def aggregate_mhcI_SE(wildcards):
