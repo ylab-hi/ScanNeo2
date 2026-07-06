@@ -613,7 +613,9 @@ print_run_summary(config, SAMPLES)
 ########### PREPROCESSING ##########
 def get_raw_reads(wildcards):
     if SAMPLES[wildcards.sample]["rnaseq_readtype"] == "SE":
-        return dict(zip(["sample"], SAMPLES[wildcards.sample]["rnaseq"][wildcards.group]))
+        return dict(
+            zip(["sample"], SAMPLES[wildcards.sample]["rnaseq"][wildcards.group])
+        )
 
 
 # returns raw reads for a given sample
@@ -953,7 +955,9 @@ def get_rnaseq_star_bam(wildcards):
 
 def get_star_input(wildcards):
     if SAMPLES[wildcards.sample]["rnaseq_filetype"] == ".bam":
-        return dict(zip(["bam"], [SAMPLES[wildcards.sample]["rnaseq"][wildcards.group]]))
+        return dict(
+            zip(["bam"], [SAMPLES[wildcards.sample]["rnaseq"][wildcards.group]])
+        )
 
     elif (
         SAMPLES[wildcards.sample]["rnaseq_filetype"] == ".fq"
@@ -1440,9 +1444,7 @@ def get_prioritization_proteins(wildcards):
 def get_prioritization_mhcI(wildcards):
     alleles = []
     if config["prioritization"]["class"] in ["I", "BOTH"]:
-        alleles += expand(
-            "results/{sample}/hla/mhc-I.tsv", sample=wildcards.sample
-        )
+        alleles += expand("results/{sample}/hla/mhc-I.tsv", sample=wildcards.sample)
 
     return alleles
 
@@ -1450,16 +1452,17 @@ def get_prioritization_mhcI(wildcards):
 def get_prioritization_mhcII(wildcards):
     alleles = []
     if config["prioritization"]["class"] in ["II", "BOTH"]:
-        alleles += expand(
-            "results/{sample}/hla/mhc-II.tsv", sample=wildcards.sample
-        )
+        alleles += expand("results/{sample}/hla/mhc-II.tsv", sample=wildcards.sample)
     return alleles
 
 
 def get_prioritization_counts(wildcards):
     counts = []
     # counts can only be generated if either RNAseq or DNAseq data is provided
-    if len(SAMPLES[wildcards.sample]["rnaseq"]) != 0 or len(SAMPLES[wildcards.sample]["dnaseq"]) != 0:
+    if (
+        len(SAMPLES[wildcards.sample]["rnaseq"]) != 0
+        or len(SAMPLES[wildcards.sample]["dnaseq"]) != 0
+    ):
 
         # make sure indels are called from rnaseq/dnaseq data
 

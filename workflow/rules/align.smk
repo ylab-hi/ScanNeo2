@@ -228,11 +228,11 @@ rule realign:
         bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
     log:
         "logs/{sample}/align/realign_{seqtype}_{group}.log",
+    wildcard_constraints:
+        seqtype="rnaseq",
     conda:
         "../envs/basic.yml"
     threads: config["threads"]
-    wildcard_constraints:
-        seqtype="rnaseq",
     shell:
         """
         (
@@ -294,9 +294,7 @@ rule dnaseq_final_BWA_stage:
 rule bwa_align_dnaseq:
     input:
         reads=get_dna_align_input,
-        idx=multiext(
-            "resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"
-        ),
+        idx=multiext("resources/refs/bwa/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
     output:
         "results/{sample}/dnaseq/align/{group}_aligned_BWA.bam",
     log:

@@ -6,7 +6,7 @@ threads: 30
 mapq: 30  # overall required mapping quality
 basequal: 20  # overall required base quality 
 
-samples: .tests/integration/config_basic/samples.tsv
+samples: integration/config_basic/samples.tsv
 
 ### pre-processing (only applied on fastq reads)
 preproc:
