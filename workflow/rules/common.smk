@@ -57,6 +57,7 @@ def per_sample_data(sample, rows):
     dnaseq_raw = {}
     rnaseq_raw = {}
     normal_groups = []
+    group_types = {}
     custom_names = (
         "custom_variants",
         "custom_proteins",
@@ -95,8 +96,24 @@ def per_sample_data(sample, rows):
                 f"{seqtype!r} -- group names must be unique per (sample, seqtype)."
             )
             continue
+
+        # a group name may recur across seqtypes (e.g. a dnaseq and an rnaseq
+        # "tumor"), but its tumor/normal role must agree: the HLA-typing helpers
+        # exclude normal groups by name only, so a name that is normal in one
+        # seqtype and tumor in the other would silently drop the tumor group
+        # from typing.
+        previous_type = group_types.get(group)
+        if previous_type is not None and previous_type != rtype:
+            config_error(
+                f"sample {sample!r}: group {group!r} is {previous_type!r} in one "
+                f"seqtype and {rtype!r} in another -- reuse a group name only with "
+                "a consistent type, or rename one."
+            )
+            continue
+        group_types[group] = rtype
+
         target[group] = reads
-        if rtype == "normal":
+        if rtype == "normal" and group not in normal_groups:
             normal_groups.append(group)
 
     # handle_seqfiles is pure; it validates + normalises one seqdict at a time
