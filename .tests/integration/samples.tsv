@@ -1,3 +1,4 @@
-sample	dnaseq_tumor	dnaseq_normal	rnaseq	custom_variants	custom_proteins	custom_hla_I	custom_hla_II
-sampleA			.tests/integration/data/reads/LNCaP_001_25K.fq			.tests/integration/data/hla/mhc-I.tsv
-sampleB			.tests/integration/data/reads/LNCaP_002_25K.fq			.tests/integration/data/hla/mhc-I.tsv
+sample	seqtype	group	type	reads	custom_variants	custom_proteins	custom_hla_I	custom_hla_II
+sampleA	rnaseq	tumor_rep1	tumor	.tests/integration/data/reads/LNCaP_001_25K.fq			.tests/integration/data/hla/mhc-I.tsv
+sampleA	rnaseq	tumor_rep2	tumor	.tests/integration/data/reads/LNCaP_002_25K.fq			.tests/integration/data/hla/mhc-I.tsv
+sampleB	rnaseq	tumor	tumor	.tests/integration/data/reads/LNCaP_001_25K.fq			.tests/integration/data/hla/mhc-I.tsv

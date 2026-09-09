@@ -8,9 +8,11 @@ threads: 30         # maximum number of threads any single rule may use
 mapq: 30            # minimum read mapping quality (MAPQ, Phred-scaled)
 basequal: 20        # minimum base-call quality (Phred-scaled)
 
-samples: config/samples.tsv   # path to the sample sheet; one row per sample, columns:
-                              #   sample, dnaseq_tumor, dnaseq_normal, rnaseq,
-                              #   custom_variants, custom_proteins, custom_hla_I, custom_hla_II
+samples: config/samples.tsv   # path to the sample sheet (long format); one row per
+                              # (sample, seqtype, group). Columns: sample, seqtype
+                              # (dnaseq/rnaseq), group, type (tumor/normal), reads,
+                              # custom_variants, custom_proteins, custom_hla_I,
+                              # custom_hla_II. See docs/configuration.md.
 
 ### pre-processing (only applied on fastq reads)
 preproc: 

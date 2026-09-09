@@ -30,31 +30,74 @@ def _arriba_extra():
 
 
 ########### CONFIG ##########
-def per_sample_data(row):
-    """Build the per-sample data dict for one row of the sample sheet.
+def config_error(message):
+    """Emit a [config error] to stderr and abort, unless running --lint (so
+    static rule analysis still completes on a placeholder/empty config)."""
+    print(f"[config error] {message}", file=sys.stderr)
+    if "--lint" not in sys.argv:
+        sys.exit(1)
 
-    Returns a dict matching the legacy `config['data']` shape (dnaseq,
+
+def per_sample_data(sample, rows):
+    """Build the per-sample data dict from every sample-sheet row for one sample.
+
+    Long format: each row is one (seqtype, group) sequencing input, or a
+    custom-only row (seqtype/group/type/reads empty, custom_* set). Rows for a
+    sample are grouped here into the legacy `config['data']` shape (dnaseq,
     dnaseq_filetype, dnaseq_readtype, rnaseq, rnaseq_filetype, rnaseq_readtype,
     normal, custom.{variants,proteins,hlatyping.{MHC-I,MHC-II}}) so every
-    existing per-rule consumer can swap `config['data'][X]` for
-    `SAMPLES[wildcards.sample][X]` without further changes.
+    per-rule consumer reads `SAMPLES[wildcards.sample][X]` unchanged.
 
-    Wide-sheet group convention: the `dnaseq_tumor` cell becomes a `dna_tumor`
-    entry in the dnaseq dict; `dnaseq_normal` becomes `dna_normal`; `rnaseq`
-    becomes `rna_tumor`. Cells may carry one path (single-end) or two
-    space-separated paths (paired-end), matching `handle_seqfiles` parsing.
+    Each group becomes a key in the dnaseq/rnaseq dict; replicates are simply
+    distinct groups (their names carry through to the output `group` column).
+    `normal` is the list of group names flagged type == 'normal'. Custom inputs
+    are sample-level: collected across the sample's rows and required to be
+    consistent.
     """
-    sample = row["sample"]
-
     dnaseq_raw = {}
-    if row.get("dnaseq_tumor", ""):
-        dnaseq_raw["dna_tumor"] = row["dnaseq_tumor"]
-    if row.get("dnaseq_normal", ""):
-        dnaseq_raw["dna_normal"] = row["dnaseq_normal"]
-
     rnaseq_raw = {}
-    if row.get("rnaseq", ""):
-        rnaseq_raw["rna_tumor"] = row["rnaseq"]
+    normal_groups = []
+    custom_names = (
+        "custom_variants",
+        "custom_proteins",
+        "custom_hla_I",
+        "custom_hla_II",
+    )
+    custom_seen = {name: set() for name in custom_names}
+
+    for row in rows:
+        for name in custom_names:
+            value = str(row.get(name, "") or "").strip()
+            if value:
+                custom_seen[name].add(value)
+
+        seqtype = str(row.get("seqtype", "") or "").strip()
+        group = str(row.get("group", "") or "").strip()
+        rtype = str(row.get("type", "") or "").strip()
+        reads = str(row.get("reads", "") or "").strip()
+
+        if not seqtype:
+            # custom-only row: custom_* already gathered; nothing else to do
+            continue
+
+        if not group or not reads or rtype not in ("tumor", "normal"):
+            config_error(
+                f"sample {sample!r}: a {seqtype!r} row is missing required "
+                "field(s) -- each sequencing row needs a non-empty 'group', "
+                "'reads', and a 'type' of 'tumor' or 'normal'."
+            )
+            continue
+
+        target = dnaseq_raw if seqtype == "dnaseq" else rnaseq_raw
+        if group in target:
+            config_error(
+                f"sample {sample!r}: duplicate group {group!r} within "
+                f"{seqtype!r} -- group names must be unique per (sample, seqtype)."
+            )
+            continue
+        target[group] = reads
+        if rtype == "normal":
+            normal_groups.append(group)
 
     # handle_seqfiles is pure; it validates + normalises one seqdict at a time
     dnaseq, dnaseq_filetype, dnaseq_readtype = handle_seqfiles(
@@ -64,11 +107,17 @@ def per_sample_data(row):
         rnaseq_raw or None, f"sample {sample!r} rnaseq"
     )
 
-    normal = "dna_normal" if "dna_normal" in dnaseq else None
+    normal = normal_groups or None
 
     def cell(name):
-        v = row.get(name, "")
-        return v if v else None
+        values = custom_seen[name]
+        if len(values) > 1:
+            config_error(
+                f"sample {sample!r}: conflicting {name} values across its rows "
+                f"({sorted(values)}) -- custom inputs are sample-level and must "
+                "be identical (or blank) on every row of a sample."
+            )
+        return next(iter(values)) if values else None
 
     custom_variants = cell("custom_variants")
     custom_proteins = cell("custom_proteins")
@@ -134,7 +183,7 @@ def handle_seqfiles(seqdata, mode):
     mod_seqdata = {}
 
     if seqdata is not None:
-        # iterate over replicates
+        # iterate over the seqtype's groups
 
         for rpl in list(seqdata.keys()):
             # make sure to ignore keys with empty values
@@ -185,10 +234,18 @@ def handle_seqfiles(seqdata, mode):
                         )
                         return mod_seqdata, None, None
 
-                # check if filetype and readtype are the same
-        #        if all_identical(filetype) and all_identical(readtype):
         if not filetype:
             return mod_seqdata, None, None
+        # every group within a seqtype shares one filetype/readtype: downstream
+        # (get_star_input, get_dna_align_input, alignment rules) reads a single
+        # per-seqtype value, so a mixed batch would be silently mis-aligned.
+        if len(set(filetype)) > 1 or len(set(readtype)) > 1:
+            config_error(
+                f"{mode}: all groups within a seqtype must share the same "
+                f"filetype and readtype; got filetypes {sorted(set(filetype))} "
+                f"and readtypes {sorted(set(readtype))}. Split the mismatched "
+                "input into a separate sample."
+            )
         return mod_seqdata, filetype[0], readtype[0]
 
     else:
@@ -207,18 +264,6 @@ def get_file_extension(path):
         else:
             file_ext = filename[res.start() :]
     return file_ext
-
-
-# returns the reads (raw/preprocessed) for a given sample
-def get_reads(wildcards):
-    if config["preproc"]["activate"]:
-        if SAMPLES[wildcards.sample][f"{wildcards.readtype}_readtype"] == "SE":
-            return SAMPLES[wildcards.sample][wildcards.seqtype][wildcards.replicate]
-        elif SAMPLES[wildcards.sample][f"{wildcards.readtype}_readtype"] == "PE":
-            return {
-                "r1": "results/{sample}/{seqtype}/reads/{replicate}_preproc_r1.fq.gz",
-                "r2": "results/{sample}/{seqtype}/reads/{replicate}_preproc_r2.fq.gz",
-            }
 
 
 # check if files are a valid paired-end pair
@@ -340,7 +385,7 @@ def print_run_summary(config, samples):
     for sample_name, d in samples.items():
         lines.append("")
         lines.append(f"    {sample_name}  (results/{sample_name}/)")
-        normal_disp = str(d["normal"]) if d["normal"] else "(none)"
+        normal_disp = ", ".join(d["normal"]) if d["normal"] else "(none)"
         custom_disp = (
             str(d["custom"]["variants"])
             if d["custom"]["variants"]
@@ -593,17 +638,13 @@ if len(SHEET) == 0:
     if "--lint" not in sys.argv:
         sys.exit(1)
 
-dup_samples = SHEET["sample"][SHEET["sample"].duplicated()].tolist()
-if dup_samples:
-    print(
-        f"[config error] sample sheet has duplicate sample name(s): "
-        f"{sorted(set(dup_samples))}. Each row must have a unique 'sample' value.",
-        file=sys.stderr,
-    )
-    if "--lint" not in sys.argv:
-        sys.exit(1)
+# long format: a sample spans one row per (seqtype, group), so gather each
+# sample's rows (first-seen order preserved) before building its data dict
+sample_rows = {}
+for row in SHEET.to_dict("records"):
+    sample_rows.setdefault(row["sample"], []).append(row)
 
-SAMPLES = {row["sample"]: per_sample_data(row) for _, row in SHEET.iterrows()}
+SAMPLES = {name: per_sample_data(name, rows) for name, rows in sample_rows.items()}
 check_vendored_scripts(config)
 check_hlahd_setup(config)
 check_cross_field_consistency(config, SAMPLES)
@@ -856,10 +897,9 @@ def get_predicted_mhcII_alleles(wildcards):
         if SAMPLES[wildcards.sample]["rnaseq"] is not None:
             for key in SAMPLES[wildcards.sample]["rnaseq"].keys():
 
-                # exclude normal samples (if specified)
+                # exclude normal groups (if any)
                 if SAMPLES[wildcards.sample]["normal"] is not None:
-                    normal = SAMPLES[wildcards.sample]["normal"].split(" ")
-                    if key in normal:
+                    if key in SAMPLES[wildcards.sample]["normal"]:
                         continue
 
                 values += expand(

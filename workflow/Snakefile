@@ -31,7 +31,6 @@ wildcard_constraints:
     chr="[^/]+",
     no=r"\d{1,}",
     rg="[^/]+",
-    replicate="[^/]+",
 
 
 #### load rules ####

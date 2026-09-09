@@ -19,35 +19,51 @@ Per-sample inputs live in a separate **sample sheet** (TSV), referenced by `conf
 samples: config/samples.tsv
 ```
 
-This pattern lets one `snakemake` invocation process **many samples in parallel** — Snakemake fans out the per-sample DAGs automatically (issue [#93](https://github.com/ylab-hi/ScanNeo2/issues/93)). For a single sample, use a one-row sheet.
+One `snakemake` invocation processes **many samples in parallel** — Snakemake fans out the per-sample DAGs automatically (issue [#93](https://github.com/ylab-hi/ScanNeo2/issues/93)).
 
-The sheet is wide-format, one row per sample. Columns (TAB-separated):
+The sheet is **long-format**: one row per sequencing input, identified by `(sample, seqtype, group)`. Columns (TAB-separated):
 
 | Column | Required | Description |
 | --- | --- | --- |
-| `sample` | yes | sample name; results are written to `results/<sample>/` and used as the `{sample}` wildcard |
-| `dnaseq_tumor` | no | DNA-seq tumor reads — one path (single-end) or two space-separated paths (paired-end); `.fq` / `.fastq` / `.bam` |
-| `dnaseq_normal` | no | DNA-seq matched normal/control reads — same format |
-| `rnaseq` | no | RNA-seq reads — same format |
-| `custom_variants` | no | path to a user-supplied VCF |
-| `custom_proteins` | no | path to a TSV of `(wildtype, mutant)` protein pairs |
-| `custom_hla_I` | no | path to a file listing MHC-I alleles (used when `hlatyping.MHC-I_mode` contains `custom`) |
-| `custom_hla_II` | no | same for MHC-II (when `hlatyping.MHC-II_mode` contains `custom`) |
-
-Leave a cell empty when not applicable. Empty cells become `None` in the per-sample data dict.
+| `sample` | yes | sample name; results are written to `results/<sample>/` and used as the `{sample}` wildcard. Repeated across the sample's rows. |
+| `seqtype` | seq rows | `dnaseq` or `rnaseq`. Leave empty on a custom-only row. |
+| `group` | seq rows | group name, **unique within `(sample, seqtype)`**. Becomes the `{group}` wildcard and the provenance label in the output. |
+| `type` | seq rows | `tumor` or `normal`. `normal` marks the matched normal/control (excluded from HLA typing). |
+| `reads` | seq rows | one path (single-end) or two space-separated paths (paired-end); `.fq` / `.fastq` / `.bam`. |
+| `custom_variants` | no | path to a user-supplied VCF (**sample-level** — see below) |
+| `custom_proteins` | no | path to a TSV of `(wildtype, mutant)` protein pairs (sample-level) |
+| `custom_hla_I` | no | path to a file listing MHC-I alleles, used when `hlatyping.MHC-I_mode` contains `custom` (sample-level) |
+| `custom_hla_II` | no | same for MHC-II, when `hlatyping.MHC-II_mode` contains `custom` (sample-level) |
 
 ```tsv
-sample	dnaseq_tumor	dnaseq_normal	rnaseq	custom_variants	custom_proteins	custom_hla_I	custom_hla_II
-sampleA	tumor_R1.fq.gz tumor_R2.fq.gz	normal_R1.fq.gz normal_R2.fq.gz	rna.bam				
-sampleB	tumorB.bam			vcfB.vcf.gz			
-sampleC				proteins.tsv		hlaC.tsv	
+sample	seqtype	group	type	reads	custom_variants	custom_proteins	custom_hla_I	custom_hla_II
+P1	dnaseq	tumor	tumor	t_R1.fq.gz t_R2.fq.gz
+P1	dnaseq	normal	normal	n_R1.fq.gz n_R2.fq.gz
+P1	rnaseq	tumor_rep1	tumor	rep1.bam
+P1	rnaseq	tumor_rep2	tumor	rep2.bam
+P2					vcfB.vcf.gz			hlaB.tsv
 ```
 
-The previous single-sample `data:` block is removed in v0.5.0. To migrate an existing config:
+`P1` above has a matched normal and **two RNA-seq replicates**; `P2` is a **custom-only** sample (predefined VCF + HLA list, no sequencing).
 
-1. Create `config/samples.tsv` (or another path) with one row keyed on what was previously `data.name`.
-2. Map old keys to columns: `data.dnaseq.<group>` → `dnaseq_tumor` / `dnaseq_normal`; `data.rnaseq.<group>` → `rnaseq`; `data.custom.{variants,proteins}` → `custom_variants` / `custom_proteins`; `data.custom.hlatyping.MHC-{I,II}` → `custom_hla_I` / `custom_hla_II`.
-3. Replace the entire `data:` block in `config.yaml` with `samples: config/samples.tsv`.
+### Replicates and groups
+
+A **replicate is just another `group`**. Give each replicate a distinct group name within its `(sample, seqtype)` (e.g. `tumor_rep1`, `tumor_rep2`). Every group is aligned and variant-called as an **independent, parallel** branch of the DAG, then all of a sample's candidates are **pooled** at prioritization into one combined list (a `bcftools concat` union — nothing is deduplicated or consensus-filtered). Provenance is preserved: each row of the final neoepitope table carries a `group` column (which replicate/condition it came from) and a `source` column (which caller), so you can pool or split by replicate yourself. On a cluster, the per-group calling distributes across nodes; the final per-sample prioritization is a single (multi-threaded) job.
+
+All groups within one `(sample, seqtype)` must share the same read type (SE/PE) and file type (`.fq`/`.bam`); a mismatch is rejected at load. Put a differing input in its own sample.
+
+### Custom inputs and custom-only samples
+
+The `custom_*` columns are **sample-level**: place them on any of a sample's rows (they must be blank or identical across that sample's rows). A sample with *only* custom inputs (no sequencing) is a single row with `seqtype`/`group`/`type`/`reads` left empty, as `P2` above.
+
+### Migrating from the old `data:` block
+
+The single-sample `data:` block is removed in v0.5.0. To migrate:
+
+1. Create `config/samples.tsv`; use what was `data.name` as the `sample` value.
+2. Turn each `data.dnaseq.<group>` / `data.rnaseq.<group>` entry into a row: `seqtype` = `dnaseq`/`rnaseq`, `group` = the old key, `reads` = its path(s), `type` = `normal` for the group named in `data.normal` else `tumor`.
+3. Map `data.custom.{variants,proteins}` → `custom_variants` / `custom_proteins` and `data.custom.hlatyping.MHC-{I,II}` → `custom_hla_I` / `custom_hla_II` on any of the sample's rows.
+4. Replace the entire `data:` block in `config.yaml` with `samples: config/samples.tsv`.
 
 In `custom_variants`, predefined variants in VCF format can be provided. When available ScanNeo2 utilizes specific INFO keys, which are used in the [results](https://github.com/ylab-hi/ScanNeo2/wiki/Output#prioritization). These include `AO`, `DP`, `AF` which correspond to the observed alleles (supporting reads), the depth of the variant, and the variant allele frequency, respectively.
 

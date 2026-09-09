@@ -1,5 +1,10 @@
 $schema: "http://json-schema.org/draft-07/schema#"
-description: ScanNeo2 sample sheet schema (validated per-row by snakemake.utils.validate)
+description: >-
+  ScanNeo2 sample sheet schema (long format). Each row is one sequencing input
+  identified by (sample, seqtype, group), or a custom-only row (seqtype/group/
+  type/reads empty, custom_* set). Validated per-row by snakemake.utils.validate;
+  cross-row constraints (group uniqueness per seqtype, uniform filetype/readtype,
+  sample-level custom consistency) are enforced in per_sample_data().
 
 type: object
 
@@ -8,28 +13,37 @@ properties:
     type: string
     minLength: 1
     pattern: "^[^/]+$"
-    description: sample name; results are written to results/<sample>/ and used as the {sample} wildcard
-  dnaseq_tumor:
+    description: sample name; results are written to results/<sample>/ and used as the {sample} wildcard. Repeated across the sample's rows.
+  seqtype:
     type: string
-    description: DNA-seq tumor reads; one path (.fq/.fastq/.bam) or two space-separated paths for paired-end. Empty when no DNA-seq tumor data is provided.
-  dnaseq_normal:
+    enum: ["", "dnaseq", "rnaseq"]
+    description: sequencing type for this row's reads. Empty on a custom-only row.
+  group:
     type: string
-    description: DNA-seq normal reads (matched normal/control); same format as dnaseq_tumor. Empty when no matched normal is provided.
-  rnaseq:
+    pattern: "^[^/]*$"
+    description: >-
+      group name, unique within (sample, seqtype). Becomes the {group} wildcard
+      and the provenance label in the output (the `group` column). Replicates are
+      just distinct groups (e.g. tumor_rep1, tumor_rep2). Empty on a custom-only row.
+  type:
     type: string
-    description: RNA-seq reads; same format as dnaseq_tumor. Empty when no RNA-seq data is provided.
+    enum: ["", "tumor", "normal"]
+    description: condition for this row; 'normal' marks the matched normal/control (excluded from HLA typing). Empty on a custom-only row.
+  reads:
+    type: string
+    description: one path (single-end) or two space-separated paths (paired-end); .fq/.fastq/.bam. Empty on a custom-only row.
   custom_variants:
     type: string
-    description: optional path to a user-supplied VCF to prioritize directly
+    description: optional path to a user-supplied VCF to prioritize directly (sample-level; must be consistent across a sample's rows)
   custom_proteins:
     type: string
-    description: optional path to a TSV of (wildtype, mutant) protein pairs; bypasses VCF + VEP
+    description: optional path to a TSV of (wildtype, mutant) protein pairs; bypasses VCF + VEP (sample-level)
   custom_hla_I:
     type: string
-    description: optional path to a file listing MHC class I alleles (used when hlatyping.MHC-I_mode contains 'custom')
+    description: optional path to a file listing MHC class I alleles (used when hlatyping.MHC-I_mode contains 'custom'; sample-level)
   custom_hla_II:
     type: string
-    description: optional path to a file listing MHC class II alleles (used when hlatyping.MHC-II_mode contains 'custom')
+    description: optional path to a file listing MHC class II alleles (used when hlatyping.MHC-II_mode contains 'custom'; sample-level)
 
 required: [sample]
 additionalProperties: false
