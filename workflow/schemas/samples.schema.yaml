@@ -12,15 +12,15 @@ properties:
   sample:
     type: string
     minLength: 1
-    pattern: "^[^/]+$"
-    description: sample name; results are written to results/<sample>/ and used as the {sample} wildcard. Repeated across the sample's rows.
+    pattern: '^[^/\s]+$'
+    description: sample name; results are written to results/<sample>/ and used as the {sample} wildcard. Repeated across the sample's rows. No '/' or whitespace (it becomes a path segment).
   seqtype:
     type: string
     enum: ["", "dnaseq", "rnaseq"]
     description: sequencing type for this row's reads. Empty on a custom-only row.
   group:
     type: string
-    pattern: "^[^/]*$"
+    pattern: '^[^/\s]*$'
     description: >-
       group name, unique within (sample, seqtype). Becomes the {group} wildcard
       and the provenance label in the output (the `group` column). Replicates are
