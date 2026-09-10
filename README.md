@@ -85,6 +85,16 @@ overwrites the default config, and should include all key/value pairs of the val
 
 For more detailed instructions and explanations on how to use ScanNeo2, please consult the [documentation site](https://ylab-hi.github.io/ScanNeo2/) (the GitHub [wiki](https://github.com/ylab-hi/ScanNeo2/wiki) is kept in sync as a fallback).
 
+### Running on a cluster (SLURM)
+
+ScanNeo2 ships a generic SLURM profile at `workflow/profiles/slurm/` (requires the `snakemake-executor-plugin-slurm`, which is included in `environment.yml`). Instead of running everything in one allocation, it submits each job to SLURM, mapping `threads` to `--cpus-per-task` and per-rule `runtime` / `mem_mb` to walltime / memory:
+
+```bash
+snakemake --workflow-profile workflow/profiles/slurm --configfile config/config.yaml
+```
+
+The profile is cluster-agnostic — no account or partition is hard-coded, so jobs use your default partition/account. To target a specific account/partition, uncomment and set `slurm_account` / `slurm_partition` in the profile's `default-resources` (or copy the profile and edit it) — set them there rather than via a CLI `--default-resources`, which would drop the profile's `mem_mb` / `runtime` defaults. The resource tiers (e.g. STAR at 64 GB) are starting points — tune them to your data.
+
 ## Docker Support
 
 For added convenience, we also provide a ready-to-use [Docker](https://hub.docker.com/r/yanglabinfo/scanneo2)

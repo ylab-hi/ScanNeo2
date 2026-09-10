@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **SLURM executor profile for cluster execution**: new `workflow/profiles/slurm/config.yaml` (invoked via `snakemake --workflow-profile workflow/profiles/slurm`) submits each job to SLURM through `snakemake-executor-plugin-slurm` (now in `environment.yml`), mapping each rule's `threads` to `--cpus-per-task` and per-rule `runtime` / `mem_mb` tiers to walltime / memory. Deliberately cluster-agnostic — no account or partition is hard-coded, so jobs use the default partition/account (set `slurm_account` / `slurm_partition` in the profile's `default-resources`, or copy the profile). Memory tiers are sized for human-scale data (STAR at 64 GB, etc.) and only fill rules that declare no memory of their own; `rnaseq_postproc_markdup` keeps its `mem_mb_per_cpu` (its default `mem_mb` is unset so SLURM gets a single memory flag). Documented in the README and `docs/configuration.md`. ([#161](https://github.com/ylab-hi/ScanNeo2/issues/161), [#165](https://github.com/ylab-hi/ScanNeo2/pull/165))
+
 ### Changed
 
 - **Bump to Snakemake 9**: `environment.yml` now installs `snakemake>=9,<10` (was `snakemake=8.4.11`) from the `conda-forge` / `bioconda` channels — the `anaconda` channel was dropped (it emitted Terms-of-Service warnings and blocked the solve) — and `min_version` is raised to `9.0.0`. The workflow lints and dry-runs cleanly on Snakemake 9 with the pandas-based sample-sheet loader; no rule / wrapper / checkpoint changes were required. CI linting pins `snakemake-version: 9.24.0` so it runs against Snakemake 9. ([#161](https://github.com/ylab-hi/ScanNeo2/issues/161), [#164](https://github.com/ylab-hi/ScanNeo2/pull/164))

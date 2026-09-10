@@ -5,3 +5,4 @@ channels:
 dependencies:
  - snakemake>=9,<10
  - snakemake-wrapper-utils
+ - snakemake-executor-plugin-slurm

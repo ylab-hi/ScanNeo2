@@ -222,6 +222,28 @@ prioritization:
 
 `lengths.MHC-I` / `lengths.MHC-II` set the epitope k-mer lengths submitted to the binding predictor (netMHCpan / netMHCIIpan), one prediction job per `(allele, length, wt|mt)` cell. The default ranges (`8,9,10,11` for class I, `13,14,15` for class II) cover the dominant binding-affinity windows for each class. Both discrete lists (`8,9,10,11`) and ranges (`8-11`) are accepted.
 
+## CLUSTER EXECUTION (SLURM)
+
+By default `snakemake --cores all --sdm conda` runs every job locally, in one machine or one interactive allocation. To distribute jobs across a SLURM cluster, ScanNeo2 ships a generic profile at `workflow/profiles/slurm/` (it needs the `snakemake-executor-plugin-slurm`, already in `environment.yml`):
+
+```bash
+snakemake --workflow-profile workflow/profiles/slurm --configfile config/config.yaml
+```
+
+Snakemake then submits each job with `sbatch`, translating each rule's `threads` into `--cpus-per-task` and the per-rule `runtime` / `mem_mb` from the profile into walltime / memory. With a sample sheet that has multiple samples or replicate groups, the independent per-group branches (alignment, variant calling) fan out across nodes; the per-sample prioritization stays a single job.
+
+The profile is deliberately **cluster-agnostic**: it sets no account and no partition, so jobs land on your cluster's default partition under your default account. To target a specific account/partition, uncomment and set `slurm_account` / `slurm_partition` in the profile's `default-resources` (or copy the profile and edit it):
+
+```yaml
+default-resources:
+  mem_mb: 4000
+  runtime: 120
+  slurm_account: "<account>"
+  slurm_partition: "<partition>"
+```
+
+Set them in the profile rather than via a CLI `--default-resources`, which would replace the whole block and drop the `mem_mb` / `runtime` defaults. The memory and runtime tiers (e.g. STAR at 64 GB) are sized for human-scale data as starting points — tune them to your inputs.
+
 
 
 

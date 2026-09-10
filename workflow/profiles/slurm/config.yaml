@@ -1,0 +1,107 @@
+# Generic SLURM executor profile for ScanNeo2 (snakemake >= 9).
+#
+# Usage (the snakemake-executor-plugin-slurm dependency ships in environment.yml):
+#   snakemake --workflow-profile workflow/profiles/slurm --configfile config/config.yaml
+#
+# Cluster-agnostic on purpose: no SLURM account and no partition are set, so
+# jobs go to your cluster's default partition under your default account.
+# To target a specific account/partition, uncomment and set slurm_account /
+# slurm_partition under `default-resources` below (or copy this file and edit
+# it). Set them there rather than via a CLI `--default-resources`, which would
+# replace this whole block and drop the mem_mb / runtime defaults set here.
+#
+# Each rule's `threads` maps to --cpus-per-task automatically. Memory below is
+# sized for human-scale data and only fills rules that declare no memory of
+# their own; rules that already set mem_mb / mem_mb_per_cpu keep those values
+# (set-resources only lists overrides). Runtime is in minutes. Both are
+# starting points -- tune to your data size.
+
+executor: slurm
+software-deployment-method: conda
+conda-frontend: mamba
+
+jobs: 100 # max concurrently-submitted SLURM jobs
+latency-wait: 60 # tolerate shared-filesystem output latency after a job finishes
+
+default-resources:
+  mem_mb: 4000
+  runtime: 120 # minutes; fallback for light rules not listed below
+  # Uncomment and set for your site (keeps the defaults above, unlike a CLI override):
+  # slurm_account: "<account>"
+  # slurm_partition: "<partition>"
+
+set-resources:
+  # --- large downloads (light on memory, slow on network) ---
+  get_genome:
+    runtime: 240
+  download_vep_cache:
+    runtime: 240
+  get_gatk_vqsr_training_sets:
+    runtime: 240
+  # --- reference indexing ---
+  star_index: # STAR genomeGenerate needs the whole genome in RAM (~64 GB for human)
+    runtime: 720
+    mem_mb: 64000
+  bwa_index:
+    runtime: 240
+    mem_mb: 16000
+  # --- alignment (STAR loads the ~30 GB human index into memory) ---
+  star_align_fastq:
+    runtime: 1440
+    mem_mb: 64000
+  star_align_bamfile:
+    runtime: 1440
+    mem_mb: 64000
+  bwa_align_dnaseq:
+    runtime: 1440
+    mem_mb: 16000
+  realign:
+    runtime: 1440
+    mem_mb: 16000
+  realign_dnaseq_bam:
+    runtime: 1440
+    mem_mb: 16000
+  merge_alignment_results:
+    runtime: 720
+    mem_mb: 8000
+  # --- BAM post-processing ---
+  rnaseq_postproc_markdup:
+    runtime: 720
+    # the rule sets mem_mb_per_cpu; unset the default mem_mb so SLURM receives
+    # only --mem-per-cpu (--mem and --mem-per-cpu are mutually exclusive)
+    mem_mb: null
+  rnaseq_postproc_fixmate:
+    runtime: 720
+    mem_mb: 8000
+  dnaseq_postproc: # keeps its declared mem_mb=20000
+    runtime: 720
+  # --- variant calling (GATK detect/recalibrate keep their declared mem_mb) ---
+  detect_variants_htc_first_round:
+    runtime: 1440
+  detect_variants_htc_final_round:
+    runtime: 1440
+  detect_short_indels_m2:
+    runtime: 1440
+  detect_long_indel_ti_call:
+    runtime: 1440
+    mem_mb: 16000
+  recalibrate_bases:
+    runtime: 720
+  recalibrate_variants_first_round:
+    runtime: 720
+  recalibrate_variants_final_round:
+    runtime: 720
+  # --- transcriptomic variant callers ---
+  spladder:
+    runtime: 1440
+    mem_mb: 32000
+  scanexitron:
+    runtime: 1440
+    mem_mb: 16000
+  arriba:
+    runtime: 720
+    mem_mb: 40000
+  # --- neoepitope prioritization (binding-affinity prediction) ---
+  prioritization:
+    runtime: 1440
+    mem_mb: 16000
