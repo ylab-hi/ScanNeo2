@@ -72,9 +72,9 @@ rule prioritization:
         peptide="resources/refs/peptide.fasta",
         annotation="resources/refs/genome_tmp.gtf",
         counts=get_prioritization_counts,
-        mhcI_ba="workflow/scripts/mhc_i/",
-        mhcII_ba="workflow/scripts/mhc_ii/",
-        mhcI_im="workflow/scripts/immunogenicity/",
+        mhcI_ba=get_mhcI_ba_tools,
+        mhcII_ba=get_mhcII_ba_tools,
+        mhcI_im=get_mhcI_immunogenicity_tools,
     output:
         directory("results/{sample}/prioritization/"),
     log:

@@ -1513,6 +1513,28 @@ def get_prioritization_mhcII(wildcards):
     return alleles
 
 
+# IEDB prediction tool directories are required by rule prioritization only for
+# the class it actually predicts (compile.py runs MHC-I / MHC-II binding gated on
+# prioritization.class; immunogenicity is MHC-I only). Gating the inputs keeps a
+# class-I run from pulling the MHC-II download rule (and vice versa).
+def get_mhcI_ba_tools(wildcards):
+    if config["prioritization"]["class"] in ["I", "BOTH"]:
+        return ["workflow/scripts/mhc_i/"]
+    return []
+
+
+def get_mhcI_immunogenicity_tools(wildcards):
+    if config["prioritization"]["class"] in ["I", "BOTH"]:
+        return ["workflow/scripts/immunogenicity/"]
+    return []
+
+
+def get_mhcII_ba_tools(wildcards):
+    if config["prioritization"]["class"] in ["II", "BOTH"]:
+        return ["workflow/scripts/mhc_ii/"]
+    return []
+
+
 def get_prioritization_counts(wildcards):
     counts = []
     # counts can only be generated if either RNAseq or DNAseq data is provided
