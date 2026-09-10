@@ -2,7 +2,7 @@
     <h1>ScanNeo2</h1>
     <img src="https://img.shields.io/github/v/release/ylab-hi/ScanNeo2">
     <img src="https://github.com/ylab-hi/ScanNeo2/actions/workflows/linting.yml/badge.svg" alt="Workflow status badge">
-    <img src="https://img.shields.io/badge/snakemake-≥8.0.0-brightgreen.svg">
+    <img src="https://img.shields.io/badge/snakemake-≥9.0.0-brightgreen.svg">
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg">
     <img alt="Citation Badge" src="https://api.juleskreuer.eu/citation-badge.php?doi=10.1093/bioinformatics/btad659">
     <img src="https://img.shields.io/github/downloads/ylab-hi/ScanNeo2/total.svg">
@@ -39,7 +39,7 @@ To get started with ScanNeo2, follow the steps below:
     mamba activate scanneo2
     ```
 
-    Note: ScanNeo2 requires Snakemake >= 8.0 and is not compatible with earlier versions.
+    Note: ScanNeo2 requires Snakemake >= 9.0 and is not compatible with earlier versions.
 
 2. Deploy ScanNeo2:
 

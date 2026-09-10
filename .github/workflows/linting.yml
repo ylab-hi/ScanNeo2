@@ -41,6 +41,7 @@ jobs:
           persist-credentials: false
       - uses: snakemake/snakemake-github-action@v1
         with:
+          snakemake-version: '9.24.0'
           directory: '.tests'
           snakefile: 'workflow/Snakefile'
           args: '--lint --configfile .tests/integration/config_basic/config.yaml'
