@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Bump to Snakemake 9**: `environment.yml` now installs `snakemake>=9,<10` (was `snakemake=8.4.11`) from the `conda-forge` / `bioconda` channels — the `anaconda` channel was dropped (it emitted Terms-of-Service warnings and blocked the solve) — and `min_version` is raised to `9.0.0`. The workflow lints and dry-runs cleanly on Snakemake 9 with the pandas-based sample-sheet loader; no rule / wrapper / checkpoint changes were required. CI linting pins `snakemake-version: 9.24.0` so it runs against Snakemake 9. ([#161](https://github.com/ylab-hi/ScanNeo2/issues/161), [#164](https://github.com/ylab-hi/ScanNeo2/pull/164))
+
 ### Fixed
 
 - **MHC-II prediction tools no longer downloaded on class-I-only runs**: `rule prioritization` declared the IEDB tool directories (`workflow/scripts/{mhc_i,mhc_ii,immunogenicity}/`) as unconditional inputs, so `download_mhcII_ba_tools` was pulled into the DAG even when `prioritization.class: I` — a needless large IEDB MHC-II download the run never uses (`compile.py` gates binding on `mhc_class`, and immunogenicity is MHC-I only). Gated the tool-dir inputs on `prioritization.class` via new `get_mhcI_ba_tools` / `get_mhcI_immunogenicity_tools` / `get_mhcII_ba_tools` (MHC-I + immunogenicity for `{I, BOTH}`, MHC-II for `{II, BOTH}`); nothing downstream changes since `compile.py` already no-ops the unused class. Verified by dry-run with the tool dir hidden: a class-I run no longer schedules the MHC-II download, a `BOTH` run still does. ([#160](https://github.com/ylab-hi/ScanNeo2/issues/160), [#163](https://github.com/ylab-hi/ScanNeo2/pull/163))

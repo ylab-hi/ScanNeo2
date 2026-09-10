@@ -1,8 +1,7 @@
 name: scanneo2
 channels:
- - bioconda
  - conda-forge
- - anaconda
+ - bioconda
 dependencies:
- - snakemake=8.4.11
+ - snakemake>=9,<10
  - snakemake-wrapper-utils
