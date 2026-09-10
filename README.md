@@ -93,7 +93,7 @@ ScanNeo2 ships a generic SLURM profile at `workflow/profiles/slurm/` (requires t
 snakemake --workflow-profile workflow/profiles/slurm --configfile config/config.yaml
 ```
 
-The profile is cluster-agnostic — no account or partition is hard-coded, so jobs use your default partition/account. Override site specifics without editing the file, e.g. `--default-resources slurm_account=<acct> slurm_partition=<partition>`, or copy the profile and edit `default-resources` / `set-resources`. The resource tiers (e.g. STAR at 64 GB) are starting points — tune them to your data.
+The profile is cluster-agnostic — no account or partition is hard-coded, so jobs use your default partition/account. To target a specific account/partition, uncomment and set `slurm_account` / `slurm_partition` in the profile's `default-resources` (or copy the profile and edit it) — set them there rather than via a CLI `--default-resources`, which would drop the profile's `mem_mb` / `runtime` defaults. The resource tiers (e.g. STAR at 64 GB) are starting points — tune them to your data.
 
 ## Docker Support
 
