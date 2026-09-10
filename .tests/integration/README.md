@@ -16,6 +16,12 @@ In `indel-test` we call ScanNeo2 to detect indel-derived neoantigens
 using provided mhc-I alleles (`data/hla/mhc-I.tsv`). The exptected
 output is stored in `results`.
 
+In `replicate-test` we call ScanNeo2 with two samples, one of which
+carries two RNA-seq tumor replicates (`tumor_rep1`, `tumor_rep2`).
+It exercises the long-format sample sheet: the per-group alignment and
+variant calling fan out (once per replicate) while prioritization pools
+each sample's groups into a single combined, provenance-tagged result.
+
 ## Running the Tests
 
 ```

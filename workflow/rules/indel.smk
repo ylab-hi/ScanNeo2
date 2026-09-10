@@ -82,7 +82,7 @@ rule long_indel_augment:
     conda:
         "../envs/manipulate_vcf.yml"
     message:
-        "Augment long indels with group and source information and resolving alleles and removing PCR slippage using transindel on sample:{wildcards.group} with replicate:{wildcards.group}"
+        "Augment long indels with group and source information and resolving alleles and removing PCR slippage using transindel on sample:{wildcards.sample} group:{wildcards.group}"
     shell:
         """
         python3 workflow/scripts/add_infos_to_vcf.py \

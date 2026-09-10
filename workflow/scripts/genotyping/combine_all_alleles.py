@@ -93,7 +93,7 @@ def main():
         print("    - If non-empty but per-batch OptiType results are 0 bytes: the")
         print("      optitype wrapper hit its '<10 reads per batch' empty-output branch")
         print(f"      (see results/<sample>/hla/{mhc_class}/genotyping/<group>_<nartype>_flt_*/)")
-        print("  For user-provided alleles: check config['data']['custom']['hlatyping']")
+        print("  For user-provided alleles: check the sample sheet's custom_hla_I / custom_hla_II columns")
         sys.exit(1)
 
 main()

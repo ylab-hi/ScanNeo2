@@ -1,0 +1,4 @@
+sample	seqtype	group	type	reads	custom_variants	custom_proteins	custom_hla_I	custom_hla_II
+basic_sample	dnaseq	tumor	tumor	TESLA_testdata/patient2/WES/TESLA_10_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_10_2.fastq.gz
+basic_sample	dnaseq	normal	normal	TESLA_testdata/patient2/WES/TESLA_9_1.fastq.gz TESLA_testdata/patient2/WES/TESLA_9_2.fastq.gz
+basic_sample	rnaseq	tumor	tumor	TESLA_testdata/patient2/RNA/TESLA_11_1.fastq.gz TESLA_testdata/patient2/RNA/TESLA_11_2.fastq.gz

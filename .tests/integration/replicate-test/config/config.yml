@@ -1,15 +1,20 @@
 ### General
+# Replicate testcase: two samples, one carrying two RNA-seq tumor replicates
+# (tumor_rep1, tumor_rep2). Exercises the long-format sheet's per-group fan-out
+# (alignment/calling run once per group) and the per-sample pooling at
+# prioritization. Custom MHC-I alleles keep HLA typing off the HLA-HD path so
+# the testcase runs without the hlahd_files/ reference data.
 reference:
   release: 111
   nonchr: false
 threads: 30
 mapq: 30  # overall required mapping quality
-basequal: 20  # overall required base quality 
+basequal: 20  # overall required base quality
 
-samples: .tests/integration/custom-test/config/samples.tsv
+samples: .tests/integration/replicate-test/config/samples.tsv
 
 ### pre-processing (only applied on fastq reads)
-preproc: 
+preproc:
   activate: true  # whether (=true) or not (=false) to include pre-processing
   minlen: 10
   slidingwindow:
@@ -57,11 +62,11 @@ genefusion:
 
 ### indel
 indel:
-  activate: false # whether (=true) or not (=false) to include indels
-  type: short # long, short, all
-  mode: BOTH  # DNA, RNA or BOTH - 
+  activate: true # whether (=true) or not (=false) to include indels
+  type: all # long, short, all
+  mode: BOTH  # DNA, RNA or BOTH -
   # strategy for optimizing posterior probability threshold
-  strategy: OPTIMAL_F_SCORE # OPTIMAL_F_SCORE, FALSE_DISCOVERY_RATE, CONSTANT 
+  strategy: OPTIMAL_F_SCORE # OPTIMAL_F_SCORE, FALSE_DISCOVERY_RATE, CONSTANT
   fscorebeta: 1.0  # rel. weight of recall to precision (when OPTIMAL_F_SCORE is selected)
   fdr: 0.05  # false discovery rate (when FALSE_DISCOVERY_RATE is selected)
   sliplen: 8  # min number of reference bases to suspect slippage event
@@ -75,9 +80,9 @@ hlatyping:
   # specific path for class II hlatyping (only required when class: II, or BOTH)
   MHC-I_mode: custom # DNA, RNA, or custom (if empty alleles have to be specified in custom)
   MHC-II_mode: RNA # DNA, RNA, or custom (if empty alleles have to be specified in custom)
-  
+
   # specific path for class II hlatyping (only required when class: II, or BOTH)
-  freqdata: ./hlahd_files/freq_data/ 
+  freqdata: ./hlahd_files/freq_data/
   split: ./hlahd_files/HLA_gene.split.txt
   dict: ./hlahd_files/dictionary/
 
@@ -86,4 +91,3 @@ prioritization:
   lengths:
     MHC-I: 8,9,10,11
     MHC-II: 13,14,15
-
