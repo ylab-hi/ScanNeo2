@@ -15,6 +15,11 @@
 # their own; rules that already set mem_mb / mem_mb_per_cpu keep those values
 # (set-resources only lists overrides). Runtime is in minutes. Both are
 # starting points -- tune to your data size.
+#
+# NODE REQUIREMENT: the largest single job is `arriba` at 128 GB (gene fusion on
+# deep RNA), so the workflow requires a partition whose nodes have >=128 GB RAM.
+# Other memory-heavy rules: STAR / OptiType HLA typing 64 GB, GATK/VQSR steps
+# 32-64 GB.
 
 executor: slurm
 software-deployment-method: conda
@@ -100,8 +105,9 @@ set-resources:
     mem_mb: 16000
   arriba:
     runtime: 720
-    # fusion-finding on high-depth RNA exceeded 40 GB (OOM at "Finding fusions").
-    mem_mb: 64000
+    # deep-RNA samples push ~40M alignments through "Finding fusions and counting
+    # supporting reads", which holds them in memory; genomics nodes have 192-257 GB.
+    mem_mb: 128000
   # --- annotation (VEP `--everything` is slow; 120 min default times out) ---
   annotate_variants:
     runtime: 1440
