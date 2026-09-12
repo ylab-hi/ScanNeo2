@@ -381,6 +381,7 @@ rule combine_aug_short_indels_m2:
 rule select_SNVs_m2:
     input:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz",
+        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz.tbi",
         ref="resources/refs/genome.fasta",
     output:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf",

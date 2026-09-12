@@ -100,7 +100,8 @@ set-resources:
     mem_mb: 16000
   arriba:
     runtime: 720
-    mem_mb: 40000
+    # fusion-finding on high-depth RNA exceeded 40 GB (OOM at "Finding fusions").
+    mem_mb: 64000
   # --- neoepitope prioritization (binding-affinity prediction) ---
   prioritization:
     runtime: 1440
