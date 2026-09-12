@@ -39,85 +39,41 @@ rule filter_reads_mhcI_SE:
         """
 
 
-rule sort_reads_mhcI_SE:
-    input:
-        "results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE.bam",
-    output:
-        bam="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE_sorted.bam",
-    log:
-        "logs/{sample}/hlatyping/sort_reads_mhcI_SE_{group}_{nartype}.log",
-    conda:
-        "../envs/samtools.yml"
-    threads: 4
-    resources:
-        mem_mb=20000,
-    message:
-        "Sort the filtered {wildcards.nartype}seq reads for hlatyping of sample: {wildcards.sample}"
-    shell:
-        """
-        # name-sort keeps mates grouped (so paired R1/R2 split identically),
-        # then reheader SO:queryname -> SO:unsorted so GATK
-        # SplitSamByNumberOfReads does not assert picard's queryname order:
-        # samtools' natural sort order differs and otherwise raises
-        # "Alignments added out of order".
-        samtools sort -n -@ {threads} -m4g {input:q} -o - 2>{log} \
-            | samtools reheader -c 'sed "s/SO:queryname/SO:unsorted/"' - \
-                >{output.bam:q} 2>>{log}
-        """
-
-
-checkpoint split_reads_mhcI_SE:
-    input:
-        fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE_sorted.bam",
-    output:
-        directory("results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE/"),
-    log:
-        "logs/{sample}/hlatyping/split_reads_mhcI_SE_{group}_{nartype}.log",
-    conda:
-        "../envs/gatk.yml"
-    threads: 1
-    message:
-        "Splitting filtered group: {wildcards.group} BAM files ({wildcards.nartype}seq reads) for HLA typing"
-    shell:
-        """
-        mkdir -p results/{wildcards.sample}/hla/mhc-I/reads/{wildcards.group}_{wildcards.nartype}_flt_SE/
-        gatk SplitSamByNumberOfReads \
-            -I {input.fwd:q} \
-            --OUTPUT {output:q} \
-            --OUT_PREFIX R \
-            --SPLIT_TO_N_READS 100000 \
-            >{log} 2>&1
-        """
-
-
+# HLA typing runs OptiType once over the whole HLA-filtered read set. OptiType
+# solves for a single best 6-allele genotype from all reads at once, so the
+# reads must NOT be split: combine_optitype_results unions the alleles across
+# inputs, and splitting would let per-piece sampling noise inflate the call
+# set. The wrapper coordinate-sorts and indexes the BAM before running.
 rule hlatyping_mhcI_SE:
     input:
-        fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE/R_{no}.bam",
-        rev="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE/R_{no}.bam",
+        fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE.bam",
+        rev="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_SE.bam",
     output:
-        pdf="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE/{no}_coverage_plot.pdf",
-        tsv="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE/{no}_result.tsv",
+        pdf="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE_coverage_plot.pdf",
+        tsv="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE_result.tsv",
     log:
-        "logs/{sample}/hlatyping/hlatyping_mhcI_SE_{group}_{nartype}_{no}.log",
+        "logs/{sample}/hlatyping/hlatyping_mhcI_SE_{group}_{nartype}.log",
     conda:
         "../envs/optitype.yml"
-    # OptiType is single-threaded (ILP solver); the wrapper does not
-    # parallelise across cores.
+    # OptiType is single-threaded (ILP solver); its razers3 hit matrix over the
+    # whole read set is the memory driver.
     threads: 1
+    resources:
+        mem_mb=64000,
     message:
-        "HLA typing from splitted BAM files"
+        "HLA typing (OptiType) of {wildcards.nartype}seq reads in group: {wildcards.group}"
     shell:
         """
         python3 workflow/scripts/genotyping/optitype_wrapper.py \
-            {wildcards.nartype} {wildcards.no} \
-            results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_SE/ \
+            {wildcards.nartype} {wildcards.group}_{wildcards.nartype}_flt_SE \
+            results/{wildcards.sample}/hla/mhc-I/genotyping/ \
             {input.fwd:q} {input.rev:q} >{log} 2>&1
         """
 
 
 rule combine_hlatyping_mhcI_SE:
     input:
-        aggregate_mhcI_SE,
+        "results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE_result.tsv",
     output:
         "results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE.tsv",
     log:
@@ -126,7 +82,7 @@ rule combine_hlatyping_mhcI_SE:
         "../envs/basic.yml"
     threads: 1
     message:
-        "Combining HLA alleles from predicted optitype results from {wildcards.nartype}seq reads in group: {wildcards.group}"
+        "Reformatting OptiType alleles from {wildcards.nartype}seq reads in group: {wildcards.group}"
     shell:
         """
         python3 workflow/scripts/genotyping/combine_optitype_results.py \
@@ -172,93 +128,35 @@ rule filter_reads_mhcI_PE:
         """
 
 
-rule sort_and_index_reads_mhcI_PE:
-    input:
-        "results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_{readpair}.bam",
-    output:
-        bam="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_{readpair}_sorted.bam",
-    log:
-        "logs/{sample}/hlatyping/sort_and_index_reads_mhcI_PE_{group}_{nartype}_{readpair}.log",
-    conda:
-        "../envs/samtools.yml"
-    threads: 4
-    resources:
-        mem_mb=20000,
-    message:
-        "Sort the filtered {wildcards.nartype}seq reads for hlatyping of sample: {wildcards.sample} with readpair: {wildcards.readpair}"
-    shell:
-        """
-        # name-sort keeps mates grouped (so paired R1/R2 split identically),
-        # then reheader SO:queryname -> SO:unsorted so GATK
-        # SplitSamByNumberOfReads does not assert picard's queryname order:
-        # samtools' natural sort order differs and otherwise raises
-        # "Alignments added out of order".
-        samtools sort -n -@ {threads} -m4g {input:q} -o - 2>{log} \
-            | samtools reheader -c 'sed "s/SO:queryname/SO:unsorted/"' - \
-                >{output.bam:q} 2>>{log}
-        """
-
-
-checkpoint split_reads_mhcI_PE:
-    input:
-        fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R1_sorted.bam",
-        rev="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R2_sorted.bam",
-    output:
-        directory("results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE/"),
-    log:
-        "logs/{sample}/hlatyping/split_reads_mhcI_PE_{group}_{nartype}.log",
-    conda:
-        "../envs/gatk.yml"
-    threads: 1
-    message:
-        "Splitting filtered group: {wildcards.group} BAM files ({wildcards.nartype}seq reads) for HLA typing"
-    shell:
-        """
-        mkdir -p results/{wildcards.sample}/hla/mhc-I/reads/{wildcards.group}_{wildcards.nartype}_flt_PE/
-        gatk SplitSamByNumberOfReads \
-            -I {input.fwd:q} \
-            --OUTPUT {output:q} \
-            --OUT_PREFIX R1 \
-            --SPLIT_TO_N_READS 100000 \
-            >{log} 2>&1
-
-        gatk SplitSamByNumberOfReads \
-            -I {input.rev:q} \
-            --OUTPUT {output:q} \
-            --OUT_PREFIX R2 \
-            --SPLIT_TO_N_READS 100000 \
-            >>{log} 2>&1
-        """
-
-
+# Single OptiType call over the whole R1/R2 filtered set (see hlatyping_mhcI_SE).
 rule hlatyping_mhcI_PE:
     input:
-        fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE/R1_{no}.bam",
-        rev="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE/R2_{no}.bam",
+        fwd="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R1.bam",
+        rev="results/{sample}/hla/mhc-I/reads/{group}_{nartype}_flt_PE_R2.bam",
     output:
-        pdf="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE/{no}_coverage_plot.pdf",
-        tsv="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE/{no}_result.tsv",
+        pdf="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE_coverage_plot.pdf",
+        tsv="results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE_result.tsv",
     log:
-        "logs/{sample}/hlatyping/hlatyping_mhcI_PE_{group}_{nartype}_{no}.log",
+        "logs/{sample}/hlatyping/hlatyping_mhcI_PE_{group}_{nartype}.log",
     conda:
         "../envs/optitype.yml"
-    # OptiType is single-threaded (ILP solver); the wrapper does not
-    # parallelise across cores.
     threads: 1
+    resources:
+        mem_mb=64000,
     message:
-        "HLA typing from splitted BAM files"
+        "HLA typing (OptiType) of {wildcards.nartype}seq reads in group: {wildcards.group}"
     shell:
         """
         python3 workflow/scripts/genotyping/optitype_wrapper.py \
-            {wildcards.nartype} {wildcards.no} \
-            results/{wildcards.sample}/hla/mhc-I/genotyping/{wildcards.group}_{wildcards.nartype}_flt_PE/ \
+            {wildcards.nartype} {wildcards.group}_{wildcards.nartype}_flt_PE \
+            results/{wildcards.sample}/hla/mhc-I/genotyping/ \
             {input.fwd:q} {input.rev:q} >{log} 2>&1
         """
 
 
 rule combine_hlatyping_mhcI_PE:
     input:
-        aggregate_mhcI_PE,
+        "results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE_result.tsv",
     output:
         "results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE.tsv",
     log:
@@ -267,7 +165,7 @@ rule combine_hlatyping_mhcI_PE:
         "../envs/basic.yml"
     threads: 1
     message:
-        "Combining HLA alleles from predicted optitype results from {wildcards.nartype}seq reads in group: {wildcards.group}"
+        "Reformatting OptiType alleles from {wildcards.nartype}seq reads in group: {wildcards.group}"
     shell:
         """
         python3 workflow/scripts/genotyping/combine_optitype_results.py \

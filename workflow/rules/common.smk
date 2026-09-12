@@ -746,28 +746,6 @@ def get_input_filtering_hlatyping_PE(wildcards):
         return SAMPLES[wildcards.sample][seqtype][wildcards.group]
 
 
-def aggregate_mhcI_SE(wildcards):
-    checkpoint_output = checkpoints.split_reads_mhcI_SE.get(**wildcards).output[0]
-    return expand(
-        "results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE/{no}_result.tsv",
-        sample=wildcards.sample,
-        group=wildcards.group,
-        nartype=wildcards.nartype,
-        no=glob_wildcards(os.path.join(checkpoint_output, "R_{no}.bam")).no,
-    )
-
-
-def aggregate_mhcI_PE(wildcards):
-    checkpoint_output = checkpoints.split_reads_mhcI_PE.get(**wildcards).output[0]
-    return expand(
-        "results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE/{no}_result.tsv",
-        sample=wildcards.sample,
-        group=wildcards.group,
-        nartype=wildcards.nartype,
-        no=glob_wildcards(os.path.join(checkpoint_output, "R1_{no}.bam")).no,
-    )
-
-
 def get_all_mhcI_alleles(wildcards):
     values = []
 
