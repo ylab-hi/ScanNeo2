@@ -60,6 +60,7 @@ rule hlatyping_mhcI_SE:
     threads: 1
     resources:
         mem_mb=64000,
+        runtime=360,
     message:
         "HLA typing (OptiType) of {wildcards.nartype}seq reads in group: {wildcards.group}"
     shell:
@@ -143,6 +144,7 @@ rule hlatyping_mhcI_PE:
     threads: 1
     resources:
         mem_mb=64000,
+        runtime=360,
     message:
         "HLA typing (OptiType) of {wildcards.nartype}seq reads in group: {wildcards.group}"
     shell:

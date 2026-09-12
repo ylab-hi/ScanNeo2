@@ -9,11 +9,12 @@ from pathlib import Path
         python3 optitype_wrapper.py <nartype> <prefix> <outpath> <bam1> [bam2] [...]
 """
 
-# HLA typing saturates well below this depth, but razers3's hit matrix grows
-# with read count and OOMs on ultra-high-depth RNA (one TESLA sample had ~455k
-# HLA reads and killed OptiType even at 64 GB). Cap the reads per input file so
-# memory is bounded regardless of expression level.
-READ_CAP = 100000
+# HLA typing saturates well below this depth, but OptiType's hit matrix grows
+# with read count -- both memory AND runtime. One TESLA RNA sample had ~455k HLA
+# reads: uncapped it OOM'd at 64 GB, and even capped at 100k OptiType spent ~1.5h
+# building the matrix and timed out. 50k keeps thousands-fold coverage per HLA
+# locus (no typing accuracy lost) while bounding memory and runtime.
+READ_CAP = 50000
 
 
 def count_reads(bam):
