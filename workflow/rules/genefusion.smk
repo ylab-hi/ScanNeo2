@@ -11,7 +11,10 @@ rule arriba:
     threads: config["threads"]
     params:
         genome_build="GRCh38",
-        default_blacklist=False,
+        # arriba's blacklist is its main artifact filter; without it arriba
+        # retains a huge candidate set (tens of millions of alignments) and
+        # OOMs. The GRCh38 blacklist ships with the arriba conda package.
+        default_blacklist=True,
         default_known_fusions=True,
         sv_file="",
         extra=_arriba_extra(),

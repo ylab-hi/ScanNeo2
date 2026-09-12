@@ -722,7 +722,7 @@ def get_input_filtering_hlatyping_SE(wildcards):
     else:
         if config["preproc"]["activate"]:
             return expand(
-                "results/{sample}/{seqtype}/reads/{group}_preproc.fq.gz",
+                "results/{sample}/{seqtype}/reads/{group}_SE_preproc.fq.gz",
                 sample=wildcards.sample,
                 seqtype=seqtype,
                 group=wildcards.group,
@@ -744,28 +744,6 @@ def get_input_filtering_hlatyping_PE(wildcards):
     else:
         seqtype = "dnaseq" if wildcards.nartype == "DNA" else "rnaseq"
         return SAMPLES[wildcards.sample][seqtype][wildcards.group]
-
-
-def aggregate_mhcI_SE(wildcards):
-    checkpoint_output = checkpoints.split_reads_mhcI_SE.get(**wildcards).output[0]
-    return expand(
-        "results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_SE/{no}_result.tsv",
-        sample=wildcards.sample,
-        group=wildcards.group,
-        nartype=wildcards.nartype,
-        no=glob_wildcards(os.path.join(checkpoint_output, "R_{no}.bam")).no,
-    )
-
-
-def aggregate_mhcI_PE(wildcards):
-    checkpoint_output = checkpoints.split_reads_mhcI_PE.get(**wildcards).output[0]
-    return expand(
-        "results/{sample}/hla/mhc-I/genotyping/{group}_{nartype}_flt_PE/{no}_result.tsv",
-        sample=wildcards.sample,
-        group=wildcards.group,
-        nartype=wildcards.nartype,
-        no=glob_wildcards(os.path.join(checkpoint_output, "R1_{no}.bam")).no,
-    )
 
 
 def get_all_mhcI_alleles(wildcards):
@@ -827,7 +805,7 @@ def get_all_mhcI_alleles(wildcards):
 def get_input_filter_reads_mhcII_SE(wildcards):
     if config["preproc"]["activate"]:
         return expand(
-            "results/{sample}/{seqtype}/reads/{group}_preproc.fq.gz",
+            "results/{sample}/{seqtype}/reads/{group}_SE_preproc.fq.gz",
             sample=wildcards.sample,
             seqtype="dnaseq" if wildcards.nartype == "DNA" else "rnaseq",
             group=wildcards.group,
@@ -1026,7 +1004,7 @@ def get_star_input(wildcards):
                     zip(
                         ["fq1"],
                         expand(
-                            "results/{sample}/rnaseq/reads/{group}_preproc.fq.gz",
+                            "results/{sample}/rnaseq/reads/{group}_SE_preproc.fq.gz",
                             sample=wildcards.sample,
                             group=wildcards.group,
                         ),
@@ -1053,7 +1031,7 @@ def aggregate_aligned_rg(wildcards):
     # make sure that all samples are processed in checkpoint - split fastq file
     checkpoint_output = checkpoints.split_bamfile_RG.get(**wildcards).output[0]
     return expand(
-        "results/{sample}/rnaseq/align/{group}/{rg}.bam",
+        "results/{sample}/rnaseq/align/bam/{group}/{rg}.bam",
         sample=wildcards.sample,
         group=wildcards.group,
         rg=glob_wildcards(os.path.join(checkpoint_output, "{rg}.bam")).rg,
@@ -1132,7 +1110,8 @@ def get_dna_align_input(wildcards):
         if config["preproc"]["activate"]:
             if SAMPLES[wildcards.sample]["dnaseq_readtype"] == "SE":
                 return expand(
-                    "results/{sample}/dnaseq/reads/{group}_preproc.fq.gz", **wildcards
+                    "results/{sample}/dnaseq/reads/{group}_SE_preproc.fq.gz",
+                    **wildcards,
                 )
             elif SAMPLES[wildcards.sample]["dnaseq_readtype"] == "PE":  # PE
                 return expand(

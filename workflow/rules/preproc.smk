@@ -2,8 +2,8 @@ rule fastqc_single_end:
     input:
         get_qc_input,
     output:
-        html="results/{sample}/{seqtype}/qualitycontrol/{group}_raw.html",
-        zip="results/{sample}/{seqtype}/qualitycontrol/{group}_raw.zip",
+        html="results/{sample}/{seqtype}/qualitycontrol/{group}_SE_raw.html",
+        zip="results/{sample}/{seqtype}/qualitycontrol/{group}_SE_raw.zip",
     log:
         "logs/{sample}/preproc/fastqc_single_end_{seqtype}_{group}.log",
     threads: 1
@@ -18,12 +18,12 @@ rule fastqc_single_end:
 rule preproc_single_end:
     input:
         sample=get_preproc_input,
-        qc="results/{sample}/{seqtype}/qualitycontrol/{group}_raw.html",
+        qc="results/{sample}/{seqtype}/qualitycontrol/{group}_SE_raw.html",
     output:
-        trimmed="results/{sample}/{seqtype}/reads/{group}_preproc.fq.gz",
-        failed="results/{sample}/{seqtype}/reads/{group}_preproc_failed.fq.gz",
-        html="results/{sample}/{seqtype}/reads/{group}_preproc_report.html",
-        json="results/{sample}/{seqtype}/reads/{group}_preproc_report.json",
+        trimmed="results/{sample}/{seqtype}/reads/{group}_SE_preproc.fq.gz",
+        failed="results/{sample}/{seqtype}/reads/{group}_SE_preproc_failed.fq.gz",
+        html="results/{sample}/{seqtype}/reads/{group}_SE_preproc_report.html",
+        json="results/{sample}/{seqtype}/reads/{group}_SE_preproc_report.json",
     log:
         "logs/{sample}/preproc/fastp_single_end_{seqtype}_{group}.log",
     threads: config["threads"]
@@ -80,9 +80,9 @@ rule preproc_paired_end:
         ],
         unpaired1="results/{sample}/{seqtype}/reads/{group}_R1_preproc_unpaired.fq.gz",
         unpaired2="results/{sample}/{seqtype}/reads/{group}_R2_preproc_unpaired.fq.gz",
-        failed="results/{sample}/{seqtype}/reads/{group}_preproc_failed.fq.gz",
-        html="results/{sample}/{seqtype}/reads/{group}_preproc_report.html",
-        json="results/{sample}/{seqtype}/reads/{group}_preproc_report.json",
+        failed="results/{sample}/{seqtype}/reads/{group}_PE_preproc_failed.fq.gz",
+        html="results/{sample}/{seqtype}/reads/{group}_PE_preproc_report.html",
+        json="results/{sample}/{seqtype}/reads/{group}_PE_preproc_report.json",
     log:
         "logs/{sample}/preproc/fastp_paired_end_{seqtype}_{group}.log",
     threads: config["threads"]
