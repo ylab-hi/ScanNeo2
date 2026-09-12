@@ -102,6 +102,9 @@ set-resources:
     runtime: 720
     # fusion-finding on high-depth RNA exceeded 40 GB (OOM at "Finding fusions").
     mem_mb: 64000
+  # --- annotation (VEP `--everything` is slow; 120 min default times out) ---
+  annotate_variants:
+    runtime: 1440
   # --- neoepitope prioritization (binding-affinity prediction) ---
   prioritization:
     runtime: 1440
