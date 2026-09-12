@@ -55,7 +55,14 @@ rule sort_reads_mhcI_SE:
         "Sort the filtered {wildcards.nartype}seq reads for hlatyping of sample: {wildcards.sample}"
     shell:
         """
-        samtools sort -n -@ {threads} -m4g {input:q} -o {output.bam:q} >{log} 2>&1
+        # name-sort keeps mates grouped (so paired R1/R2 split identically),
+        # then reheader SO:queryname -> SO:unsorted so GATK
+        # SplitSamByNumberOfReads does not assert picard's queryname order:
+        # samtools' natural sort order differs and otherwise raises
+        # "Alignments added out of order".
+        samtools sort -n -@ {threads} -m4g {input:q} -o - 2>{log} \
+            | samtools reheader -c 'sed "s/SO:queryname/SO:unsorted/"' - \
+                >{output.bam:q} 2>>{log}
         """
 
 
@@ -181,7 +188,14 @@ rule sort_and_index_reads_mhcI_PE:
         "Sort the filtered {wildcards.nartype}seq reads for hlatyping of sample: {wildcards.sample} with readpair: {wildcards.readpair}"
     shell:
         """
-        samtools sort -n -@ {threads} -m4g {input:q} -o {output.bam:q} >{log} 2>&1
+        # name-sort keeps mates grouped (so paired R1/R2 split identically),
+        # then reheader SO:queryname -> SO:unsorted so GATK
+        # SplitSamByNumberOfReads does not assert picard's queryname order:
+        # samtools' natural sort order differs and otherwise raises
+        # "Alignments added out of order".
+        samtools sort -n -@ {threads} -m4g {input:q} -o - 2>{log} \
+            | samtools reheader -c 'sed "s/SO:queryname/SO:unsorted/"' - \
+                >{output.bam:q} 2>>{log}
         """
 
 

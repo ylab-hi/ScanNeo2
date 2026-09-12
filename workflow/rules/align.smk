@@ -90,9 +90,9 @@ rule star_align_bamfile:
         faidx="resources/refs/genome.fasta.fai",
         idx="resources/refs/star/",
     output:
-        aln="results/{sample}/rnaseq/align/{group}/{rg}.bam",
-        log="results/{sample}/rnaseq/align/{group}/{rg}.log",
-        sj="results/{sample}/rnaseq/align/{group}/{rg}.tab",
+        aln="results/{sample}/rnaseq/align/bam/{group}/{rg}.bam",
+        log="results/{sample}/rnaseq/align/bam/{group}/{rg}.log",
+        sj="results/{sample}/rnaseq/align/bam/{group}/{rg}.tab",
     log:
         "logs/{sample}/align/star_align_bamfile_{group}_{rg}.log",
     threads: config["threads"]
@@ -171,7 +171,7 @@ rule rnaseq_postproc_markdup:
         "../envs/samtools.yml"
     threads: 4
     resources:
-        mem_mb_per_cpu=4000,
+        mem_mb=20000,
     shell:
         """
         mkdir -p tmp/

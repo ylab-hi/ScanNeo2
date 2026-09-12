@@ -184,7 +184,15 @@ rule detect_short_indels_m2:
         idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
         fasta="resources/refs/genome.fasta",
     output:
-        vcf=temp("results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}.vcf"),
+        vcf=temp(
+            "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.vcf"
+        ),
+        # Mutect2 writes this sidecar next to the vcf; FilterMutectCalls requires
+        # it. Declare it explicitly so snakemake tracks/stages it alongside the
+        # vcf (the raw/ subdir split it from filter's working directory).
+        stats=temp(
+            "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.vcf.stats"
+        ),
     log:
         "logs/{sample}/indel/detect_short_indels_m2_{seqtype}_{group}_{chr}.log",
     threads: 4
@@ -198,7 +206,8 @@ rule detect_short_indels_m2:
 
 rule filter_short_indels_m2:
     input:
-        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}.vcf",
+        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.vcf",
+        stats="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.vcf.stats",
         bam="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam",
         idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
         ref="resources/refs/genome.fasta",

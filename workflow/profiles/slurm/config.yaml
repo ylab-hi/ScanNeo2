@@ -67,12 +67,12 @@ set-resources:
   # --- BAM post-processing ---
   rnaseq_postproc_markdup:
     runtime: 720
-    # the rule sets mem_mb_per_cpu; unset the default mem_mb so SLURM receives
-    # only --mem-per-cpu (--mem and --mem-per-cpu are mutually exclusive)
-    mem_mb: null
+    # rule declares mem_mb=20000 for its `samtools sort -m4G -@4` working set.
   rnaseq_postproc_fixmate:
     runtime: 720
-    mem_mb: 8000
+    # `samtools sort -m4g -@4` in the shell buffers up to 4 threads x 4 GB;
+    # give headroom above that 16 GB working set (8000 OOM-killed the sort).
+    mem_mb: 20000
   dnaseq_postproc: # keeps its declared mem_mb=20000
     runtime: 720
   # --- variant calling (GATK detect/recalibrate keep their declared mem_mb) ---
