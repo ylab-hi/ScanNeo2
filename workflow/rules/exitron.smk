@@ -1,38 +1,22 @@
-rule prepare_cds:
+rule prepare_scanexitron_cds:
     input:
-        "resources/refs/genome.gtf",
+        gtf="resources/refs/genome.gtf",
     output:
-        "resources/refs/CDS.bed",
+        # ScanExitron derives this path from the GTF (<gtf_stem>.CDS.bed) and
+        # caches it there. Its cache writer is not concurrency-safe (bare
+        # exists-check + in-place write), so pre-generate it once here and have
+        # every scanexitron job depend on it -- concurrent samples then reuse
+        # the cache instead of racing to regenerate it.
+        "resources/refs/genome.CDS.bed",
     log:
-        "logs/ref/prepare_cds.log",
+        "logs/ref/prepare_scanexitron_cds.log",
     conda:
-        "../envs/basic.yml"
+        "../envs/scanexitron.yml"
     shell:
         """
-        cat resources/refs/genome.gtf \
-            | awk 'OFS="\\t" {{if ($3=="CDS") {{print $1,$4-1,$5,$10,$16,$7}}}}' \
-            | tr -d '";' >{output} 2>{log}
-        """
-
-
-rule prepare_scanexitron_config:
-    input:
-        genome="resources/refs/genome.fasta",
-        annotation="resources/refs/genome.gtf",
-        cds="resources/refs/CDS.bed",
-    output:
-        "resources/scanexitron_config.ini",
-    log:
-        "logs/ref/prepare_scanexitron_config.log",
-    conda:
-        "../envs/basic.yml"
-    shell:
-        """
-        python3 workflow/scripts/prep_scanexitron_config.py \
-            {input.genome} \
-            {input.annotation} \
-            {input.cds} \
-            {output} >{log} 2>&1
+        PYTHONPATH=workflow/scripts/scanexitron/src python3 -c \
+            'import sys; from scanexitron.gtf import extract_cds_bed; extract_cds_bed(sys.argv[1])' \
+            {input.gtf} >{log} 2>&1
         """
 
 
@@ -42,8 +26,7 @@ rule scanexitron:
         idx="results/{sample}/rnaseq/align/{group}_final_STAR.bam.bai",
         fasta="resources/refs/genome.fasta",
         gtf="resources/refs/genome.gtf",
-        cds="resources/refs/CDS.bed",
-        config="resources/scanexitron_config.ini",
+        cds="resources/refs/genome.CDS.bed",
     output:
         "results/{sample}/rnaseq/exitron/{group}.exitron",
     log:
@@ -59,18 +42,20 @@ rule scanexitron:
     message:
         "Detect exitrons on sample:{wildcards.sample} of group:{wildcards.group}"
     shell:
+        # ScanExitron 1.4.0 typer CLI (vendored submodule); it writes
+        # {output-prefix}.exitron and keeps intermediates in a TemporaryDirectory
+        # (the fix branch), so no CWD cleanup is needed.
         """
-        python3 workflow/scripts/scanexitron/ScanExitron.py \
-            -t {threads} \
-            --mapq {params.mapq} \
-            --ao {params.ao} \
-            --pso {params.pso} \
-            -c ../../../{input.config} \
-            -s {params.strand} \
+        PYTHONPATH=workflow/scripts/scanexitron/src python3 -m scanexitron run \
             -i {input.bam} \
-            -r hg38 >{log} 2>&1
-        mv {wildcards.group}_final_STAR.exitron {output}
-        mv {wildcards.group}_final_STAR* results/{wildcards.sample}/rnaseq/exitron/
+            -r {input.fasta} \
+            -g {input.gtf} \
+            -a {params.ao} \
+            -p {params.pso} \
+            -m {params.mapq} \
+            -s {params.strand} \
+            -t {threads} \
+            -o results/{wildcards.sample}/rnaseq/exitron/{wildcards.group} >{log} 2>&1
         """
 
 
