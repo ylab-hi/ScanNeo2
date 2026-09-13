@@ -1201,6 +1201,18 @@ def get_custom_variants(wildcards):
 
 
 ########### INDEL CALLING ##########
+def somatic_groups(sample, seqtype):
+    """Tumor group names for `seqtype`, excluding matched-normal groups.
+
+    Normal groups are germline references (used to subtract germline from the
+    tumor calls), not neoantigen candidate sources -- so they must not feed the
+    somatic variant combines. `SAMPLES[sample]["normal"]` is the list of
+    normal-flagged group names (or None).
+    """
+    normals = SAMPLES[sample]["normal"] or []
+    return [g for g in SAMPLES[sample][seqtype].keys() if g not in normals]
+
+
 def get_longindels(wildcards):
     indels = []
     if SAMPLES[wildcards.sample]["dnaseq"] is not None:
@@ -1209,7 +1221,7 @@ def get_longindels(wildcards):
                 "results/{sample}/{seqtype}/indel/transindel/{group}_long.indels.vcf.gz",
                 sample=wildcards.sample,
                 seqtype="dnaseq",
-                group=list(SAMPLES[wildcards.sample]["dnaseq"].keys()),
+                group=somatic_groups(wildcards.sample, "dnaseq"),
             )
 
     if SAMPLES[wildcards.sample]["rnaseq"] is not None:
@@ -1218,7 +1230,7 @@ def get_longindels(wildcards):
                 "results/{sample}/{seqtype}/indel/transindel/{group}_long.indels.vcf.gz",
                 sample=wildcards.sample,
                 seqtype="rnaseq",
-                group=list(SAMPLES[wildcards.sample]["rnaseq"].keys()),
+                group=somatic_groups(wildcards.sample, "rnaseq"),
             )
 
     return indels
@@ -1306,7 +1318,7 @@ def get_shortindels(wildcards):
                 "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf.gz",
                 sample=wildcards.sample,
                 seqtype="dnaseq",
-                group=list(SAMPLES[wildcards.sample]["dnaseq"].keys()),
+                group=somatic_groups(wildcards.sample, "dnaseq"),
             )
         else:
             print(
@@ -1319,7 +1331,7 @@ def get_shortindels(wildcards):
                 "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf.gz",
                 sample=wildcards.sample,
                 seqtype="rnaseq",
-                group=list(SAMPLES[wildcards.sample]["rnaseq"].keys()),
+                group=somatic_groups(wildcards.sample, "rnaseq"),
             )
         else:
             print(
@@ -1342,7 +1354,7 @@ def get_snvs(wildcards):
             "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf.gz",
             sample=wildcards.sample,
             seqtype="rnaseq",
-            group=list(SAMPLES[wildcards.sample]["rnaseq"].keys()),
+            group=somatic_groups(wildcards.sample, "rnaseq"),
         )
 
     if config["indel"]["mode"] in ["DNA", "BOTH"]:
@@ -1350,7 +1362,7 @@ def get_snvs(wildcards):
             "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf.gz",
             sample=wildcards.sample,
             seqtype="dnaseq",
-            group=list(SAMPLES[wildcards.sample]["dnaseq"].keys()),
+            group=somatic_groups(wildcards.sample, "dnaseq"),
         )
 
     return snvs
