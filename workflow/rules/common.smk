@@ -469,7 +469,7 @@ def check_vendored_scripts(config):
             )
 
     if config["exitronsplicing"]["activate"]:
-        p = Path("workflow/scripts/scanexitron/ScanExitron.py")
+        p = Path("workflow/scripts/scanexitron/src/scanexitron/cli.py")
         if not p.is_file():
             missing.append(
                 (

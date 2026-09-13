@@ -1,13 +1,20 @@
+# ScanExitron 1.4.0 (vendored submodule at workflow/scripts/scanexitron) is a
+# typer CLI package; the rules run it via
+#   PYTHONPATH=workflow/scripts/scanexitron/src python -m scanexitron ...
+# so this env only needs the package's runtime deps plus the bio tools.
+#
+# regtools must stay 0.5.0: ScanExitron passes a numeric `-s` strand argument
+# that newer regtools reject. conda-forge is listed before bioconda so a modern
+# samtools/openssl can be solved alongside bioconda's regtools 0.5.0.
 channels:
   - conda-forge
   - bioconda
-  - defaults
 dependencies:
-  - samtools=1.20
-  - bedtools=2.30.0
-  - pyfaidx=0.7.0
-  # pyfaidx 0.7.0 imports pkg_resources, which setuptools >=81 dropped; keep an
-  # older setuptools so the import resolves.
-  - setuptools <81
+  - python >=3.10,<3.13
+  - pyfaidx >=0.7
+  - numpy >=1.21
+  - htseq >=2.0
+  - typer >=0.12
+  - samtools
+  - bedtools
   - regtools=0.5.0
-
