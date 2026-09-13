@@ -15,6 +15,11 @@
 # their own; rules that already set mem_mb / mem_mb_per_cpu keep those values
 # (set-resources only lists overrides). Runtime is in minutes. Both are
 # starting points -- tune to your data size.
+#
+# NODE REQUIREMENT: the largest single job is `arriba` at 128 GB (gene fusion on
+# deep RNA), so the workflow requires a partition whose nodes have >=128 GB RAM.
+# Other memory-heavy rules: STAR / OptiType HLA typing 64 GB, GATK/VQSR steps
+# 32-64 GB.
 
 executor: slurm
 software-deployment-method: conda
@@ -67,12 +72,12 @@ set-resources:
   # --- BAM post-processing ---
   rnaseq_postproc_markdup:
     runtime: 720
-    # the rule sets mem_mb_per_cpu; unset the default mem_mb so SLURM receives
-    # only --mem-per-cpu (--mem and --mem-per-cpu are mutually exclusive)
-    mem_mb: null
+    # rule declares mem_mb=20000 for its `samtools sort -m4G -@4` working set.
   rnaseq_postproc_fixmate:
     runtime: 720
-    mem_mb: 8000
+    # `samtools sort -m4g -@4` in the shell buffers up to 4 threads x 4 GB;
+    # give headroom above that 16 GB working set (8000 OOM-killed the sort).
+    mem_mb: 20000
   dnaseq_postproc: # keeps its declared mem_mb=20000
     runtime: 720
   # --- variant calling (GATK detect/recalibrate keep their declared mem_mb) ---
@@ -100,7 +105,12 @@ set-resources:
     mem_mb: 16000
   arriba:
     runtime: 720
-    mem_mb: 40000
+    # deep-RNA samples push ~40M alignments through "Finding fusions and counting
+    # supporting reads", which holds them in memory; genomics nodes have 192-257 GB.
+    mem_mb: 128000
+  # --- annotation (VEP `--everything` is slow; 120 min default times out) ---
+  annotate_variants:
+    runtime: 1440
   # --- neoepitope prioritization (binding-affinity prediction) ---
   prioritization:
     runtime: 1440

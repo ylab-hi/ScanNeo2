@@ -232,6 +232,8 @@ snakemake --workflow-profile workflow/profiles/slurm --configfile config/config.
 
 Snakemake then submits each job with `sbatch`, translating each rule's `threads` into `--cpus-per-task` and the per-rule `runtime` / `mem_mb` from the profile into walltime / memory. With a sample sheet that has multiple samples or replicate groups, the independent per-group branches (alignment, variant calling) fan out across nodes; the per-sample prioritization stays a single job.
 
+> **Node memory requirement:** the largest single job is `arriba` (gene fusion) at **128 GB** on deep-RNA samples, so the target partition must have nodes with **≥128 GB RAM**. Other memory-heavy steps are STAR alignment and OptiType HLA typing at 64 GB, and several GATK/VQSR steps at 32–64 GB.
+
 The profile is deliberately **cluster-agnostic**: it sets no account and no partition, so jobs land on your cluster's default partition under your default account. To target a specific account/partition, uncomment and set `slurm_account` / `slurm_partition` in the profile's `default-resources` (or copy the profile and edit it):
 
 ```yaml

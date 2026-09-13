@@ -3,7 +3,7 @@ rule spladder:
         bam="results/{sample}/rnaseq/align/{group}_final_STAR.bam",
         bamidx="results/{sample}/rnaseq/align/{group}_final_STAR.bam.bai",
     output:
-        directory("results/{sample}/rnaseq/altsplicing/spladder/{group}"),
+        directory("results/{sample}/rnaseq/altsplicing/spladder_run/{group}"),
     log:
         "logs/{sample}/altsplicing/spladder_{group}.log",
     conda:
@@ -29,7 +29,7 @@ rule spladder:
 
 rule splicing_to_vcf:
     input:
-        "results/{sample}/rnaseq/altsplicing/spladder/{group}",
+        "results/{sample}/rnaseq/altsplicing/spladder_run/{group}",
     output:
         "results/{sample}/rnaseq/altsplicing/spladder/{group}_altsplicing.vcf",
     log:

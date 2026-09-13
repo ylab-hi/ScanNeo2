@@ -6,5 +6,8 @@ dependencies:
   - samtools=1.20
   - bedtools=2.30.0
   - pyfaidx=0.7.0
+  # pyfaidx 0.7.0 imports pkg_resources, which setuptools >=81 dropped; keep an
+  # older setuptools so the import resolves.
+  - setuptools <81
   - regtools=0.5.0
 

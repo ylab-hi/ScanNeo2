@@ -29,7 +29,7 @@ wildcard_constraints:
     group="[^/]+",
     vartype="[^/]+",
     chr="[^/]+",
-    no=r"\d{1,}",
+    no=r"\d+",
     rg="[^/]+",
 
 
