@@ -37,12 +37,13 @@ def main():
 
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            # Decide one subsample fraction from the first input and apply the
-            # SAME seed+fraction to every input, so samtools keeps identical
-            # read names across R1/R2 and mates stay paired. Then coordinate-sort
-            # and index each (razers3/OptiType read BAM, and samtools index needs
-            # coordinate order; the split chunks arrive name-sorted).
-            n = count_reads(inbams[0])
+            # Decide one subsample fraction from the LARGEST input and apply the
+            # SAME seed+fraction to every input: sizing off the max bounds every
+            # file below READ_CAP (R2 may exceed R1), while one shared seed keeps
+            # samtools' read-name selection identical across R1/R2 so mates stay
+            # paired. Then coordinate-sort and index each (OptiType reads BAM, and
+            # samtools index needs coordinate order).
+            n = max(count_reads(b) for b in inbams)
             subsample = None
             if n > READ_CAP:
                 subsample = "{:.6f}".format(42 + READ_CAP / n)  # 42 = seed
