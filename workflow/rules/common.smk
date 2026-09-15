@@ -1279,6 +1279,48 @@ def somatic_groups(sample, seqtype):
     return [g for g in SAMPLES[sample][seqtype].keys() if g not in normals]
 
 
+def matched_normal_group(sample, seqtype):
+    """Name of the matched-normal group in `seqtype` (a same-seqtype normal), or
+    None. Used to run Mutect2 in paired mode so germline is subtracted at the
+    read level. If several normals exist, the first is used."""
+    normals = SAMPLES[sample]["normal"] or []
+    same = [g for g in normals if g in SAMPLES[sample][seqtype]]
+    return same[0] if same else None
+
+
+def mutect_normal_split(wildcards):
+    """Per-chr recalibrated normal BAM used by `_paired_bam`/`_extra`."""
+    n = matched_normal_group(wildcards.sample, wildcards.seqtype)
+    return (
+        f"results/{wildcards.sample}/{wildcards.seqtype}/indel/mutect2/"
+        f"{n}_baserecal_split/{wildcards.chr}.bam"
+    )
+
+
+def get_mutect_normal_input(wildcards):
+    """Matched-normal per-chr BAM (+ index) for paired Mutect2, or [] for
+    tumor-only. Declared as a rule input so Snakemake stages it and builds the
+    normal's split; the wrapper adds it to the command line via params.extra."""
+    if wildcards.group in (SAMPLES[wildcards.sample]["normal"] or []):
+        return []
+    if matched_normal_group(wildcards.sample, wildcards.seqtype) is None:
+        return []
+    bam = mutect_normal_split(wildcards)
+    return [bam, f"{bam}.bai"]
+
+
+def get_mutect_paired_extra(wildcards):
+    """`-I <normal> -normal <SM>` when a matched same-seqtype normal exists, else
+    '' (tumor-only). In paired mode Mutect2 uses the normal to call germline and
+    excludes it from the somatic output. The normal's SM is `<sample>_<group>`."""
+    if wildcards.group in (SAMPLES[wildcards.sample]["normal"] or []):
+        return ""
+    n = matched_normal_group(wildcards.sample, wildcards.seqtype)
+    if n is None:
+        return ""
+    return f"-I {mutect_normal_split(wildcards)} -normal {wildcards.sample}_{n}"
+
+
 def get_longindels(wildcards):
     indels = []
     if SAMPLES[wildcards.sample]["dnaseq"] is not None:

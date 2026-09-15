@@ -182,6 +182,9 @@ rule detect_short_indels_m2:
     input:
         map="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam",
         idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
+        # matched-normal BAM (+index) when present -> paired Mutect2; [] otherwise.
+        # The wrapper adds it to the command via params.extra (`-I ... -normal`).
+        normal=get_mutect_normal_input,
         fasta="resources/refs/genome.fasta",
     output:
         vcf=temp(
@@ -198,6 +201,8 @@ rule detect_short_indels_m2:
     threads: 4
     resources:
         mem_mb=1024,
+    params:
+        extra=get_mutect_paired_extra,
     message:
         "Detection of somatic SNVs/Indels with Mutect2 on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
     wrapper:
