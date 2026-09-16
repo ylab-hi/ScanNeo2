@@ -316,9 +316,10 @@ def normalize_read_name(header):
     R2 of the same fragment compare equal. Handles the '.../1' | '.../2'
     (Casava <1.8) and 'ID 1:...' | 'ID 2:...' (Casava >=1.8) conventions."""
     name = header[1:].strip().split(" ")[0]
-    if name.endswith("/1") or name.endswith("/2"):
-        name = name[:-2]
-    return name
+    # strip a trailing mate marker (slash then 1 or 2); the leading [/] class
+    # keeps the pattern from starting with a slash, which snakemake --lint would
+    # otherwise misread as an absolute path
+    return re.sub(r"[/][12]$", "", name)
 
 
 def check_fastq_pairing(path1, path2, mode, rpl):
@@ -339,8 +340,17 @@ def check_fastq_pairing(path1, path2, mode, rpl):
             for i in range(FASTQ_PAIR_CHECK_READS):
                 h1 = f1.readline()
                 h2 = f2.readline()
+                if not h1 and not h2:
+                    break  # both files ended together within the window
                 if not h1 or not h2:
-                    break  # one file ended within the sample window
+                    longer = path1 if h1 else path2
+                    config_error(
+                        f"{mode}.{rpl}: paired-end files have different read "
+                        f"counts -- {longer} runs longer than its mate. R1 and "
+                        f"R2 must hold the same reads in the same order; re-pair "
+                        f"them by name (e.g. BBMap repair.sh) before running."
+                    )
+                    return
                 n1 = normalize_read_name(h1)
                 n2 = normalize_read_name(h2)
                 if n1 != n2:
@@ -355,7 +365,9 @@ def check_fastq_pairing(path1, path2, mode, rpl):
                 for _ in range(3):
                     f1.readline()
                     f2.readline()
-    except OSError as e:
+    except (OSError, EOFError, UnicodeError) as e:
+        # truncated gzip -> EOFError, undecodable bytes -> UnicodeError; neither
+        # is an OSError, so surface both as a clean config error
         config_error(
             f"{mode}.{rpl}: could not read paired-end FASTQs for the mate-sync "
             f"check: {e}"
