@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import glob
+import gzip
 from pathlib import Path
 
 
@@ -234,13 +235,11 @@ def handle_seqfiles(seqdata, mode):
                     f2_ext = get_file_extension(files[1])
                     # check if file extensions are the same
                     if f1_ext == f2_ext:
-                        # if(valid_paired_end(files[0], files[1])):
+                        if f1_ext in (".fq", ".fastq"):
+                            check_fastq_pairing(files[0], files[1], mode, rpl)
                         mod_seqdata[rpl] = files
                         filetype.append(f1_ext)
                         readtype.append("PE")
-
-                        # else:
-                        # print('files not in valid PE format')
                     else:
                         ext1 = f1_ext if f1_ext else "?"
                         ext2 = f2_ext if f2_ext else "?"
@@ -306,6 +305,61 @@ def valid_paired_end(path1, path2):
         print("{} and {} are not valid PE files".format(file1, file2))
 
     return valid
+
+
+# number of leading read pairs spot-checked for R1/R2 mate synchronization
+FASTQ_PAIR_CHECK_READS = 10000
+
+
+def normalize_read_name(header):
+    """Strip the leading '@' and the mate suffix from a FASTQ header so R1 and
+    R2 of the same fragment compare equal. Handles the '.../1' | '.../2'
+    (Casava <1.8) and 'ID 1:...' | 'ID 2:...' (Casava >=1.8) conventions."""
+    name = header[1:].strip().split(" ")[0]
+    if name.endswith("/1") or name.endswith("/2"):
+        name = name[:-2]
+    return name
+
+
+def check_fastq_pairing(path1, path2, mode, rpl):
+    """Abort if paired-end FASTQs are not mate-synchronized -- read N of R1 must
+    be the mate of read N of R2. When R1/R2 are independently shuffled or
+    truncated, aligners pair unrelated reads: the proper-pair rate collapses and
+    arriba treats every discordant pair as a fusion candidate, exhausting memory
+    hours into the run. A shuffle desynchronizes within the first handful of
+    reads, so spot-checking the leading FASTQ_PAIR_CHECK_READS pairs catches it
+    cheaply, before any alignment is scheduled."""
+
+    def opener(path):
+        p = str(path)
+        return gzip.open(p, "rt") if p.endswith(".gz") else open(p)
+
+    try:
+        with opener(path1) as f1, opener(path2) as f2:
+            for i in range(FASTQ_PAIR_CHECK_READS):
+                h1 = f1.readline()
+                h2 = f2.readline()
+                if not h1 or not h2:
+                    break  # one file ended within the sample window
+                n1 = normalize_read_name(h1)
+                n2 = normalize_read_name(h2)
+                if n1 != n2:
+                    config_error(
+                        f"{mode}.{rpl}: paired-end reads are out of sync -- read "
+                        f"{i + 1} is '{n1}' in {path1} but '{n2}' in {path2}. R1 "
+                        f"and R2 must list mates in the same order; re-pair them "
+                        f"by name (e.g. BBMap repair.sh) before running."
+                    )
+                    return
+                # advance past the sequence, '+', and quality lines
+                for _ in range(3):
+                    f1.readline()
+                    f2.readline()
+    except OSError as e:
+        config_error(
+            f"{mode}.{rpl}: could not read paired-end FASTQs for the mate-sync "
+            f"check: {e}"
+        )
 
 
 # check if files in list are identical
