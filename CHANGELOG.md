@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-09-17
+
 ### Changed
 
 - **transindel BAM-rebuild rules given the variant-calling walltime tier**: `detect_long_indel_ti_build_RNA` / `detect_long_indel_ti_build_DNA` were absent from the SLURM profile's `set-resources` and fell to the 120-min default; the single-threaded, `samtools sort`-heavy build exceeds 2 h on deep RNA and is killed by SLURM TIMEOUT. Both now sit in the same 1440-min / 16 GB tier as `detect_long_indel_ti_call`. ([#176](https://github.com/ylab-hi/ScanNeo2/pull/176))
