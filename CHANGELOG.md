@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **gnomAD germline-resource for germline-aware tumor-only Mutect2**: pass af-only-gnomAD as Mutect2's `--germline-resource` on every call, so Mutect2 annotates POPAF and FilterMutectCalls' germline filter drops likely-germline variants — the primary germline filter for samples with **no matched normal** (additive with paired `-normal` calling). A new `download_gnomad_germline` rule fetches `af-only-gnomad.hg38.vcf.gz` from the GATK somatic-hg38 bundle (contig-compatible with the `chr`-named reference). Unconditional (no toggle); panel-of-normals + contamination are the remaining phases. ([#173](https://github.com/ylab-hi/ScanNeo2/issues/173), [#174](https://github.com/ylab-hi/ScanNeo2/pull/174))
+
 ## [0.5.1] - 2026-09-17
 
 ### Added
