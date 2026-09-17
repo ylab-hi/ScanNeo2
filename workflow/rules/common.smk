@@ -1425,6 +1425,17 @@ def aggregate_idx_mutect2(wildcards):
     )
 
 
+def aggregate_ti_build(wildcards):
+    checkpoint_output = checkpoints.split_bam_ti_build.get(**wildcards).output[0]
+    return expand(
+        "results/{sample}/{seqtype}/indel/transindel/{group}_build_perchr/{chr}.bam",
+        sample=wildcards.sample,
+        seqtype=wildcards.seqtype,
+        group=wildcards.group,
+        chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr,
+    )
+
+
 def aggregate_f1r2_mutect2(wildcards):
     checkpoint_output = checkpoints.split_bam_detect_short_indels_m2.get(
         **wildcards

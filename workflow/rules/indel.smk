@@ -2,19 +2,42 @@ import os
 from snakemake.remote import HTTP
 
 
+# transindel BAM-rebuild streams the whole BAM single-threaded (~2 h on deep RNA),
+# so it is scattered by chromosome: split the aligned BAM, rebuild each chromosome
+# in parallel, then merge. Each read's redefined CIGAR depends only on that read,
+# the reference, and the genome-wide GTF splice coverage -- no cross-read state --
+# so per-chromosome rebuild + merge is equivalent to a whole-BAM rebuild.
+checkpoint split_bam_ti_build:
+    input:
+        bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
+        idx="results/{sample}/{seqtype}/align/{group}_final_BWA.bam.bai",
+    output:
+        directory("results/{sample}/{seqtype}/indel/transindel/{group}_build_split"),
+    log:
+        "logs/{sample}/indel/ti_split_{seqtype}_{group}.log",
+    conda:
+        "../envs/basic.yml"
+    message:
+        "Splitting BAM by chromosome for transindel build on sample:{wildcards.sample} with group:{wildcards.group}"
+    shell:
+        """
+        python workflow/scripts/split_bam_by_chr.py {input.bam} {output} >{log} 2>&1
+        """
+
+
 rule detect_long_indel_ti_build_RNA:
     input:
-        bam="results/{sample}/rnaseq/align/{group}_final_BWA.bam",
-        idx="results/{sample}/rnaseq/align/{group}_final_BWA.bam.bai",
+        bam="results/{sample}/rnaseq/indel/transindel/{group}_build_split/{chr}.bam",
     output:
-        bam=temp("results/{sample}/rnaseq/indel/transindel/{group}_build.bam"),
-        idx=temp("results/{sample}/rnaseq/indel/transindel/{group}_build.bam.bai"),
+        bam=temp(
+            "results/{sample}/rnaseq/indel/transindel/{group}_build_perchr/{chr}.bam"
+        ),
     log:
-        "logs/{sample}/indel/ti_build_RNA_{group}.log",
+        "logs/{sample}/indel/ti_build_RNA_{group}_{chr}.log",
     conda:
         "../envs/transindel.yml"
     message:
-        "Building new BAM file with redefined CIGAR string using transindel build on sample:{wildcards.sample} with group:{wildcards.group}"
+        "transindel build (RNA) on sample:{wildcards.sample} group:{wildcards.group} chr:{wildcards.chr}"
     shell:
         """
         python3 workflow/scripts/transindel/transIndel_build_RNA.py \
@@ -22,28 +45,47 @@ rule detect_long_indel_ti_build_RNA:
             -o {output.bam} \
             -r resources/refs/genome.fasta \
             -g resources/refs/genome.gtf >{log} 2>&1
-        samtools index {output.bam} -o {output.idx} >>{log} 2>&1
         """
 
 
 rule detect_long_indel_ti_build_DNA:
     input:
-        bam="results/{sample}/dnaseq/align/{group}_final_BWA.bam",
-        idx="results/{sample}/dnaseq/align/{group}_final_BWA.bam.bai",
+        bam="results/{sample}/dnaseq/indel/transindel/{group}_build_split/{chr}.bam",
     output:
-        bam=temp("results/{sample}/dnaseq/indel/transindel/{group}_build.bam"),
-        idx=temp("results/{sample}/dnaseq/indel/transindel/{group}_build.bam.bai"),
+        bam=temp(
+            "results/{sample}/dnaseq/indel/transindel/{group}_build_perchr/{chr}.bam"
+        ),
     log:
-        "logs/{sample}/indel/ti_build_DNA_{group}.log",
+        "logs/{sample}/indel/ti_build_DNA_{group}_{chr}.log",
     conda:
         "../envs/transindel.yml"
     message:
-        "Building new BAM file with redefined CIGAR string using transindel build on sample:{wildcards.sample} with group:{wildcards.group}"
+        "transindel build (DNA) on sample:{wildcards.sample} group:{wildcards.group} chr:{wildcards.chr}"
     shell:
         """
         python workflow/scripts/transindel/transIndel_build_DNA.py \
             -i {input.bam} -o {output.bam} >{log} 2>&1
-        samtools index {output.bam} -o {output.idx} >>{log} 2>&1
+        """
+
+
+rule merge_ti_build:
+    input:
+        aggregate_ti_build,
+    output:
+        bam=temp("results/{sample}/{seqtype}/indel/transindel/{group}_build.bam"),
+        idx=temp("results/{sample}/{seqtype}/indel/transindel/{group}_build.bam.bai"),
+    log:
+        "logs/{sample}/indel/ti_merge_build_{seqtype}_{group}.log",
+    conda:
+        "../envs/samtools.yml"
+    message:
+        "Merging per-chromosome transindel builds on sample:{wildcards.sample} with group:{wildcards.group}"
+    shell:
+        """
+        (
+            samtools merge -f {output.bam} {input}
+            samtools index {output.bam} -o {output.idx}
+        ) >{log} 2>&1
         """
 
 
