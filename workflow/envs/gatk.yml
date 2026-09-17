@@ -1,4 +1,9 @@
 channels:
+  - conda-forge
   - bioconda
 dependencies:
-  - gatk4=4.5.0.0
+  # pinned to match the gatk/mutect + gatk/filtermutectcalls wrappers (both
+  # v1.31.1 -> gatk4 4.4.0.0), so the read-orientation model produced here is
+  # format-compatible with the Mutect2 f1r2 inputs and the FilterMutectCalls
+  # --ob-priors consumer
+  - gatk4=4.4.0.0
