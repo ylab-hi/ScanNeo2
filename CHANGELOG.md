@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **VEP annotation parallelized (`annotate_variants` 4 → 16 threads)**: VEP `--everything` was the critical-path tail of large runs (multi-hour `annotate_variants` jobs). The `v5.9.0/bio/vep/annotate` wrapper forwards `threads` to `--fork`, so raising it to 16 — with a 32 GB profile tier for the fork workers' cache — cuts annotation wall-clock substantially. ([#179](https://github.com/ylab-hi/ScanNeo2/pull/179))
+
 ## [0.5.2] - 2026-09-17
 
 ### Changed
