@@ -119,6 +119,7 @@ set-resources:
   # --- annotation (VEP `--everything` is slow; 120 min default times out) ---
   annotate_variants:
     runtime: 1440
+    mem_mb: 32000 # 16 --fork workers each load the VEP cache
   # --- neoepitope prioritization (binding-affinity prediction) ---
   prioritization:
     runtime: 1440
