@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-09-17
+
 ### Added
 
 - **Pre-flight check for mate-desynchronized paired-end FASTQs**: `handle_seqfiles` now spot-checks the first 10,000 read pairs of every paired-end FASTQ set (`check_fastq_pairing`) and aborts at DAG-build with a clear `[config error]` if R1/R2 list their mates in different orders. Independently-shuffled or truncated pairs make aligners pair unrelated reads — the proper-pair rate collapses and arriba treats every discordant pair as a fusion candidate, exhausting memory hours into a run (two TESLA RNA libraries hit exactly this: same read set, equal counts, shuffled order → ~20% properly paired, arriba OOM). Read-name normalization handles both the `/1`|`/2` and `ID 1:…`|`ID 2:…` mate conventions. ([#171](https://github.com/ylab-hi/ScanNeo2/pull/171))
