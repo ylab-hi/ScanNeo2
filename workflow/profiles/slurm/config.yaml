@@ -90,6 +90,14 @@ set-resources:
   detect_long_indel_ti_call:
     runtime: 1440
     mem_mb: 16000
+  # transindel BAM-rebuild (single-threaded, samtools-sort heavy); on deep RNA
+  # it can exceed 2 h, so give it the same variant-calling tier as ti_call
+  detect_long_indel_ti_build_RNA:
+    runtime: 1440
+    mem_mb: 16000
+  detect_long_indel_ti_build_DNA:
+    runtime: 1440
+    mem_mb: 16000
   recalibrate_bases:
     runtime: 720
   recalibrate_variants_first_round:
