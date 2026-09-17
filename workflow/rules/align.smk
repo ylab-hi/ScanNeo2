@@ -21,7 +21,9 @@ rule star_align_fastq:
             "--outSAMtype BAM Unsorted "
             "--genomeSAindexNbases 10 "
             "--outSAMattributes RG HI "
-            f"--outSAMattrRGline ID:{wildcards.group} "
+            # SM carries the group so a tumor and its matched normal get distinct
+            # sample names -- Mutect2's -normal identifies the normal by SM.
+            f"--outSAMattrRGline ID:{wildcards.group} SM:{wildcards.sample}_{wildcards.group} "
             "--outFilterMultimapNmax 50 "
             "--peOverlapNbasesMin 15 "
             "--alignSplicedMateMapLminOverLmate 0.5 "
@@ -100,7 +102,7 @@ rule star_align_bamfile:
         extra=lambda wildcards: (
             "--outSAMtype BAM Unsorted --genomeSAindexNbases 10 "
             "--readFilesCommand zcat "
-            f"--outSAMattributes RG HI --outSAMattrRGline ID:{wildcards.rg} "
+            f"--outSAMattributes RG HI --outSAMattrRGline ID:{wildcards.rg} SM:{wildcards.sample}_{wildcards.group} "
             "--outFilterMultimapNmax 50 "
             "--peOverlapNbasesMin 15 "
             "--alignSplicedMateMapLminOverLmate 0.5 "
@@ -211,7 +213,7 @@ rule get_readgroups:
     shell:
         """
         python workflow/scripts/get_readgroups.py '{input}' \
-            {output} >{log} 2>&1
+            {output} {wildcards.sample}_{wildcards.group} >{log} 2>&1
         """
 
 
@@ -308,7 +310,7 @@ rule bwa_align_dnaseq:
         """
         (
             bwa mem -t{threads} resources/refs/bwa/genome \
-                -R '@RG\\tID:{wildcards.group}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:ILLUMINA' \
+                -R '@RG\\tID:{wildcards.group}\\tSM:{wildcards.sample}_{wildcards.group}\\tLB:{wildcards.sample}\\tPL:ILLUMINA' \
                 {input.reads} \
                 | samtools sort -@ 6 -n -m1g - -o {output}
         ) >{log} 2>&1

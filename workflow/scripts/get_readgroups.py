@@ -54,14 +54,19 @@ class ReadGroups:
         else:
             self.readgroups[rg_id] = tags[0:]
 
-    def write_to_file(self, filepath):
-        with open(sys.argv[2], "w") as f:
+    def write_to_file(self, filepath, sm_override=None):
+        # sm_override forces the SM tag for every read group. Paired Mutect2
+        # identifies the matched normal by SM, and the rest of the workflow
+        # tags reads SM:{sample}_{group}; a pre-aligned BAM's own SM would not
+        # match, so callers pass the canonical value here.
+        with open(filepath, "w") as f:
             for rg in self.readgroups.keys():
+                sm = sm_override if sm_override else self.readgroups[rg][3]
                 f.write("@RG\tID:{}".format(rg))
                 f.write("\tPL:{}".format(self.readgroups[rg][0]))
-                f.write("\tPU:{}".format(self.readgroups[rg][1]))  
+                f.write("\tPU:{}".format(self.readgroups[rg][1]))
                 f.write("\tLB:{}".format(self.readgroups[rg][2]))
-                f.write("\tSM:{}\n".format(self.readgroups[rg][3]))
+                f.write("\tSM:{}\n".format(sm))
 
 def main():
 
@@ -72,7 +77,8 @@ def main():
         if Path(bam).is_file():
             rg.scan_bamfile(bam)
 
-    rg.write_to_file(sys.argv[2])
+    sm_override = sys.argv[3] if len(sys.argv) > 3 else None
+    rg.write_to_file(sys.argv[2], sm_override)
 
 
 main()
