@@ -232,9 +232,9 @@ rule learn_read_orientation_m2:
         """
         (
             tmp=$(mktemp -d)
+            trap 'st=$?; rm -rf "$tmp" || true; exit $st' EXIT
             gatk LearnReadOrientationModel $(printf -- '-I %s ' {input.f1r2}) \
                 -O {output} --tmp-dir "$tmp"
-            rm -rf "$tmp"
         ) >{log} 2>&1
         """
 
