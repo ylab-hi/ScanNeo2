@@ -198,6 +198,25 @@ rule combine_longindels:
 ####### MUTECT2 ######
 
 
+rule download_gnomad_germline:
+    output:
+        vcf="resources/somatic/af-only-gnomad.hg38.vcf.gz",
+        tbi="resources/somatic/af-only-gnomad.hg38.vcf.gz.tbi",
+    log:
+        "logs/download/gnomad_germline.log",
+    conda:
+        "../envs/basic.yml"
+    message:
+        "Downloading af-only-gnomAD germline resource (GATK somatic-hg38) for Mutect2"
+    shell:
+        """
+        (
+            curl --fail -L https://storage.googleapis.com/gatk-best-practices/somatic-hg38/af-only-gnomad.hg38.vcf.gz -o {output.vcf}
+            curl --fail -L https://storage.googleapis.com/gatk-best-practices/somatic-hg38/af-only-gnomad.hg38.vcf.gz.tbi -o {output.tbi}
+        ) >{log} 2>&1
+        """
+
+
 checkpoint split_bam_detect_short_indels_m2:
     input:
         bam="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal.bam",
@@ -226,6 +245,12 @@ rule detect_short_indels_m2:
         # The wrapper adds it to the command via params.extra (`-I ... -normal`).
         normal=get_mutect_normal_input,
         fasta="resources/refs/genome.fasta",
+        # af-only-gnomAD population frequencies; the wrapper passes this as
+        # --germline-resource so Mutect2 annotates POPAF and FilterMutectCalls
+        # can drop germline (the primary germline filter for no-normal samples,
+        # additive with -normal on paired ones).
+        germline="resources/somatic/af-only-gnomad.hg38.vcf.gz",
+        germline_idx="resources/somatic/af-only-gnomad.hg38.vcf.gz.tbi",
     output:
         vcf=temp(
             "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.vcf"
