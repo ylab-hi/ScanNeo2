@@ -213,7 +213,7 @@ rule get_readgroups:
     shell:
         """
         python workflow/scripts/get_readgroups.py '{input}' \
-            {output} >{log} 2>&1
+            {output} {wildcards.sample}_{wildcards.group} >{log} 2>&1
         """
 
 

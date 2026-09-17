@@ -1303,8 +1303,16 @@ def get_mutect_normal_input(wildcards):
     normal's split; the wrapper adds it to the command line via params.extra."""
     if wildcards.group in (SAMPLES[wildcards.sample]["normal"] or []):
         return []
-    if matched_normal_group(wildcards.sample, wildcards.seqtype) is None:
+    n = matched_normal_group(wildcards.sample, wildcards.seqtype)
+    if n is None:
         return []
+    # Trigger the normal group's split checkpoint explicitly. Only the tumor
+    # group's checkpoint is .get()-ed (by the aggregate_* functions), and
+    # somatic_groups excludes normals, so without this the normal's per-chr
+    # split is never built -> the normal BAM is missing when paired detect runs.
+    checkpoints.split_bam_detect_short_indels_m2.get(
+        sample=wildcards.sample, seqtype=wildcards.seqtype, group=n
+    )
     bam = mutect_normal_split(wildcards)
     return [bam, f"{bam}.bai"]
 
