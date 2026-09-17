@@ -221,12 +221,22 @@ rule learn_read_orientation_m2:
         "results/{sample}/{seqtype}/indel/mutect2/{group}_read-orientation-model.tar.gz",
     log:
         "logs/{sample}/indel/learn_read_orientation_m2_{seqtype}_{group}.log",
+    conda:
+        "../envs/gatk.yml"
     resources:
         mem_mb=4096,
     message:
         "Learning read-orientation model (FFPE/OxoG artifact priors) on sample:{wildcards.sample} with group:{wildcards.group}"
-    wrapper:
-        "v1.31.1/bio/gatk/learnreadorientationmodel"
+    shell:
+        # LearnReadOrientationModel takes one -I per per-chromosome f1r2 archive
+        """
+        (
+            tmp=$(mktemp -d)
+            trap 'st=$?; rm -rf "$tmp" || true; exit $st' EXIT
+            gatk LearnReadOrientationModel $(printf -- '-I %s ' {input.f1r2}) \
+                -O {output} --tmp-dir "$tmp"
+        ) >{log} 2>&1
+        """
 
 
 rule filter_short_indels_m2:

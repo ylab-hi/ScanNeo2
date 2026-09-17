@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Read-orientation artifact filtering (`learn_read_orientation_m2`) actually runs**: the `v1.31.1/bio/gatk/learnreadorientationmodel` wrapper mis-joins a multi-file `f1r2` input (`"--input ".join(...)` → a malformed `--input{file,file…}` argument), so every `learn_read_orientation_m2` job failed with a GATK USER ERROR and blocked `FilterMutectCalls --ob-priors` — the FFPE/OxoG orientation-bias filter shipped in v0.5.1 never ran. Replaced with a direct `gatk LearnReadOrientationModel -I … -O` shell call (one `-I` per per-chromosome archive) in `workflow/envs/gatk.yml`, repurposed from an unused orphan (4.5.0.0) to `gatk4=4.4.0.0` to match the `mutect` / `filtermutectcalls` wrappers so the produced model is format-compatible. ([#175](https://github.com/ylab-hi/ScanNeo2/pull/175))
+
 ## [0.5.1] - 2026-09-17
 
 ### Added
