@@ -196,6 +196,11 @@ rule detect_short_indels_m2:
         stats=temp(
             "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.vcf.stats"
         ),
+        # per-chr read-orientation counts; aggregated by learn_read_orientation_m2
+        # into the group's artifact-priors model for FilterMutectCalls
+        f1r2=temp(
+            "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.f1r2.tar.gz"
+        ),
     log:
         "logs/{sample}/indel/detect_short_indels_m2_{seqtype}_{group}_{chr}.log",
     threads: 4
@@ -209,6 +214,21 @@ rule detect_short_indels_m2:
         "v1.31.1/bio/gatk/mutect"
 
 
+rule learn_read_orientation_m2:
+    input:
+        f1r2=aggregate_f1r2_mutect2,
+    output:
+        "results/{sample}/{seqtype}/indel/mutect2/{group}_read-orientation-model.tar.gz",
+    log:
+        "logs/{sample}/indel/learn_read_orientation_m2_{seqtype}_{group}.log",
+    resources:
+        mem_mb=4096,
+    message:
+        "Learning read-orientation model (FFPE/OxoG artifact priors) on sample:{wildcards.sample} with group:{wildcards.group}"
+    wrapper:
+        "v1.31.1/bio/gatk/learnreadorientationmodel"
+
+
 rule filter_short_indels_m2:
     input:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.vcf",
@@ -216,6 +236,8 @@ rule filter_short_indels_m2:
         bam="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam",
         idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
         ref="resources/refs/genome.fasta",
+        # the wrapper maps input.f1r2 -> --orientation-bias-artifact-priors
+        f1r2="results/{sample}/{seqtype}/indel/mutect2/{group}_read-orientation-model.tar.gz",
     output:
         vcf=temp(
             "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/{chr}_flt.vcf"
@@ -455,4 +477,85 @@ rule combine_somatic_SNVs_m2:
     shell:
         """
         (bcftools concat --naive-force -O z {input} -o - | bcftools sort -O z -o {output}) >{log} 2>&1
+        """
+
+
+######### RNA GERMLINE SUBTRACTION ########
+# RNA is called tumor-only, so its germline is not removed during calling. When
+# the sample has a matched normal, subtract that normal's germline calls (the
+# final-round HaplotypeCaller/VQSR set) from the RNA somatic calls. DNA is
+# already germline-subtracted by paired Mutect2 and does not route through here.
+
+
+rule build_germline_reference:
+    input:
+        snvs="results/{sample}/{seqtype}/indel/htcaller/{group}_snvs.final.flt.vcf",
+        indels="results/{sample}/{seqtype}/indel/htcaller/{group}_indel.final.flt.vcf",
+    output:
+        vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_germline.final.vcf.gz",
+        tbi="results/{sample}/{seqtype}/indel/htcaller/{group}_germline.final.vcf.gz.tbi",
+    log:
+        "logs/{sample}/indel/build_germline_reference_{seqtype}_{group}.log",
+    conda:
+        "../envs/bcftools.yml"
+    message:
+        "Building germline reference (final-round SNVs + indels) for sample:{wildcards.sample} group:{wildcards.group}"
+    shell:
+        """
+        (
+            tmp=$(mktemp -d)
+            bcftools view -O z -o $tmp/snvs.vcf.gz {input.snvs} && bcftools index -t $tmp/snvs.vcf.gz
+            bcftools view -O z -o $tmp/indels.vcf.gz {input.indels} && bcftools index -t $tmp/indels.vcf.gz
+            bcftools concat -a $tmp/snvs.vcf.gz $tmp/indels.vcf.gz | bcftools sort -O z -o {output.vcf}
+            bcftools index -t {output.vcf}
+            rm -rf $tmp
+        ) >{log} 2>&1
+        """
+
+
+rule subtract_germline_snvs:
+    input:
+        vcf="results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs.vcf.gz",
+        germline=matched_normal_germline_vcf,
+        germline_idx=matched_normal_germline_tbi,
+    output:
+        "results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs.germsub.vcf.gz",
+    log:
+        "logs/{sample}/indel/subtract_germline_snvs_{group}.log",
+    conda:
+        "../envs/bcftools.yml"
+    message:
+        "Subtracting matched-normal germline from RNA somatic SNVs on sample:{wildcards.sample} group:{wildcards.group}"
+    shell:
+        """
+        (
+            tmp=$(mktemp -d)
+            cp {input.vcf} $tmp/in.vcf.gz && bcftools index -t $tmp/in.vcf.gz
+            bcftools isec -C -w1 -O z -o {output} $tmp/in.vcf.gz {input.germline}
+            rm -rf $tmp
+        ) >{log} 2>&1
+        """
+
+
+rule subtract_germline_short_indels:
+    input:
+        vcf="results/{sample}/rnaseq/indel/mutect2/{group}_somatic.short.indels.vcf.gz",
+        germline=matched_normal_germline_vcf,
+        germline_idx=matched_normal_germline_tbi,
+    output:
+        "results/{sample}/rnaseq/indel/mutect2/{group}_somatic.short.indels.germsub.vcf.gz",
+    log:
+        "logs/{sample}/indel/subtract_germline_short_indels_{group}.log",
+    conda:
+        "../envs/bcftools.yml"
+    message:
+        "Subtracting matched-normal germline from RNA somatic short indels on sample:{wildcards.sample} group:{wildcards.group}"
+    shell:
+        """
+        (
+            tmp=$(mktemp -d)
+            cp {input.vcf} $tmp/in.vcf.gz && bcftools index -t $tmp/in.vcf.gz
+            bcftools isec -C -w1 -O z -o {output} $tmp/in.vcf.gz {input.germline}
+            rm -rf $tmp
+        ) >{log} 2>&1
         """

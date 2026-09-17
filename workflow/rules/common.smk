@@ -1417,6 +1417,67 @@ def aggregate_idx_mutect2(wildcards):
     )
 
 
+def aggregate_f1r2_mutect2(wildcards):
+    checkpoint_output = checkpoints.split_bam_detect_short_indels_m2.get(
+        **wildcards
+    ).output[0]
+    return expand(
+        "results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.f1r2.tar.gz",
+        sample=wildcards.sample,
+        seqtype=wildcards.seqtype,
+        group=wildcards.group,
+        chr=glob_wildcards(os.path.join(checkpoint_output, "{chr}.bam")).chr,
+    )
+
+
+def normal_germline_seqtype(sample, group):
+    """The seqtype under which a group's germline (htcaller) was called."""
+    if group in (SAMPLES[sample]["dnaseq"] or {}):
+        return "dnaseq"
+    return "rnaseq"
+
+
+def rna_needs_germsub(sample, group):
+    """True for an rnaseq tumor group that is called tumor-only yet has a normal
+    to subtract against.
+
+    An rnaseq group with a matched *RNA* normal is already called paired, so
+    Mutect2 removes its germline internally -- subtracting again post-hoc would
+    be redundant, so those are excluded here. This only fires for a tumor group
+    with no same-seqtype normal (tumor-only Mutect2) when the sample nonetheless
+    has a normal elsewhere (e.g. DNA) whose germline calls we can subtract via
+    bcftools isec. DNA tumor groups never route here (paired Mutect2).
+    """
+    normals = SAMPLES[sample]["normal"] or []
+    if not normals or group in normals:
+        return False
+    return matched_normal_group(sample, "rnaseq") is None
+
+
+def matched_normal_germline_vcf(wildcards):
+    """Final-round germline reference VCF of the sample's matched normal."""
+    n = (SAMPLES[wildcards.sample]["normal"] or [None])[0]
+    nseq = normal_germline_seqtype(wildcards.sample, n)
+    return f"results/{wildcards.sample}/{nseq}/indel/htcaller/{n}_germline.final.vcf.gz"
+
+
+def matched_normal_germline_tbi(wildcards):
+    return matched_normal_germline_vcf(wildcards) + ".tbi"
+
+
+def rnaseq_somatic_snvs(sample, group):
+    sub = ".germsub" if rna_needs_germsub(sample, group) else ""
+    return f"results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs{sub}.vcf.gz"
+
+
+def rnaseq_somatic_shortindels(sample, group):
+    sub = ".germsub" if rna_needs_germsub(sample, group) else ""
+    return (
+        f"results/{sample}/rnaseq/indel/mutect2/"
+        f"{group}_somatic.short.indels{sub}.vcf.gz"
+    )
+
+
 def get_shortindels(wildcards):
     indels = []
 
@@ -1435,12 +1496,10 @@ def get_shortindels(wildcards):
 
     if config["indel"]["mode"] in ["RNA", "BOTH"]:
         if SAMPLES[wildcards.sample]["rnaseq"] is not None:
-            indels += expand(
-                "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf.gz",
-                sample=wildcards.sample,
-                seqtype="rnaseq",
-                group=somatic_groups(wildcards.sample, "rnaseq"),
-            )
+            indels += [
+                rnaseq_somatic_shortindels(wildcards.sample, group)
+                for group in somatic_groups(wildcards.sample, "rnaseq")
+            ]
         else:
             print(
                 "rnaseq data has not been specified in the config file, but specified mode for indel calling in config file is RNA or BOTH"
@@ -1458,12 +1517,10 @@ def get_shortindels(wildcards):
 def get_snvs(wildcards):
     snvs = []
     if config["indel"]["mode"] in ["RNA", "BOTH"]:
-        snvs += expand(
-            "results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf.gz",
-            sample=wildcards.sample,
-            seqtype="rnaseq",
-            group=somatic_groups(wildcards.sample, "rnaseq"),
-        )
+        snvs += [
+            rnaseq_somatic_snvs(wildcards.sample, group)
+            for group in somatic_groups(wildcards.sample, "rnaseq")
+        ]
 
     if config["indel"]["mode"] in ["DNA", "BOTH"]:
         snvs += expand(
@@ -1481,7 +1538,7 @@ def get_exitrons(wildcards):
     return expand(
         "results/{sample}/rnaseq/exitron/{group}_exitrons.vcf.gz",
         sample=wildcards.sample,
-        group=list(SAMPLES[wildcards.sample]["rnaseq"].keys()),
+        group=somatic_groups(wildcards.sample, "rnaseq"),
     )
 
 
@@ -1493,7 +1550,7 @@ def get_fusions(wildcards):
             fusions += expand(
                 "results/{sample}/rnaseq/genefusion/{group}_fusions.tsv",
                 sample=wildcards.sample,
-                group=list(SAMPLES[wildcards.sample]["rnaseq"].keys()),
+                group=somatic_groups(wildcards.sample, "rnaseq"),
             )
 
     return fusions
@@ -1507,7 +1564,7 @@ def get_altsplicing(wildcards):
             altsplicing += expand(
                 "results/{sample}/rnaseq/altsplicing/spladder/{group}_altsplicing.vcf.gz",
                 sample=wildcards.sample,
-                group=list(SAMPLES[wildcards.sample]["rnaseq"].keys()),
+                group=somatic_groups(wildcards.sample, "rnaseq"),
             )
     return altsplicing
 

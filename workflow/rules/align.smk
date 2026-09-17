@@ -102,7 +102,7 @@ rule star_align_bamfile:
         extra=lambda wildcards: (
             "--outSAMtype BAM Unsorted --genomeSAindexNbases 10 "
             "--readFilesCommand zcat "
-            f"--outSAMattributes RG HI --outSAMattrRGline ID:{wildcards.rg} "
+            f"--outSAMattributes RG HI --outSAMattrRGline ID:{wildcards.rg} SM:{wildcards.sample}_{wildcards.group} "
             "--outFilterMultimapNmax 50 "
             "--peOverlapNbasesMin 15 "
             "--alignSplicedMateMapLminOverLmate 0.5 "
