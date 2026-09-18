@@ -69,29 +69,9 @@ checkpoint split_bam_htc_first_round:
         """
 
 
-rule index_split_bam_htc_first_round:
-    input:
-        bam="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam",
-    output:
-        idx=temp(
-            "results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam.bai"
-        ),
-    log:
-        "logs/{sample}/germline/index_split_bam_htc_1rd_{seqtype}_{group}_{chr}.log",
-    conda:
-        "../envs/samtools.yml"
-    message:
-        "Indexing split bam file for first round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
-    shell:
-        """
-        samtools index {input.bam} >{log} 2>&1
-        """
-
-
 rule detect_variants_htc_first_round:
     input:
         bam="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam",
-        idx="results/{sample}/{seqtype}/align/{group}_final_BWA_split/{chr}.bam.bai",
         ref="resources/refs/genome.fasta",
         ref_idx="resources/refs/genome.fasta.fai",
     output:
@@ -328,27 +308,9 @@ checkpoint split_bam_htc_final_round:
         """
 
 
-rule index_split_bam_htc_final_round:
-    input:
-        bam="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal_split/{chr}.bam",
-    output:
-        idx="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal_split/{chr}.bam.bai",
-    log:
-        "logs/{sample}/germline/index_split_bam_htc_final_{seqtype}_{group}_{chr}.log",
-    conda:
-        "../envs/samtools.yml"
-    message:
-        "Indexing split bam file for the final round of variant calling (htcaller) on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
-    shell:
-        """
-        samtools index {input.bam} >{log} 2>&1
-        """
-
-
 rule detect_variants_htc_final_round:
     input:
         bam="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal_split/{chr}.bam",
-        idx="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal_split/{chr}.bam.bai",
         ref="resources/refs/genome.fasta",
     output:
         vcf=temp(
