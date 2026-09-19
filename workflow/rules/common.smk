@@ -1425,10 +1425,10 @@ def aggregate_idx_mutect2(wildcards):
     )
 
 
-def aggregate_ti_build(wildcards):
+def aggregate_ti_call(wildcards):
     checkpoint_output = checkpoints.split_bam_ti_build.get(**wildcards).output[0]
     return expand(
-        "results/{sample}/{seqtype}/indel/transindel/{group}_build_perchr/{chr}.bam",
+        "results/{sample}/{seqtype}/indel/transindel/{group}_call_perchr/{chr}.indel.vcf",
         sample=wildcards.sample,
         seqtype=wildcards.seqtype,
         group=wildcards.group,
