@@ -161,27 +161,11 @@ checkpoint split_bam_detect_short_indels_m2:
         """
 
 
-rule index_split_bam_detect_short_indels_m2:
-    input:
-        bam="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam",
-    output:
-        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
-    log:
-        "logs/{sample}/indel/index_split_bam_m2_{seqtype}_{group}_{chr}.log",
-    conda:
-        "../envs/samtools.yml"
-    message:
-        "Indexing splitted bam files for somatic SNV/Indel detection with Mutect2 on recalibrated data on sample:{wildcards.sample} with group:{wildcards.group}"
-    shell:
-        """
-        samtools index {input.bam} >{log} 2>&1
-        """
-
-
 rule detect_short_indels_m2:
     input:
+        # the .bai sits next to this .bam inside the split checkpoint directory
+        # (written by split_bam_by_chr.py); GATK finds it automatically
         map="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam",
-        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
         # matched-normal BAM (+index) when present -> paired Mutect2; [] otherwise.
         # The wrapper adds it to the command via params.extra (`-I ... -normal`).
         normal=get_mutect_normal_input,
@@ -244,7 +228,6 @@ rule filter_short_indels_m2:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.vcf",
         stats="results/{sample}/{seqtype}/indel/mutect2/{group}_variants/raw/{chr}.vcf.stats",
         bam="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam",
-        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_baserecal_split/{chr}.bam.bai",
         ref="resources/refs/genome.fasta",
         # the wrapper maps input.f1r2 -> --orientation-bias-artifact-priors
         f1r2="results/{sample}/{seqtype}/indel/mutect2/{group}_read-orientation-model.tar.gz",

@@ -11,12 +11,18 @@ def split(input_bamfile, outdir):
 
     # create a dictionary of output files
     for chrom in chromosomes:
-        # define output path 
+        # define output path
         outbam = os.path.join(outdir, f"{chrom}.bam")
 
-        with pysam.AlignmentFile(outbam, "wb", template=bam) as outbam:
+        with pysam.AlignmentFile(outbam, "wb", template=bam) as outbam_fh:
             for read in bam.fetch(chrom):
-                outbam.write(read)
+                outbam_fh.write(read)
+
+        # Index each per-chromosome BAM in place so the .bai lives inside the
+        # checkpoint's directory() output. A standalone index rule emits a .bai
+        # nested under that directory, which snakemake rejects as a
+        # ChildIOException when the consuming rule runs as a remote SLURM jobstep.
+        pysam.index(outbam)
 
     bam.close()
 

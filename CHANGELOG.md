@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **VEP annotation parallelized (`annotate_variants` 4 → 16 threads)**: VEP `--everything` was the critical-path tail of large runs (multi-hour `annotate_variants` jobs). The `v5.9.0/bio/vep/annotate` wrapper forwards `threads` to `--fork`, so raising it to 16 — with a 32 GB profile tier for the fork workers' cache — cuts annotation wall-clock substantially. ([#179](https://github.com/ylab-hi/ScanNeo2/pull/179))
 
+### Fixed
+
+- **Remote-jobstep `ChildIOException` in split-BAM variant calling**: the per-chromosome split-index rules wrote each `.bam.bai` nested under the split checkpoint's `directory()` output, which Snakemake accepts in the controller DAG but rejects as a `ChildIOException` when the consuming rule (e.g. `filter_short_indels_m2`) rebuilds the DAG as a remote SLURM jobstep — dead-ending the entire Mutect2 somatic SNV/short-indel path on the cluster. The split checkpoint now indexes each per-chr BAM in place (so the `.bai` is part of the directory output), the three standalone index rules are removed, and the consuming rules drop their explicit `.bai` input (GATK finds the co-located index). ([#182](https://github.com/ylab-hi/ScanNeo2/pull/182))
+
 ## [0.5.2] - 2026-09-17
 
 ### Changed
