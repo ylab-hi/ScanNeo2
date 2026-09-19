@@ -375,9 +375,13 @@ rule sort_aug_short_indels_m2:
         "../envs/bcftools.yml"
     message:
         "Sorting and compressing short indels on sample:{wildcards.sample}"
+    # Keep only the tumor sample. Paired dnaseq Mutect2 emits a matched-normal
+    # column alongside the tumor, but combine_aug_short_indels_m2 stacks this
+    # dnaseq VCF with the tumor-only rnaseq one, which requires both to carry the
+    # same single tumor sample.
     shell:
         """
-        (bcftools sort {input} -o - | bcftools view -O z -o {output}) >{log} 2>&1
+        (bcftools sort {input} -o - | bcftools view -s {wildcards.sample}_{wildcards.group} -O z -o {output}) >{log} 2>&1
         """
 
 
@@ -450,9 +454,11 @@ rule sort_somatic_SNVs_m2:
         "../envs/bcftools.yml"
     message:
         "Sorting and compressing somatic SNVs on sample:{wildcards.sample}"
+    # Keep only the tumor sample (see sort_aug_short_indels_m2): combine_somatic_SNVs_m2
+    # likewise stacks the paired dnaseq VCF with the tumor-only rnaseq one.
     shell:
         """
-        (bcftools sort {input} -o - | bcftools view -O z -o {output}) >{log} 2>&1
+        (bcftools sort {input} -o - | bcftools view -s {wildcards.sample}_{wildcards.group} -O z -o {output}) >{log} 2>&1
         """
 
 

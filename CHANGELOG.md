@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Remote-jobstep `ChildIOException` in split-BAM variant calling**: the per-chromosome split-index rules wrote each `.bam.bai` nested under the split checkpoint's `directory()` output, which Snakemake accepts in the controller DAG but rejects as a `ChildIOException` when the consuming rule (e.g. `filter_short_indels_m2`) rebuilds the DAG as a remote SLURM jobstep — dead-ending the entire Mutect2 somatic SNV/short-indel path on the cluster. The split checkpoint now indexes each per-chr BAM in place (so the `.bai` is part of the directory output), the three standalone index rules are removed, and the consuming rules drop their explicit `.bai` input (GATK finds the co-located index). ([#182](https://github.com/ylab-hi/ScanNeo2/pull/182))
+- **Paired somatic VCFs reduced to the tumor sample before combining**: paired dnaseq Mutect2 carries a matched-normal FORMAT column alongside the tumor, but `combine_aug_short_indels_m2` / `combine_somatic_SNVs_m2` stack it with the tumor-only (single-sample) rnaseq calls via `bcftools concat`, which requires matching sample columns — so the 2-sample dnaseq broke the concat (the short-indels combine failed hard; the SNV combine carried the same latent mismatch). `sort_aug_short_indels_m2` and `sort_somatic_SNVs_m2` now `bcftools view -s {sample}_{group}` to keep only the tumor column, matching the rnaseq shape. ([#183](https://github.com/ylab-hi/ScanNeo2/pull/183))
 
 ## [0.5.2] - 2026-09-17
 
