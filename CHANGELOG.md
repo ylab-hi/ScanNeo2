@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **VEP annotation parallelized (`annotate_variants` 4 → 16 threads)**: VEP `--everything` was the critical-path tail of large runs (multi-hour `annotate_variants` jobs). The `v5.9.0/bio/vep/annotate` wrapper forwards `threads` to `--fork`, so raising it to 16 — with a 32 GB profile tier for the fork workers' cache — cuts annotation wall-clock substantially. ([#179](https://github.com/ylab-hi/ScanNeo2/pull/179))
+- **transindel long-indel path scattered by chromosome**: the transindel BAM rebuild *and* long-indel calling ran single-threaded over the whole BAM (the multi-hour tail on deep RNA — ~3 h on the TESLA samples). Both now split per chromosome, run in parallel, and merge — cutting wall-clock to roughly the slowest single chromosome. Validated byte-identical to the whole-BAM call set. ([#178](https://github.com/ylab-hi/ScanNeo2/pull/178))
 
 ### Fixed
 
