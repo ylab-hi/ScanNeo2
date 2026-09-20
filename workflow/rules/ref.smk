@@ -116,7 +116,7 @@ rule download_rediportal:
         """
         (
             curl --fail -L --retry 5 -o {output.table} \
-                http://rediportal.cloud.ba.infn.it/download/TABLE1_hg38_v3.txt.gz
+                https://rediportal.cloud.ba.infn.it/download/TABLE1_hg38_v3.txt.gz
             tabix -S 1 -s 2 -b 3 -e 3 {output.table}
         ) >{log} 2>&1
         """
