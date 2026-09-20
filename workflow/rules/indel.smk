@@ -391,7 +391,11 @@ rule select_short_indels_m2:
     resources:
         mem_mb=1024,
     params:
-        extra="--select-type-to-include INDEL",  # optional filter arguments, see GATK docs
+        # --exclude-filtered: keep only PASS calls. FilterMutectCalls only
+        # annotates the FILTER column, so without this the non-PASS calls
+        # (weak_evidence, orientation, clustered_events, ...) flow downstream and
+        # are treated as somatic neoepitope sources.
+        extra="--select-type-to-include INDEL --exclude-filtered",
         java_opts="",  # optional
     message:
         "Selecting short somatic indels with SelectVariants on sample:{wildcards.sample}"
@@ -470,7 +474,8 @@ rule select_SNVs_m2:
     resources:
         mem_mb=1024,
     params:
-        extra="--select-type-to-include SNP",  # optional filter arguments, see GATK docs
+        # --exclude-filtered: keep only PASS calls (see select_short_indels_m2)
+        extra="--select-type-to-include SNP --exclude-filtered",
         java_opts="",  # optional
     message:
         "Selecting somatic SNVs with SelectVariants on sample:{wildcards.sample}"
