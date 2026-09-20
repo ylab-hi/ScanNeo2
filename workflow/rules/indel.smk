@@ -597,6 +597,26 @@ rule subtract_germline_snvs:
         """
 
 
+rule annotate_rna_editing:
+    input:
+        vcf="results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs.germsub.vcf.gz",
+        redi="resources/rediportal/rediportal_hg38.txt.gz",
+        redi_idx="resources/rediportal/rediportal_hg38.txt.gz.tbi",
+    output:
+        "results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs.germsub.reanno.vcf.gz",
+    log:
+        "logs/{sample}/indel/annotate_rna_editing_{group}.log",
+    conda:
+        "../envs/basic.yml"
+    message:
+        "Annotating RNA somatic SNVs against REDIportal (A-to-I editing) on sample:{wildcards.sample} group:{wildcards.group}"
+    shell:
+        """
+        python workflow/scripts/annotate_rna_editing.py \
+            {input.vcf} {input.redi} {output} >{log} 2>&1
+        """
+
+
 rule subtract_germline_short_indels:
     input:
         vcf="results/{sample}/rnaseq/indel/mutect2/{group}_somatic.short.indels.vcf.gz",
