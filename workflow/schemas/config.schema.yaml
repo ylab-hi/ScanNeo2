@@ -120,6 +120,24 @@ properties:
     required: [activate, ao, pso, strand]
     additionalProperties: false
 
+  rnaediting:
+    type: object
+    properties:
+      activate:
+        type: boolean
+      max_normal_tissues:
+        type: integer
+        minimum: 0
+        description: sites edited in more than this many normal GTEx tissues (REDIportal nTissues) are treated as constitutive/self and dropped
+      coding_only:
+        type: boolean
+      min_editing_level:
+        type: number
+        minimum: 0
+        maximum: 1
+    required: [activate, max_normal_tissues, coding_only, min_editing_level]
+    additionalProperties: false
+
   genefusion:
     type: object
     properties:

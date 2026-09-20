@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **REDIportal A-to-I editing atlas reference**: `download_rediportal` fetches and tabix-indexes the REDIportal editing-site atlas (GRCh38, ~15.7M sites), with an optional `rnaediting` config section (activate + constitutive/coding/editing-level cutoffs) — the reference groundwork for the tumor-specific RNA-editing neoepitope source. ([#187](https://github.com/ylab-hi/ScanNeo2/pull/187))
+
 ### Changed
 
 - **VEP annotation parallelized (`annotate_variants` 4 → 16 threads)**: VEP `--everything` was the critical-path tail of large runs (multi-hour `annotate_variants` jobs). The `v5.9.0/bio/vep/annotate` wrapper forwards `threads` to `--fork`, so raising it to 16 — with a 32 GB profile tier for the fork workers' cache — cuts annotation wall-clock substantially. ([#179](https://github.com/ylab-hi/ScanNeo2/pull/179))
