@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **REDIportal A-to-I editing atlas reference**: `download_rediportal` fetches and tabix-indexes the REDIportal editing-site atlas (GRCh38, ~15.7M sites), with an optional `rnaediting` config section (activate + constitutive/coding/editing-level cutoffs) — the reference groundwork for the tumor-specific RNA-editing neoepitope source. ([#187](https://github.com/ylab-hi/ScanNeo2/pull/187))
+- **RNA somatic SNVs annotated with A-to-I editing evidence**: `annotate_rna_editing` tabix-looks-up each `A>G`/`T>C` RNA somatic SNV against REDIportal and adds INFO flags (`RE`, `RE_nTissues`, `RE_exonic`, `RE_TCGA`), so the downstream split can separate point mutations from editing and drop constitutive (self) edits. ([#188](https://github.com/ylab-hi/ScanNeo2/pull/188))
 
 ### Changed
 
