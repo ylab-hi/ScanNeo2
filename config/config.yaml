@@ -62,16 +62,6 @@ genefusion:
   fraglen: 200 # mean fragment length
   maxmismatch: 0.01
 
-# RNA A-to-I editing neoantigens (REDIportal atlas; human GRCh38 only)
-rnaediting:
-  activate: true # tumor-specific A-to-I editing as a neoepitope source (see issue #186)
-  # A site edited in more than `max_normal_tissues` normal GTEx tissues (REDIportal
-  # nTissues) is treated as constitutive/self and dropped; 0 keeps only edits absent
-  # from every normal tissue (strictest tumor-specific set). Raise to relax.
-  max_normal_tissues: 0
-  coding_only: true # only keep exonic edits that recode a residue (can form a neoepitope)
-  min_editing_level: 0.1 # minimal per-site editing level (RNA VAF) to consider
-
 ### indel
 indel:
   activate: true # whether (=true) or not (=false) to include indels

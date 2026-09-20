@@ -599,13 +599,18 @@ rule subtract_germline_snvs:
 
 rule annotate_rna_editing:
     input:
-        vcf="results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs.germsub.vcf.gz",
+        vcf="results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs{sub}.vcf.gz",
         redi="resources/rediportal/rediportal_hg38.txt.gz",
         redi_idx="resources/rediportal/rediportal_hg38.txt.gz.tbi",
     output:
-        "results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs.germsub.reanno.vcf.gz",
+        "results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs{sub}.reanno.vcf.gz",
     log:
-        "logs/{sample}/indel/annotate_rna_editing_{group}.log",
+        "logs/{sample}/indel/annotate_rna_editing_{group}{sub}.log",
+    # {sub} is either "" (RNA-only / paired-RNA calls) or ".germsub" (tumor-only
+    # RNA subtracted against a DNA normal); editing is annotated on whichever RNA
+    # somatic SNV set the sample produces, independent of its normal topology.
+    wildcard_constraints:
+        sub=r"(\.germsub)?",
     conda:
         "../envs/basic.yml"
     message:
@@ -614,6 +619,33 @@ rule annotate_rna_editing:
         """
         python workflow/scripts/annotate_rna_editing.py \
             {input.vcf} {input.redi} {output} >{log} 2>&1
+        """
+
+
+rule remove_rna_editing:
+    input:
+        "results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs{sub}.reanno.vcf.gz",
+    output:
+        "results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs{sub}.nored.vcf.gz",
+    log:
+        "logs/{sample}/indel/remove_rna_editing_{group}{sub}.log",
+    wildcard_constraints:
+        sub=r"(\.germsub)?",
+    conda:
+        "../envs/bcftools.yml"
+    message:
+        "Removing known A-to-I RNA editing sites from somatic SNVs on sample:{wildcards.sample} group:{wildcards.group}"
+    # REDIportal-known A-to-I edits are RNA editing, not somatic DNA mutations, so
+    # they do not belong in the somatic.snvs neoepitope source. Recovering
+    # tumor-specific edits as their own neoepitope class needs a dedicated
+    # RNA-vs-DNA editing caller, tracked separately (see issue #189).
+    #
+    # RE is a record-level flag set when *any* ALT is a known edit, so restrict the
+    # drop to biallelic records (N_ALT=1); a multiallelic record mixing an edit with
+    # a real somatic ALT is kept intact rather than dropping the somatic allele too.
+    shell:
+        """
+        bcftools view -e 'INFO/RE=1 && N_ALT=1' -O z -o {output} {input} >{log} 2>&1
         """
 
 
