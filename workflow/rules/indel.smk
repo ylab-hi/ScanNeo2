@@ -639,9 +639,13 @@ rule remove_rna_editing:
     # they do not belong in the somatic.snvs neoepitope source. Recovering
     # tumor-specific edits as their own neoepitope class needs a dedicated
     # RNA-vs-DNA editing caller, tracked separately (see issue #189).
+    #
+    # RE is a record-level flag set when *any* ALT is a known edit, so restrict the
+    # drop to biallelic records (N_ALT=1); a multiallelic record mixing an edit with
+    # a real somatic ALT is kept intact rather than dropping the somatic allele too.
     shell:
         """
-        bcftools view -e 'INFO/RE=1' -O z -o {output} {input} >{log} 2>&1
+        bcftools view -e 'INFO/RE=1 && N_ALT=1' -O z -o {output} {input} >{log} 2>&1
         """
 
 
