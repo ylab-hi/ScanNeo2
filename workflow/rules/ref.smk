@@ -111,8 +111,8 @@ rule download_rediportal:
     shell:
         # REDIportal TABLE1 ships coordinate-sorted BGZF, so index it in place
         # by chromosome (col 2) and position (col 3), skipping the single header
-        # line. The atlas is human GRCh38 only; downloaded on demand by the
-        # RNA-editing neoepitope path (gated on config rnaediting.activate).
+        # line. The atlas is human GRCh38 only; downloaded on demand by the RNA
+        # somatic SNV editing de-noising path (any run that calls RNA SNVs).
         """
         (
             curl --fail -L --retry 5 -o {output.table} \

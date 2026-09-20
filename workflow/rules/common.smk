@@ -1486,7 +1486,13 @@ def matched_normal_germline_tbi(wildcards):
 
 def rnaseq_somatic_snvs(sample, group):
     sub = ".germsub" if rna_needs_germsub(sample, group) else ""
-    return f"results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs{sub}.vcf.gz"
+    # RNA somatic SNVs always route through editing de-noising: known REDIportal
+    # A-to-I edits are RNA editing, not somatic DNA mutations, so remove_rna_editing
+    # strips them before the SNVs feed neoepitope prioritization. ScanNeo2 is human
+    # GRCh38, so REDIportal always applies -- de-noising is unconditional, no toggle.
+    return (
+        f"results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs{sub}.nored.vcf.gz"
+    )
 
 
 def rnaseq_somatic_shortindels(sample, group):
