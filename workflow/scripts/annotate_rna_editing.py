@@ -52,33 +52,36 @@ def main():
         "Integer",
         "TCGA tumor samples with the edit (REDIportal nTCGASamples)",
     )
-    vcf_out = pysam.VariantFile(out_vcf, "w", header=header)
+    # "wz" = BGZF-compressed, matching the .vcf.gz output ("w" would write plain text)
+    vcf_out = pysam.VariantFile(out_vcf, "wz", header=header)
 
     annotated = 0
     for record in vcf_in:
-        alt = record.alts[0] if record.alts else None
-        if (
-            alt is not None
-            and len(record.ref) == 1
-            and len(alt) == 1
-            and (record.ref, alt) in AI_SIGNATURE
-            and record.contig in redi_contigs
-        ):
-            for line in redi.fetch(record.contig, record.pos - 1, record.pos):
-                fields = line.split("\t")
-                if (
-                    int(fields[POSITION]) == record.pos
-                    and fields[REF] == record.ref
-                    and fields[ED] == alt
-                ):
-                    record.info["RE"] = True
-                    if fields[NTISSUES].isdigit():
-                        record.info["RE_nTissues"] = int(fields[NTISSUES])
-                    if len(fields) > EXONICFUNC and "nonsynonymous" in fields[EXONICFUNC]:
-                        record.info["RE_exonic"] = True
-                    if len(fields) > NTCGA and fields[NTCGA].isdigit():
-                        record.info["RE_TCGA"] = int(fields[NTCGA])
-                    annotated += 1
+        # Mutect2 SNVs are effectively biallelic, but check every ALT so a
+        # multiallelic site with an A-to-I allele is still annotated.
+        if len(record.ref) == 1 and record.contig in redi_contigs:
+            matched = False
+            for alt in record.alts or ():
+                if len(alt) != 1 or (record.ref, alt) not in AI_SIGNATURE:
+                    continue
+                for line in redi.fetch(record.contig, record.pos - 1, record.pos):
+                    fields = line.split("\t")
+                    if (
+                        int(fields[POSITION]) == record.pos
+                        and fields[REF] == record.ref
+                        and fields[ED] == alt
+                    ):
+                        record.info["RE"] = True
+                        if fields[NTISSUES].isdigit():
+                            record.info["RE_nTissues"] = int(fields[NTISSUES])
+                        if len(fields) > EXONICFUNC and "nonsynonymous" in fields[EXONICFUNC]:
+                            record.info["RE_exonic"] = True
+                        if len(fields) > NTCGA and fields[NTCGA].isdigit():
+                            record.info["RE_TCGA"] = int(fields[NTCGA])
+                        annotated += 1
+                        matched = True
+                        break
+                if matched:
                     break
         vcf_out.write(record)
 
