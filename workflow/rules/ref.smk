@@ -98,6 +98,30 @@ rule tabix:
         "v1.29.0/bio/tabix/index"
 
 
+rule download_rediportal:
+    output:
+        table="resources/rediportal/rediportal_hg38.txt.gz",
+        idx="resources/rediportal/rediportal_hg38.txt.gz.tbi",
+    log:
+        "logs/ref/download_rediportal.log",
+    conda:
+        "../envs/basic.yml"
+    message:
+        "Downloading and tabix-indexing the REDIportal A-to-I RNA editing atlas (GRCh38)"
+    shell:
+        # REDIportal TABLE1 ships coordinate-sorted BGZF, so index it in place
+        # by chromosome (col 2) and position (col 3), skipping the single header
+        # line. The atlas is human GRCh38 only; downloaded on demand by the
+        # RNA-editing neoepitope path (gated on config rnaediting.activate).
+        """
+        (
+            curl --fail -L --retry 5 -o {output.table} \
+                http://rediportal.cloud.ba.infn.it/download/TABLE1_hg38_v3.txt.gz
+            tabix -S 1 -s 2 -b 3 -e 3 {output.table}
+        ) >{log} 2>&1
+        """
+
+
 rule star_index:
     input:
         fasta="resources/refs/genome.fasta",
