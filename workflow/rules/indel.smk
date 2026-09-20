@@ -12,7 +12,11 @@ checkpoint split_bam_ti_build:
         bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
         idx="results/{sample}/{seqtype}/align/{group}_final_BWA.bam.bai",
     output:
-        directory("results/{sample}/{seqtype}/indel/transindel/{group}_build_split"),
+        temp(
+            directory(
+                "results/{sample}/{seqtype}/indel/transindel/{group}_build_split"
+            )
+        ),
     log:
         "logs/{sample}/indel/ti_split_{seqtype}_{group}.log",
     conda:
@@ -118,7 +122,7 @@ rule merge_ti_call:
             first=$(echo {input} | tr ' ' '\\n' | head -n1)
             grep '^##' "$first"
             printf '#CHROM\\tPOS\\tID\\tREF\\tALT\\tQUAL\\tFILTER\\tINFO\\tFORMAT\\tresults/{wildcards.sample}/{wildcards.seqtype}/indel/transindel/{wildcards.group}_call\\n'
-            grep -hv '^#' {input} || true
+            grep -hv '^#' {input} || [ $? -eq 1 ]
         ) >{output} 2>{log}
         """
 
