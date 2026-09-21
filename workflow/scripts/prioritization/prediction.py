@@ -11,6 +11,7 @@ import os
 import contextlib
 import concurrent.futures
 import subprocess
+import sys
 from pathlib import Path
 import utility as ut
 
@@ -291,6 +292,7 @@ class BindingAffinities:
             # one pool over all units -- the prediction tool numbers each batch
             # file from 1, so offset translates that to a global seqnum
             completed = 0
+            dropped = 0
             total = len(units)
             # emit ~10 progress lines per vartype regardless of unit count
             step = max(1, total // 10)
@@ -309,14 +311,26 @@ class BindingAffinities:
                     completed += 1
                     if completed % step == 0 or completed == total:
                         print(f"  [{completed}/{total}] completed", flush=True)
+                    result = future.result()
+                    if result is None:
+                        dropped += 1
+                        continue
                     dest = affinities[group][epilen]
-                    for seqnum, epitopes in future.result().items():
+                    for seqnum, epitopes in result.items():
                         global_seqnum = offset + seqnum
                         if global_seqnum not in dest:
                             dest[global_seqnum] = epitopes
                         else:
                             for seq, val in epitopes.items():
                                 dest[global_seqnum].setdefault(seq, val)
+
+        if dropped:
+            # dropped batches = neoepitopes never predicted; surface loudly on
+            # stdout and stderr rather than returning a silently-incomplete set.
+            msg = (f"  WARNING: {dropped}/{total} prediction batches DROPPED "
+                   f"(timeout/failure) -- neoepitope results are INCOMPLETE")
+            print(msg, flush=True)
+            print(msg, file=sys.stderr, flush=True)
 
         return affinities['wt'], affinities['mt']
     
@@ -365,8 +379,10 @@ class BindingAffinities:
         """Run a single prediction subprocess and parse its output into a
         binding_affinities dict keyed by (seqnum -> epitope_seq -> tuple).
 
-        A hung or failing batch is skipped (returns an empty dict) so one
-        bad batch does not stall the whole run."""
+        Returns None if the batch timed out or failed -- distinct from a
+        successful batch that simply yields no binders (an empty dict) -- so the
+        caller can count and surface dropped batches rather than silently
+        losing their neoepitopes."""
         binding_affinities = {}
 
         try:
@@ -379,11 +395,11 @@ class BindingAffinities:
         except subprocess.TimeoutExpired:
             print(f"    WARNING: prediction timed out after "
                   f"{PREDICTION_TIMEOUT_SEC}s for {fa_file}", flush=True)
-            return binding_affinities
+            return None
         except subprocess.CalledProcessError as e:
             print(f"    WARNING: prediction failed for {fa_file}: "
                   f"{e.stderr}", flush=True)
-            return binding_affinities
+            return None
 
         predictions = result.stdout.rstrip().split('\n')[1:]
 
