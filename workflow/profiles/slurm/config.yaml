@@ -100,9 +100,9 @@ set-resources:
     mem_mb: 16000
   # SplitNCigarReads streams the whole RNA BAM single-threaded; give it the
   # variant-calling walltime tier rather than the 120-min default (cf. #176).
+  # Memory is set on the rule (mem_mb=16000) so the JVM -Xmx can derive from it.
   split_n_cigar_reads:
     runtime: 1440
-    mem_mb: 16000
   recalibrate_bases:
     runtime: 720
   recalibrate_variants_first_round:

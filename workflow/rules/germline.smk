@@ -64,12 +64,15 @@ rule split_n_cigar_reads:
     conda:
         "../envs/gatk.yml"
     resources:
-        mem_mb=10240,
+        mem_mb=16000,
     message:
         "SplitNCigarReads (RNA splice-aware) on sample:{wildcards.sample} group:{wildcards.group}"
+    # cap the JVM heap under the SLURM allocation -- GATK's default sizing sees the
+    # node's physical RAM, not the cgroup limit, and can OOM otherwise (cf. #191).
     shell:
         """
-        gatk SplitNCigarReads -R {input.ref} -I {input.bam} -O {output} \
+        gatk --java-options "-Xmx$(({resources.mem_mb} - 2048))m" SplitNCigarReads \
+            -R {input.ref} -I {input.bam} -O {output} \
             --create-output-bam-index false >{log} 2>&1
         """
 
