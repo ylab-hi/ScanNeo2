@@ -1318,15 +1318,37 @@ def get_mutect_normal_input(wildcards):
 
 
 def get_mutect_paired_extra(wildcards):
-    """`-I <normal> -normal <SM>` when a matched same-seqtype normal exists, else
-    '' (tumor-only). In paired mode Mutect2 uses the normal to call germline and
-    excludes it from the somatic output. The normal's SM is `<sample>_<group>`."""
-    if wildcards.group in (SAMPLES[wildcards.sample]["normal"] or []):
-        return ""
-    n = matched_normal_group(wildcards.sample, wildcards.seqtype)
-    if n is None:
-        return ""
-    return f"-I {mutect_normal_split(wildcards)} -normal {wildcards.sample}_{n}"
+    """Extra Mutect2 args: `--dont-use-soft-clipped-bases` for rnaseq (soft-clipped
+    bases at splice junctions are RNA-seq artifacts), plus `-I <normal> -normal
+    <SM>` when a tumor group has a matched same-seqtype normal (paired mode, where
+    Mutect2 uses the normal to call germline and excludes it). Normal SM is
+    `<sample>_<group>`."""
+    extra = []
+    if wildcards.seqtype == "rnaseq":
+        extra.append("--dont-use-soft-clipped-bases")
+    if wildcards.group not in (SAMPLES[wildcards.sample]["normal"] or []):
+        n = matched_normal_group(wildcards.sample, wildcards.seqtype)
+        if n is not None:
+            extra.append(
+                f"-I {mutect_normal_split(wildcards)} -normal {wildcards.sample}_{n}"
+            )
+    return " ".join(extra)
+
+
+def varprep_bam(wildcards):
+    """Aligned BAM feeding the Mutect2 / HaplotypeCaller short-variant chain: RNA
+    reads are SplitNCigar'd first (intron-spanning reads split at their N-CIGAR)
+    so junction-spanning mismatches are not miscalled as SNVs; DNA uses the raw
+    BAM. transindel / arriba / quantification keep using the raw final_BWA.bam."""
+    base = (
+        f"results/{wildcards.sample}/{wildcards.seqtype}/align/"
+        f"{wildcards.group}_final_BWA"
+    )
+    return f"{base}.splitn.bam" if wildcards.seqtype == "rnaseq" else f"{base}.bam"
+
+
+def varprep_bai(wildcards):
+    return varprep_bam(wildcards) + ".bai"
 
 
 def get_longindels(wildcards):
