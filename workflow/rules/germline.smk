@@ -46,14 +46,53 @@ rule get_gatk_vqsr_training_sets:
         """
 
 
+# GATK RNA-seq best practice: split intron-spanning (N-CIGAR) reads at their
+# junctions and reassign MAPQ before variant calling, so junction-spanning
+# mismatches are not miscalled as SNVs. RNA only; DNA and the transindel / arriba
+# / quantification paths keep the raw final_BWA.bam (see varprep_bam).
+rule split_n_cigar_reads:
+    input:
+        bam="results/{sample}/rnaseq/align/{group}_final_BWA.bam",
+        idx="results/{sample}/rnaseq/align/{group}_final_BWA.bam.bai",
+        ref="resources/refs/genome.fasta",
+        fasta_dict="resources/refs/genome.dict",
+        fai="resources/refs/genome.fasta.fai",
+    output:
+        "results/{sample}/rnaseq/align/{group}_final_BWA.splitn.bam",
+    log:
+        "logs/{sample}/germline/split_n_cigar_reads_{group}.log",
+    conda:
+        "../envs/gatk.yml"
+    resources:
+        mem_mb=16000,
+    message:
+        "SplitNCigarReads (RNA splice-aware) on sample:{wildcards.sample} group:{wildcards.group}"
+    # cap the JVM heap under the SLURM allocation -- GATK's default sizing sees the
+    # node's physical RAM, not the cgroup limit, and can OOM otherwise (cf. #191).
+    shell:
+        """
+        gatk --java-options "-Xmx$(({resources.mem_mb} - 2048))m" SplitNCigarReads \
+            -R {input.ref} -I {input.bam} -O {output} \
+            --create-output-bam-index false >{log} 2>&1
+        """
+
+
+rule index_split_n_cigar_reads:
+    input:
+        "results/{sample}/rnaseq/align/{group}_final_BWA.splitn.bam",
+    output:
+        "results/{sample}/rnaseq/align/{group}_final_BWA.splitn.bam.bai",
+    log:
+        "logs/{sample}/germline/index_split_n_cigar_reads_{group}.log",
+    wrapper:
+        "v2.3.0/bio/samtools/index"
+
+
 # do a first round of variant calling on original, unrecalibrated data
-# TODO: split
-
-
 checkpoint split_bam_htc_first_round:
     input:
-        bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
-        idx="results/{sample}/{seqtype}/align/{group}_final_BWA.bam.bai",
+        bam=varprep_bam,
+        idx=varprep_bai,
     output:
         temp(directory("results/{sample}/{seqtype}/align/{group}_final_BWA_split")),
     log:
@@ -83,6 +122,11 @@ rule detect_variants_htc_first_round:
     threads: 4
     resources:
         mem_mb=1024,
+    params:
+        # soft-clipped bases at splice junctions are RNA-seq artifacts
+        extra=lambda w: (
+            "--dont-use-soft-clipped-bases" if w.seqtype == "rnaseq" else ""
+        ),
     message:
         "First round of variant calling (htcaller) on original, unrecalibrated data on sample:{wildcards.sample} with group:{wildcards.group} on chromosome {wildcards.chr}"
     wrapper:
@@ -230,7 +274,7 @@ rule apply_VSQR_INDEL_first_round:
 
 rule recalibrate_bases:
     input:
-        bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
+        bam=varprep_bam,
         ref="resources/refs/genome.fasta",
         dict="resources/refs/genome.dict",
         known=[
@@ -252,7 +296,7 @@ rule recalibrate_bases:
 
 rule apply_BQSR:
     input:
-        bam="results/{sample}/{seqtype}/align/{group}_final_BWA.bam",
+        bam=varprep_bam,
         ref="resources/refs/genome.fasta",
         dict="resources/refs/genome.dict",
         recal_table="results/{sample}/{seqtype}/indel/htcaller/{group}_variants.1rd.baserecal.grp",
