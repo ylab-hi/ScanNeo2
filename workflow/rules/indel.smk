@@ -270,8 +270,8 @@ rule detect_short_indels_m2:
         "logs/{sample}/indel/detect_short_indels_m2_{seqtype}_{group}_{chr}.log",
     threads: 4
     resources:
-        # Mutect2 loads the af-only-gnomAD --germline-resource (a ~3 GB atlas);
-        # 1 GB OOM-killed deep dnaseq calls on gene-dense chromosomes (e.g. chr15).
+        # Mutect2 loads the af-only-gnomAD --germline-resource (a ~3 GB atlas); deep
+        # dnaseq calls on gene-dense chromosomes (e.g. chr15) need several GB of heap.
         mem_mb=8192,
     params:
         extra=get_mutect_paired_extra,
