@@ -79,12 +79,18 @@ class Immunogenicity:
 
             # run immunogenicity
             try:
+                # The IEDB tools read a line from stdin whenever it is not a
+                # TTY, to support piped input. Under the SLURM executor srun
+                # supplies an open stdin pipe that is never written, so an
+                # inherited stdin can block forever -- and this call has no
+                # timeout to bound it. DEVNULL gives an immediate EOF.
                 result = subprocess.run(
                         ['python',
                          'workflow/scripts/immunogenicity/predict_immunogenicity.py',
                          tmpsfile.name],
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
+                        stdin=subprocess.DEVNULL,
                         universal_newlines=True,
                         check=True,
                 )
