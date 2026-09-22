@@ -386,9 +386,16 @@ class BindingAffinities:
         binding_affinities = {}
 
         try:
+            # IEDB's predict_binding.py / mhc_II_binding.py read a line from
+            # stdin whenever it is not a TTY, to support piped input. Under the
+            # SLURM executor each job step runs via srun, which supplies an open
+            # stdin pipe that is never written, so that read blocks until the
+            # timeout below fires and the batch is lost. DEVNULL gives them an
+            # immediate EOF, which is the input shape they handle correctly.
             result = subprocess.run(call,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
+                                    stdin=subprocess.DEVNULL,
                                     universal_newlines=True,
                                     timeout=PREDICTION_TIMEOUT_SEC,
                                     check=True)
