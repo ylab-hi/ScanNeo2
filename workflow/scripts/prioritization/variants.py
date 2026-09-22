@@ -45,6 +45,11 @@ class Variants():
                     ref = entry.REF
                     alts = entry.ALT
 
+                    # collect the CSQ fields of *every* ALT (not just the last):
+                    # parse_csq_entries returns per-allele fields, so a multiallelic
+                    # record needs each ALT's fields carried with its own alt index
+                    # (alt_i drives VAF/AD/allele lookups below).
+                    alt_fields = []
                     for alt_i, alt_v in enumerate(alts):
                         csq_allele = alleles_vep[str(alt_v.value)]
                         csq_fields = self.parse_csq_entries(
@@ -52,8 +57,10 @@ class Variants():
                                 csq_format,
                                 csq_allele
                         )
+                        for field in csq_fields:
+                            alt_fields.append((alt_i, field))
 
-                    for field in csq_fields:
+                    for alt_i, field in alt_fields:
                         gene_name = field["SYMBOL"]
                         gene_id = field["Gene"]
                         transcript_id = field['Feature']
