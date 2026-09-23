@@ -10,3 +10,9 @@ __pycache__/
 
 # MkDocs build output
 /site/
+
+# Workflow run output. Anchored to the repo root on purpose: the integration
+# tests keep tracked expected-output fixtures under .tests/integration/*/results/,
+# which a depth-agnostic pattern would silently ignore.
+/results/
+/logs/
