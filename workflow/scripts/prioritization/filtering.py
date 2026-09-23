@@ -287,24 +287,11 @@ class SequenceSimilarity:
         hits = {}
         # tempfile (write the sequences to file)  no with
         with tempfile.NamedTemporaryFile() as infile:
-            # create proteome database
-            try:
-                index = subprocess.run(
-                        ["makeblastdb",
-                         "-in",
-                         "resources/refs/peptide.fasta",
-                         "-dbtype",
-                         "prot",
-                         "-out",
-                         "resources/refs/proteome_blastdb"],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        universal_newlines=True,
-                        check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"makeblastdb failed: {e.stderr}", file=sys.stderr, flush=True)
-                raise
-
+            # The database is built once by the `make_proteome_blastdb` rule and
+            # is read-only here. Building it inline raced: every prioritization
+            # job rebuilt it at this shared path while sibling jobs were
+            # querying it, so blastp intermittently found a half-written
+            # database and failed with "File ...phr not found".
             fh_in = open(infile.name, "w")
             for idx, val in enumerate(mt_seqs):
                 fh_in.write(f">{idx}\n{val}\n")
