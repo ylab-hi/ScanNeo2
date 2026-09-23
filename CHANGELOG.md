@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-23
+
 ### Added
 
 - **REDIportal A-to-I editing atlas reference**: `download_rediportal` fetches and tabix-indexes the REDIportal editing-site atlas (GRCh38, ~15.7M sites) — the reference used to identify known RNA editing in the RNA somatic SNVs. ([#187](https://github.com/ylab-hi/ScanNeo2/pull/187))
