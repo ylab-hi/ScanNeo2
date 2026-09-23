@@ -1,3 +1,15 @@
+# The BLAST protein database files that `blastp` requires. Measured against the
+# pinned blast: removing .pdb makes blastp abort with "File ....pdb not found",
+# while the other v5 metadata files it writes (.pot, .ptf, .pto, .pjs) serve
+# blastdbcmd/taxonomy lookups and are individually removable with identical
+# results, so they are deliberately not tracked. Declared once and shared by the
+# rule that builds the database and the rule that reads it, so the two sets
+# cannot drift apart.
+PROTEOME_BLASTDB = multiext(
+    "resources/refs/proteome_blastdb", ".phr", ".pin", ".psq", ".pdb"
+)
+
+
 rule download_mhcI_ba_tools:
     output:
         directory("workflow/scripts/mhc_i/"),
@@ -60,11 +72,7 @@ rule make_proteome_blastdb:
     input:
         peptide="resources/refs/peptide.fasta",
     output:
-        # The three files that make up a BLAST protein database in every
-        # version. The pinned blast writes auxiliary LMDB files (.pdb, .pot,
-        # .ptf, .pto, .pjs) alongside them; those are left undeclared because
-        # which ones appear varies by blast version.
-        multiext("resources/refs/proteome_blastdb", ".phr", ".pin", ".psq"),
+        PROTEOME_BLASTDB,
     log:
         "logs/ref/make_proteome_blastdb.log",
     conda:
@@ -101,7 +109,7 @@ rule prioritization:
         mhcI_ba=get_mhcI_ba_tools,
         mhcII_ba=get_mhcII_ba_tools,
         mhcI_im=get_mhcI_immunogenicity_tools,
-        proteome_db=multiext("resources/refs/proteome_blastdb", ".phr", ".pin", ".psq"),
+        proteome_db=PROTEOME_BLASTDB,
     output:
         directory("results/{sample}/prioritization/"),
     log:
