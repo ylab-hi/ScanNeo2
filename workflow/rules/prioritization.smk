@@ -70,7 +70,9 @@ rule make_proteome_blastdb:
     conda:
         "../envs/prioritization.yml"
     params:
-        prefix="resources/refs/proteome_blastdb",
+        # derived from the output rather than hardcoded, so the prefix still
+        # resolves when the outputs are staged (no shared filesystem)
+        prefix=lambda w, output: os.path.splitext(output[0])[0],
     message:
         "Building BLAST database for the reference proteome"
     shell:
