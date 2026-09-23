@@ -56,6 +56,30 @@ rule download_prediction_binding_affinity_tools:
         """
 
 
+rule make_proteome_blastdb:
+    input:
+        peptide="resources/refs/peptide.fasta",
+    output:
+        # The three files that make up a BLAST protein database in every
+        # version. The pinned blast writes auxiliary LMDB files (.pdb, .pot,
+        # .ptf, .pto, .pjs) alongside them; those are left undeclared because
+        # which ones appear varies by blast version.
+        multiext("resources/refs/proteome_blastdb", ".phr", ".pin", ".psq"),
+    log:
+        "logs/ref/make_proteome_blastdb.log",
+    conda:
+        "../envs/prioritization.yml"
+    params:
+        prefix="resources/refs/proteome_blastdb",
+    message:
+        "Building BLAST database for the reference proteome"
+    shell:
+        """
+        makeblastdb -in {input.peptide} -dbtype prot -out {params.prefix} \
+            >{log} 2>&1
+        """
+
+
 rule prioritization:
     input:
         snv=get_prioritization_snvs,
@@ -75,6 +99,7 @@ rule prioritization:
         mhcI_ba=get_mhcI_ba_tools,
         mhcII_ba=get_mhcII_ba_tools,
         mhcI_im=get_mhcI_immunogenicity_tools,
+        proteome_db=multiext("resources/refs/proteome_blastdb", ".phr", ".pin", ".psq"),
     output:
         directory("results/{sample}/prioritization/"),
     log:
