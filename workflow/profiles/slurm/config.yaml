@@ -128,4 +128,9 @@ set-resources:
   # --- neoepitope prioritization (binding-affinity prediction) ---
   prioritization:
     runtime: 1440
-    mem_mb: 16000
+    # altsplicing epitope windows span the whole novel region (median ~210 aa,
+    # p99 ~2350) rather than an SNV's ~21 aa, so the in-memory prediction set is
+    # far larger for those sources: on the TESLA cohort six of eight jobs sat at
+    # 15.9-16.3 GB against a 16 GB limit, and the resulting page-reclaim thrash
+    # slowed netMHCpan enough that the heaviest batches hit the per-batch cap.
+    mem_mb: 32000
