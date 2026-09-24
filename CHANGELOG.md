@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **`prioritization` memory tier raised to 32 GB**: transcriptomic sources emit epitope windows spanning the whole novel region (altsplicing median ~210 aa, p99 ~2,355) rather than an SNV's ~21 aa, so the prediction set held in memory is an order of magnitude larger for those sources than the previous 16 GB tier allowed. Six of eight prioritization jobs on a human cohort peaked at 15.9–16.3 GB against that limit, and the two heaviest altsplicing batches then exceeded the per-batch prediction cap and were dropped (24/270 on one sample), leaving its neoepitope table incomplete. 32 GB matches the existing heavy tiers (`annotate_variants`, `spladder`). This is headroom rather than a cure: batches are formed by sequence count while prediction cost scales with residues, so an altsplicing unit carries roughly 18× the peptides of an SNV unit. ([#202](https://github.com/ylab-hi/ScanNeo2/pull/202))
+- **`prioritization` memory tier raised to 32 GB**: transcriptomic sources emit epitope windows spanning the whole novel region (altsplicing median ~210 aa, p99 ~2,355) rather than an SNV's ~21 aa, so the prediction set held in memory is an order of magnitude larger for those sources. Measured peak on an altsplicing-heavy human sample is ~16.6 GB, above the previous 16 GB tier, so those jobs ran against their limit. 32 GB matches the existing heavy tiers (`annotate_variants`, `spladder`) and leaves headroom for larger cohorts. ([#202](https://github.com/ylab-hi/ScanNeo2/pull/202))
 
 ## [0.6.0] - 2026-09-23
 

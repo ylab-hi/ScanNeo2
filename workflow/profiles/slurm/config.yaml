@@ -130,5 +130,5 @@ set-resources:
     runtime: 1440
     # Transcriptomic sources emit epitope windows spanning the whole novel
     # region -- median ~210 aa against ~21 aa for an SNV -- so the prediction
-    # set held in memory for one sample can approach 16 GB.
+    # set held in memory exceeds 16 GB on an altsplicing-heavy human sample.
     mem_mb: 32000
