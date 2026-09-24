@@ -128,4 +128,7 @@ set-resources:
   # --- neoepitope prioritization (binding-affinity prediction) ---
   prioritization:
     runtime: 1440
-    mem_mb: 16000
+    # Transcriptomic sources emit epitope windows spanning the whole novel
+    # region -- median ~210 aa against ~21 aa for an SNV -- so the prediction
+    # set held in memory exceeds 16 GB on an altsplicing-heavy human sample.
+    mem_mb: 32000
