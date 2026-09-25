@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-09-25
+
 ### Fixed
 
 - **Every VEP transcript annotation now parsed, not just the first**: `variants.py::parse_csq_entries` returned from inside its loop, so only the **first** CSQ entry on a record was ever examined. VEP emits one entry per transcript — median 6 per variant, up to 66 — and 44.5% of records span more than one gene, so which gene a variant was attributed to came down to VEP's ordering. NRAS Q61H in a melanoma sample is the clearest casualty: 47 entries, 46 for the overlapping CSDE1 and 1 for NRAS, so the driver was discarded and its TESLA-validated neoepitope `ILDTAGHEEY` never reached the table. Measured on 2,000 PASS records, the fix takes protein-altering annotations from 41 to 160 (snvs) and 325 to 1,498 (indels), reaching ~50% more genes; the additional entries are overwhelmingly non-coding and discarded cheaply by the existing consequence filter. ([#204](https://github.com/ylab-hi/ScanNeo2/pull/204))
