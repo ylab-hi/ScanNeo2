@@ -233,7 +233,10 @@ class Variants():
             if transcript['Allele'] == csq_allele:
                 transcripts.append(transcript)
 
-            return transcripts
+        # VEP emits one CSQ entry per transcript, so every entry for this allele
+        # has to be collected: a variant in overlapping genes or a multi-isoform
+        # gene carries its coding consequence in an arbitrary position among them.
+        return transcripts
 
 
     def parse_csq_format(self,vcf_header):
