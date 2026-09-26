@@ -18,8 +18,8 @@
 #
 # NODE REQUIREMENT: the largest single job is `arriba` at 128 GB (gene fusion on
 # deep RNA), so the workflow requires a partition whose nodes have >=128 GB RAM.
-# `prioritization` asks for 48 cores (see set-threads), so nodes also need at
-# least that many; drop the value if yours are smaller.
+# `prioritization` asks for 48 cores, so nodes need at least that many; see the
+# set-threads example below to lower it.
 # Other memory-heavy rules: STAR / OptiType HLA typing 64 GB, GATK/VQSR steps
 # 32-64 GB.
 
@@ -37,13 +37,11 @@ default-resources:
   # slurm_account: "<account>"
   # slurm_partition: "<partition>"
 
-set-threads:
-  # Binding-affinity prediction is a single thread pool over (allele x epitope
-  # length x wt/mt x FASTA batch) units, so it scales with whatever it is given;
-  # every other rule keeps the workflow-wide `threads` from the config. 48 fills
-  # a 52-core node while leaving the OS a few cores -- lower it if your nodes are
-  # smaller, since a request larger than a node cannot be scheduled.
-  prioritization: 48
+# `prioritization` declares 48 threads because its binding-affinity pool scales
+# with whatever it is given. Uncomment and lower this if your nodes are smaller,
+# since a request larger than a node can never be scheduled:
+# set-threads:
+#   prioritization: 32
 
 set-resources:
   # --- large downloads (light on memory, slow on network) ---
