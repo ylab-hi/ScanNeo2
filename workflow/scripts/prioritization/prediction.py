@@ -204,18 +204,12 @@ class BindingAffinities:
                         wt_seqnum = int(entry[22:][epilen_idx*2])
                         mt_seqnum = int(entry[22:][epilen_idx*2+1])
 
-                        wt = None
-                        if wt_seqnum in wt_affinities[epilens[epilen_idx]].keys():
-                            wt = wt_affinities[epilens[epilen_idx]][wt_seqnum]
-                        else:
-                            final["wt_epitope_ic50"] = None
-                            final["wt_epitope_rank"] = None
-
-                        if mt_seqnum in mt_affinities[epilens[epilen_idx]].keys():
-                            mt = mt_affinities[epilens[epilen_idx]][mt_seqnum]
-                        else:
+                        wt = wt_affinities[epilens[epilen_idx]].get(wt_seqnum, {})
+                        mt = mt_affinities[epilens[epilen_idx]].get(mt_seqnum)
+                        if mt is None:
                             continue
 
+                        candidates = []
                         for epitope in mt.keys():
                             # find every position of the epitope within
                             # mt_subseq -- the same k-mer can occur more than
@@ -236,34 +230,38 @@ class BindingAffinities:
                                             None)
                             if startpos is None:
                                 continue
+                            candidates.append((startpos, epitope))
 
-                            # mt[epitope] = (allele, start, end, ic50, rank)
+                        # sorted so the table does not depend on the order the
+                        # prediction units happened to complete in
+                        for startpos, epitope in sorted(candidates):
                             final["mt_epitope_seq"] = epitope
-                            final["allele"] = mt[epitope][0]
-                            final["mt_epitope_ic50"] = mt[epitope][3]
-                            final["mt_epitope_rank"] = mt[epitope][4]
 
                             # the wt epitope occupies the same coordinates in
                             # wt_subseq as the mt epitope does in mt_subseq
                             final["wt_epitope_seq"] = wt_subseq[startpos:startpos+len(epitope)]
+                            wt_alleles = wt.get(final["wt_epitope_seq"], {})
 
-                            # search for binidng affinities of wildtype sequence
-                            final["wt_epitope_ic50"] = None
-                            final["wt_epitope_rank"] = None
-                            if wt is not None:
-                                if final["wt_epitope_seq"] in wt.keys():
-                                    final["wt_epitope_ic50"] = wt[final["wt_epitope_seq"]][3]
-                                    final["wt_epitope_rank"] = wt[final["wt_epitope_seq"]][4]
+                            # one row per allele binding the mt epitope; the wt
+                            # affinity is looked up for that same allele, since
+                            # agretopicity and the ranking score compare the two
+                            for allele, (_, _, mt_ic50, mt_rank) in sorted(mt[epitope].items()):
+                                final["allele"] = allele
+                                final["mt_epitope_ic50"] = mt_ic50
+                                final["mt_epitope_rank"] = mt_rank
 
-                            # calculate ranking calc_ranking_score
-                            score = BindingAffinities.calc_ranking_score(final['vaf'],
-                                                                         final['wt_epitope_ic50'],
-                                                                         final['mt_epitope_ic50'])
-                            final['ranking_score'] = score
-                            final['agretopicity'] = BindingAffinities.calc_agretopicity(final["wt_epitope_ic50"],
-                                                                                        final["mt_epitope_ic50"])
+                                final["wt_epitope_ic50"] = None
+                                final["wt_epitope_rank"] = None
+                                if allele in wt_alleles:
+                                    _, _, final["wt_epitope_ic50"], final["wt_epitope_rank"] = \
+                                        wt_alleles[allele]
 
-                            BindingAffinities.write_entry(final, outfile)
+                                final['ranking_score'] = BindingAffinities.calc_ranking_score(
+                                    final['vaf'], final['wt_epitope_ic50'], final['mt_epitope_ic50'])
+                                final['agretopicity'] = BindingAffinities.calc_agretopicity(
+                                    final["wt_epitope_ic50"], final["mt_epitope_ic50"])
+
+                                BindingAffinities.write_entry(final, outfile)
 
 
 
@@ -295,7 +293,7 @@ class BindingAffinities:
 
         fnames is {'wt': {epilen: path}, 'mt': {epilen: path}}. Returns
         (wt_affinities, mt_affinities), each
-        {epilen: {global_seqnum: {epitope: tuple}}}.
+        {epilen: {global_seqnum: {epitope: {allele: (start, end, ic50, rank)}}}}.
         """
         affinities = {grp: {epilen: {} for epilen in epilens}
                       for grp in ('wt', 'mt')}
@@ -347,14 +345,16 @@ class BindingAffinities:
                     if result is None:
                         dropped += 1
                         continue
+                    # each unit covers a single allele, and several alleles
+                    # can bind the same epitope with different affinities, so
+                    # the allele is part of the key: every allele's result is
+                    # kept whatever order the units complete in
                     dest = affinities[group][epilen]
                     for seqnum, epitopes in result.items():
-                        global_seqnum = offset + seqnum
-                        if global_seqnum not in dest:
-                            dest[global_seqnum] = epitopes
-                        else:
-                            for seq, val in epitopes.items():
-                                dest[global_seqnum].setdefault(seq, val)
+                        per_epitope = dest.setdefault(offset + seqnum, {})
+                        for seq, (allele, start, end, ic50, rank) in epitopes.items():
+                            per_epitope.setdefault(seq, {})[allele] = (
+                                start, end, ic50, rank)
 
         if dropped:
             # dropped batches = neoepitopes never predicted; surface loudly on

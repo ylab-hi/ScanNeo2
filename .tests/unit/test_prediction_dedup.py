@@ -69,7 +69,7 @@ def run_start(tmp_path, monkeypatch):
                 seqs = read_fasta(fnames[grp][L])
                 fastas[(grp, L)] = seqs
                 res[grp][L] = {
-                    num: {seq[i:i + L]: ("HLA-A*02:01", i, i + L - 1, 50.0, 0.1)
+                    num: {seq[i:i + L]: {"HLA-A*02:01": (i, i + L - 1, 50.0, 0.1)}
                           for i in range(len(seq) - L + 1)}
                     for num, seq in seqs.items()
                 }
