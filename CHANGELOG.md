@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`prioritization` given its own thread count (48) and matching memory**: binding-affinity prediction is a single thread pool over (allele × epitope length × wt/mt × FASTA batch) units, so it scales with whatever it is given, but it inherited the workflow-wide `threads` ceiling that every other rule shares. At 30 workers only ~19 of 30 cores were busy — each worker spends roughly a third of its time on per-sequence temp-file I/O rather than CPU, which more workers overlap against other workers' compute. The SLURM profile now sets `set-threads: prioritization: 48` (filling a 52-core node) with `mem_mb` raised to 48 GB for the additional netMHCpan chains. `set-threads` rather than the rule's `threads:` so non-SLURM runs keep the shared value and a site with smaller nodes tunes one number. ([#120](https://github.com/ylab-hi/ScanNeo2/issues/120), [#208](https://github.com/ylab-hi/ScanNeo2/pull/208))
+
 ## [0.6.2] - 2026-09-26
 
 ### Fixed
