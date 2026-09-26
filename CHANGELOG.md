@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-09-26
+
 ### Fixed
 
 - **CSQ entries without a protein position no longer crash prioritization**: VEP can report an amino-acid change while leaving `Protein_position` (and `HGVSp`) empty where the protein consequence is ambiguous — found on the second ALT of a multiallelic `inframe_insertion` that also falls in a splice region. `get_variant_startpos` was handed `''` and raised `ValueError: invalid literal for int() with base 10: ''`, taking the whole job down. Such entries cannot place an epitope window, so they are skipped with a warning on stderr rather than quietly. 27 of 17,084 gate-passing entries in the affected file (0.16%), all from one variant. Reachable only since [#204](https://github.com/ylab-hi/ScanNeo2/pull/204), which stopped discarding non-first CSQ entries. ([#206](https://github.com/ylab-hi/ScanNeo2/pull/206))
