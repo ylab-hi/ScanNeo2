@@ -37,6 +37,16 @@ class BindingAffinities:
             wt_cnt = {}
             mt_cnt = {}
 
+            # sequence -> its number in the fasta. A variant is annotated against
+            # every transcript overlapping it, and isoforms usually share the
+            # residues immediately around it, so the window cut for each one is
+            # frequently the same string. Writing it once and letting those rows
+            # share the number keeps the prediction identical while asking
+            # netMHCpan for it a single time.
+            wt_seen = {}
+            mt_seen = {}
+            reused = 0
+
             epilens = self.extract_epilens(epitope_lengths)
 
             for epilen in epilens:
@@ -46,6 +56,9 @@ class BindingAffinities:
                 # initialise counter
                 wt_cnt[epilen] = 1
                 mt_cnt[epilen] = 1
+
+                wt_seen[epilen] = {}
+                mt_seen[epilen] = {}
 
             subseqs = []
 
@@ -96,17 +109,29 @@ class BindingAffinities:
                         mt_epitope_seq = mt_subseq_adj
 
                         if len(wt_epitope_seq) >= epilen+1:
-                            fh_wt[epilen].write(f'>{wt_cnt[epilen]}\n{wt_epitope_seq}\n')
-                            entries.append(wt_cnt[epilen])
-                            wt_cnt[epilen] += 1
+                            seqnum = wt_seen[epilen].get(wt_epitope_seq)
+                            if seqnum is None:
+                                seqnum = wt_cnt[epilen]
+                                wt_seen[epilen][wt_epitope_seq] = seqnum
+                                fh_wt[epilen].write(f'>{seqnum}\n{wt_epitope_seq}\n')
+                                wt_cnt[epilen] += 1
+                            else:
+                                reused += 1
+                            entries.append(seqnum)
 
                         else:
                             entries.append(0)
 
                         if len(mt_epitope_seq) >= epilen+1:
-                            fh_mt[epilen].write(f'>{mt_cnt[epilen]}\n{mt_epitope_seq}\n')
-                            entries.append(mt_cnt[epilen])
-                            mt_cnt[epilen] += 1
+                            seqnum = mt_seen[epilen].get(mt_epitope_seq)
+                            if seqnum is None:
+                                seqnum = mt_cnt[epilen]
+                                mt_seen[epilen][mt_epitope_seq] = seqnum
+                                fh_mt[epilen].write(f'>{seqnum}\n{mt_epitope_seq}\n')
+                                mt_cnt[epilen] += 1
+                            else:
+                                reused += 1
+                            entries.append(seqnum)
 
                         else:
                             entries.append(0)
@@ -115,6 +140,8 @@ class BindingAffinities:
 
             total_seqs = max((wt_cnt.get(epilens[0], 1),
                               mt_cnt.get(epilens[0], 1))) - 1
+            written = sum(len(s) for s in wt_seen.values()) + \
+                sum(len(s) for s in mt_seen.values())
             bar = "=" * 70
             print(bar, flush=True)
             print(f"  {vartype}", flush=True)
@@ -122,6 +149,11 @@ class BindingAffinities:
             print(f"  calculate binding affinities for {total_seqs} sequences "
                   f"({len(self.alleles)} alleles, epitope lengths: "
                   f"{','.join(map(str, epilens))})...", flush=True)
+            if reused:
+                print(f"  {written} distinct epitope windows to predict; "
+                      f"{reused} further rows reuse one of them "
+                      f"({100 * reused / (written + reused):.0f}% of windows were repeats)",
+                      flush=True)
 
             wt_affinities, mt_affinities = self.collect_binding_affinities(
                 self.alleles,
