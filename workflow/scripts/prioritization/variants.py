@@ -99,6 +99,19 @@ class Variants():
                         else:
                             continue
 
+                        # VEP reports an amino-acid change but leaves
+                        # Protein_position (and HGVSp) empty where the protein
+                        # consequence is ambiguous -- an inframe insertion that also
+                        # falls in a splice region, for instance. The epitope window
+                        # is placed on that position, so the entry is unusable; say so
+                        # rather than dropping it quietly.
+                        if not field["Protein_position"]:
+                            print(f"    WARNING: no protein position for {gene_name} "
+                                  f"{csq} {aa_change} at {chrom}:{start} "
+                                  f"({transcript_id}) -- entry skipped",
+                                  file=sys.stderr, flush=True)
+                            continue
+
                         if csq == "frameshift":
                             var_start = self.get_variant_startpos(field['Protein_position'])
                             wt_seq = field["WildtypeProtein"]
