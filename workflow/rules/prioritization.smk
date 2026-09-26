@@ -116,7 +116,11 @@ rule prioritization:
         "logs/{sample}/prioritization/prioritization.log",
     conda:
         "../envs/prioritization.yml"
-    threads: config["threads"]
+    # The binding-affinity pool is one set of (allele x epitope length x wt/mt x
+    # FASTA batch) units, so it uses as many threads as it is given, unlike the
+    # rest of the workflow; 48 fills a 52-core node. Snakemake clamps this to
+    # --cores, so a smaller local run is unaffected.
+    threads: 48
     params:
         mhc_class=f"""{config["prioritization"]["class"]}""",
         mhcI_len=f"""{config["prioritization"]["lengths"]["MHC-I"]}""",
