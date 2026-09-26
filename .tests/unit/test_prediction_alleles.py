@@ -11,6 +11,7 @@ complete in submission order, i.e. in allele-file order, which lets the tests
 check that the output does not depend on it.
 """
 
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -48,14 +49,15 @@ def read_fasta(path):
 
 @pytest.fixture
 def run_start(tmp_path, monkeypatch):
-    """Run start() with the given {(group, allele): {epitope: ic50}} answers.
+    """Run start() with the given {allele: {epitope: ic50}} answers.
 
+    WT and MT epitopes differ, so one table per allele serves both groups.
     Returns the output rows as dicts keyed by header name.
     """
     def run(answers, allele_order=(A, B)):
-        def stub(call, fa_file, group, mhc_class):
+        def stub(call, fa_file, mhc_class):
             allele = call[3]
-            table = answers.get((group, allele), {})
+            table = answers.get(allele, {})
             result = {}
             for num, seq in read_fasta(fa_file).items():
                 for epitope, ic50 in table.items():
@@ -84,10 +86,8 @@ def run_start(tmp_path, monkeypatch):
 
 
 BOTH_BIND = {
-    ("mt", A): {MT_EPITOPE: 100.0},
-    ("mt", B): {MT_EPITOPE: 200.0},
-    ("wt", A): {WT_EPITOPE: 1000.0},
-    ("wt", B): {WT_EPITOPE: 4000.0},
+    A: {MT_EPITOPE: 100.0, WT_EPITOPE: 1000.0},
+    B: {MT_EPITOPE: 200.0, WT_EPITOPE: 4000.0},
 }
 
 
@@ -113,7 +113,7 @@ def test_wt_affinity_comes_from_the_same_allele(run_start):
 
 def test_wt_without_a_prediction_for_that_allele_is_empty(run_start):
     """A wt result for allele A must not stand in for allele B."""
-    answers = {k: v for k, v in BOTH_BIND.items() if k != ("wt", B)}
+    answers = {A: BOTH_BIND[A], B: {MT_EPITOPE: 200.0}}
     rows = {r["allele"]: r for r in run_start(answers)}
 
     assert float(rows[A]["wt_epitope_ic50"]) == 1000.0
@@ -127,3 +127,36 @@ def test_wt_without_a_prediction_for_that_allele_is_empty(run_start):
 def test_output_does_not_depend_on_completion_order(run_start):
     assert run_start(BOTH_BIND, allele_order=(A, B)) == \
         run_start(BOTH_BIND, allele_order=(B, A))
+
+
+def test_mt_non_binder_is_stored_but_not_reported(run_start, tmp_path):
+    """The IC50 cutoff selects rows for the table; the database keeps all."""
+    answers = {A: {MT_EPITOPE: 100.0, WT_EPITOPE: 1000.0},
+               B: {MT_EPITOPE: prediction.BINDER_IC50, WT_EPITOPE: 4000.0}}
+    rows = run_start(answers)
+
+    assert [r["allele"] for r in rows] == [A]
+
+    with sqlite3.connect(tmp_path / "exitrons_mhc-I_predictions.sqlite") as db:
+        stored = db.execute(
+            "SELECT ic50 FROM predictions WHERE grp = 'mt' AND allele = ? "
+            "AND epitope = ?", (B, MT_EPITOPE)).fetchall()
+    assert stored == [(prediction.BINDER_IC50,)]
+
+
+def test_prediction_db_is_kept_with_sequences_and_every_allele(run_start, tmp_path):
+    run_start(BOTH_BIND)
+
+    with sqlite3.connect(tmp_path / "exitrons_mhc-I_predictions.sqlite") as db:
+        seqs = dict(((grp, seq) for grp, seq in
+                     db.execute("SELECT grp, sequence FROM sequences")))
+        preds = set(db.execute(
+            "SELECT tool, grp, allele, epitope, ic50 FROM predictions"))
+
+    assert seqs == {"wt": WT[2:19], "mt": MT[2:19]}
+    assert preds == {
+        ("netmhcpan", "mt", A, MT_EPITOPE, 100.0),
+        ("netmhcpan", "mt", B, MT_EPITOPE, 200.0),
+        ("netmhcpan", "wt", A, WT_EPITOPE, 1000.0),
+        ("netmhcpan", "wt", B, WT_EPITOPE, 4000.0),
+    }

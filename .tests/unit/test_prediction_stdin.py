@@ -56,7 +56,7 @@ def test_run_prediction_passes_devnull_as_stdin(monkeypatch):
 
     monkeypatch.setattr(prediction.subprocess, "run", fake_run)
     prediction.BindingAffinities._run_prediction(
-        ["true"], "batch.fa", "mt", "mhc-I"
+        ["true"], "batch.fa", "mhc-I"
     )
 
     assert "stdin" in captured, "_run_prediction must not let the child inherit stdin"
@@ -81,7 +81,7 @@ def test_run_prediction_survives_an_open_stdin_pipe(tmp_path, monkeypatch):
     try:
         os.dup2(read_fd, 0)  # an open pipe nobody will ever write to
         result = prediction.BindingAffinities._run_prediction(
-            [sys.executable, str(stub)], str(stub), "mt", "mhc-I"
+            [sys.executable, str(stub)], str(stub), "mhc-I"
         )
     finally:
         os.dup2(saved_stdin, 0)
