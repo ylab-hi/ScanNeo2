@@ -10,6 +10,7 @@ import utility as ut
 import reference
 
 # standard
+import os
 import re
 from pathlib import Path
 
@@ -66,7 +67,9 @@ class VariantEffects:
         self.data["ao"] = ao
         self.data["dp"] = dp
 
-        var_bnds = self.determine_var_bnds()
+        # the unpadded wildtype: adjust_wildtype truncates it to the mutant's
+        # length, which would drop the tail a deletion's suffix is matched on
+        var_bnds = self.determine_var_bnds(wt_seq)
         self.data["aa_var_start"], self.data["aa_var_end"] = var_bnds
 
         self.determine_subsequence()
@@ -87,18 +90,39 @@ class VariantEffects:
             wt_seq = wt[:len(mt)]
         return wt_seq
     
-    def determine_var_bnds(self):
-        """determines the actual variant start and end by comparing
-        the wildtype and mutant sequences"""
-        variants = []
-        for i in range(self.data["var_start"], len(self.data["mt_seq"])):
-            if self.data["wt_seq"][i] != self.data["mt_seq"][i]:
-                variants.append(i)
+    def determine_var_bnds(self, wt_seq):
+        """Locate the altered region of the mutant as (start, end), 0-based
+        and inclusive, in mutant coordinates.
 
-        if len(variants) != 0: # 
-            return min(variants), max(variants)
-        else:
+        start is the first position from var_start on where wildtype and
+        mutant differ. end is found from the C-terminal side: past an in-frame
+        insertion or deletion the mutant is the wildtype shifted, so comparing
+        position by position would mark everything up to the protein end as
+        altered. Instead the common suffix is excluded, capped so it cannot
+        reach back past start (e.g. a deletion inside a repeat).
+
+        An in-frame deletion alters no residue, only joins two: it yields
+        end == start - 1, an empty region at the junction. The overlap test
+        used to select epitopes (p <= end and p + len - 1 >= start) then keeps
+        exactly the epitopes spanning that junction. Returns (-1, -1) when
+        there is no altered residue and no junction inside the mutant.
+        """
+        mt_seq = self.data["mt_seq"]
+
+        start = self.data["var_start"]
+        start += len(os.path.commonprefix([wt_seq[start:], mt_seq[start:]]))
+
+        # nothing differs within the mutant: a C-terminal deletion or
+        # truncation leaves no residue after the junction to form a new peptide
+        if start >= len(mt_seq):
             return -1, -1
+
+        # negative when start lies beyond the wildtype (e.g. a fusion whose
+        # wildtype is unknown): then nothing can be shared
+        max_suffix = max(min(len(wt_seq), len(mt_seq)) - start, 0)
+        suffix = min(len(os.path.commonprefix([wt_seq[::-1], mt_seq[::-1]])), max_suffix)
+
+        return start, len(mt_seq) - 1 - suffix
     
     def determine_subsequence(self):
         """determines the subsequence of the variant"""
