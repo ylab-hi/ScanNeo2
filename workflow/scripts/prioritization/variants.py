@@ -114,7 +114,11 @@ class Variants():
 
                         if csq == "frameshift":
                             var_start = self.get_variant_startpos(field['Protein_position'])
-                            wt_seq = field["WildtypeProtein"]
+                            wt_seq, var_start = self.strip_partial_codon(
+                                field["WildtypeProtein"], var_start, csq
+                            )
+                            if wt_seq is None:
+                                continue
                             # mutant/variant sequence is wt until mutation start
                             mt_seq = wt_seq[:var_start] + field["DownstreamProtein"]
 
@@ -141,17 +145,11 @@ class Variants():
                             wt_aa_change, wt_stop_codon = self.scan_stop_codon(wt_aa_change)
                             mt_aa_change, mt_stop_codon = self.scan_stop_codon(mt_aa_change)
 
-                            wt_seq = field["WildtypeProtein"] # wildtype peptide sequence
-                            # check if there are unknown amino Amino_acids
-                            if 'X' in wt_seq:
-                                # needs to occur before varstart...
-                                unknown_pos = wt_seq.find('X')
-                                if unknown_pos != -1 and unknown_pos < var_start:
-                                    var_start = var_start - unknown_pos - 1
-                                    wt_seq = wt_seq[unknown_pos+1:]
-                                else:
-                                    # ...otherwise subsequence is altered - skip
-                                    continue
+                            wt_seq, var_start = self.strip_partial_codon(
+                                field["WildtypeProtein"], var_start, csq
+                            )
+                            if wt_seq is None:
+                                continue
 
                             mt_seq = wt_seq[:var_start] + mt_aa_change
                             if not mt_stop_codon:
@@ -187,6 +185,27 @@ class Variants():
                         # check if variant is self dissimilar
                         if self.variant_effects.self_dissimilarity():
                             self.variant_effects.write_entry()
+
+
+    @staticmethod
+    def strip_partial_codon(wt_seq, var_start, csq):
+        """Drop the leading X VEP gives a cds_start_NF transcript.
+
+        The X is the translation of an incomplete first codon, not a residue:
+        left in, it reaches the prediction tool (which rejects the whole
+        batch) and, for a frameshift, starts mt_seq, which is then truncated
+        to nothing at the X. Returns (wt_seq, var_start) re-indexed past it,
+        or (None, None) when a non-frameshift variant changes that unknown
+        residue itself. A frameshift there keeps its row: the mutant is
+        defined by DownstreamProtein alone.
+        """
+        if not wt_seq.startswith("X"):
+            return wt_seq, var_start
+        if var_start > 0:
+            return wt_seq[1:], var_start - 1
+        if csq == "frameshift":
+            return wt_seq[1:], var_start
+        return None, None
 
 
     @staticmethod
