@@ -13,6 +13,8 @@ import sys
 import types
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "workflow/scripts/prioritization"))
 
@@ -34,55 +36,55 @@ def bounds(wt, mt, var_start=0):
     return ve.determine_var_bnds(wt)
 
 
-def test_snv_is_the_single_changed_residue():
-    assert bounds("ABCDEFGH", "ABXDEFGH") == (2, 2)
-
-
-def test_mnv_and_delins_cover_the_changed_residues():
-    assert bounds("ABCDEFGH", "ABXYEFGH") == (2, 3)
-    assert bounds("ABCDEFGH", "ABXYZEFGH") == (2, 4)   # CD -> XYZ
-
-
-def test_inframe_insertion_is_only_the_inserted_residues():
+@pytest.mark.parametrize("wt, mt, var_start, expected", [
+    pytest.param("ABCDEFGH", "ABXDEFGH", 0, (2, 2), id="snv"),
+    pytest.param("ABCDEFGH", "ABXYEFGH", 0, (2, 3), id="mnv"),
+    pytest.param("ABCDEFGH", "ABXYZEFGH", 0, (2, 4), id="delins"),
     # position-by-position comparison would run to the end (index 9)
-    assert bounds("ABCDEFGH", "ABCXYDEFGH") == (3, 4)
-
-
-def test_inframe_deletion_is_an_empty_region_at_the_junction():
+    pytest.param("ABCDEFGH", "ABCXYDEFGH", 0, (3, 4), id="inframe-insertion"),
     # DE deleted: C (2) and F (3) are now adjacent; end == start - 1
-    assert bounds("ABCDEFGH", "ABCFGH") == (3, 2)
-
-
-def test_deletion_inside_a_repeat_does_not_let_prefix_and_suffix_overlap():
-    # XAAAAY -> XAAAY: the shared A's could belong to either side
-    start, end = bounds("XAAAAY", "XAAAY")
-    assert (start, end) == (4, 3)
-
-
-def test_insertion_inside_a_repeat():
-    assert bounds("XAAY", "XAAAY") == (3, 3)
-
-
-def test_c_terminal_extension():
-    assert bounds("ABCD", "ABCDXY") == (4, 5)
-
-
-def test_c_terminal_deletion_has_no_new_peptide():
+    pytest.param("ABCDEFGH", "ABCFGH", 0, (3, 2), id="inframe-deletion"),
+    # the shared A's could belong to either side; prefix and suffix must not overlap
+    pytest.param("XAAAAY", "XAAAY", 0, (4, 3), id="deletion-in-repeat"),
+    pytest.param("XAAY", "XAAAY", 0, (3, 3), id="insertion-in-repeat"),
+    pytest.param("ABCD", "ABCDXY", 0, (4, 5), id="c-terminal-extension"),
     # nothing follows the junction, so no peptide can span it
-    assert bounds("ABCDEF", "ABCD") == (-1, -1)
-
-
-def test_identical_sequences():
-    assert bounds("ABCDEF", "ABCDEF") == (-1, -1)
-
-
-def test_frameshift_runs_to_the_new_stop():
-    assert bounds("ABCDEFGHIK", "ABCWXYZ", var_start=3) == (3, 6)
-
-
-def test_scan_starts_at_var_start():
+    pytest.param("ABCDEF", "ABCD", 0, (-1, -1), id="c-terminal-deletion"),
+    # the mutant is a piece of the wildtype: an empty region before position 0,
+    # which the overlap filter (p <= -1) can never select
+    pytest.param("ABCDEFGH", "DEFGH", 0, (0, -1), id="n-terminal-deletion"),
+    # the new residue L happens to equal the wildtype's last residue; the
+    # region is empty, so only peptides spanning C|L are selected
+    pytest.param("ABCDEFGHL", "ABCL", 3, (3, 2), id="stop-gain-matching-c-terminus"),
+    pytest.param("ABCDEF", "ABCDEF", 0, (-1, -1), id="identical"),
+    pytest.param("ABCDEFGHIK", "ABCWXYZ", 3, (3, 6), id="frameshift"),
     # differences before var_start are not the variant's
-    assert bounds("ABCDEFGH", "QBCDEFXH", var_start=3) == (6, 6)
+    pytest.param("ABCDEFGH", "QBCDEFXH", 3, (6, 6), id="scan-starts-at-var-start"),
+    # fusion partner without a known wildtype: start lies beyond the wildtype,
+    # so nothing can be shared and the region runs to the end
+    pytest.param("", "ABCD", 1, (1, 3), id="fusion-without-wildtype"),
+])
+def test_bounds(wt, mt, var_start, expected):
+    assert bounds(wt, mt, var_start) == expected
+
+
+def test_change_entry_bounds_on_the_unpadded_wildtype(monkeypatch):
+    """adjust_wildtype truncates the stored wildtype to the mutant's length,
+    which removes the tail a deletion's suffix is matched on; change_entry must
+    hand determine_var_bnds the wildtype as passed in."""
+    monkeypatch.setattr(effects.VariantEffects, "determine_NMD", lambda self, nmd: None)
+    monkeypatch.setattr(effects.VariantEffects, "get_counts", lambda self: None)
+    ve = effects.VariantEffects.__new__(effects.VariantEffects)
+
+    ve.change_entry(chrom="chr1", start=100, end=101, gene_id="G1",
+                    gene_name="GENE1", transcript_id="T1", transcript=None,
+                    transcript_bp=None, source="DNA", group="g1",
+                    var_type="inframe_DEL", var_start=0,
+                    wt_seq="ABCDEFGH", mt_seq="ABCFGH",
+                    vaf=0.5, ao=10, dp=20, nmd_event=None)
+
+    # on the truncated wildtype "ABCDEF" the region would be (3, 5)
+    assert (ve.data["aa_var_start"], ve.data["aa_var_end"]) == (3, 2)
 
 
 def test_deletion_yields_only_junction_spanning_epitopes(tmp_path, monkeypatch):

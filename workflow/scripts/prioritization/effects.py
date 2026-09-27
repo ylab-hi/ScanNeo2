@@ -10,6 +10,7 @@ import utility as ut
 import reference
 
 # standard
+import os
 import re
 from pathlib import Path
 
@@ -109,19 +110,17 @@ class VariantEffects:
         mt_seq = self.data["mt_seq"]
 
         start = self.data["var_start"]
-        while (start < len(mt_seq) and start < len(wt_seq)
-               and wt_seq[start] == mt_seq[start]):
-            start += 1
+        start += len(os.path.commonprefix([wt_seq[start:], mt_seq[start:]]))
 
         # nothing differs within the mutant: a C-terminal deletion or
         # truncation leaves no residue after the junction to form a new peptide
         if start >= len(mt_seq):
             return -1, -1
 
-        suffix = 0
-        max_suffix = min(len(wt_seq), len(mt_seq)) - start
-        while suffix < max_suffix and wt_seq[-1 - suffix] == mt_seq[-1 - suffix]:
-            suffix += 1
+        # negative when start lies beyond the wildtype (e.g. a fusion whose
+        # wildtype is unknown): then nothing can be shared
+        max_suffix = max(min(len(wt_seq), len(mt_seq)) - start, 0)
+        suffix = min(len(os.path.commonprefix([wt_seq[::-1], mt_seq[::-1]])), max_suffix)
 
         return start, len(mt_seq) - 1 - suffix
     
