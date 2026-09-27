@@ -398,9 +398,12 @@ class BindingAffinities:
                     futures[future] = (call[2], group, epilen, offset)
 
                 # results are inserted from this thread only: the workers
-                # never touch the connection
+                # never touch the connection. Each future is popped so its
+                # result is freed once inserted; as_completed drops its own
+                # references, and a future kept here would hold that unit's
+                # full prediction set until the pool is done.
                 for future in concurrent.futures.as_completed(futures):
-                    tool, group, epilen, offset = futures[future]
+                    tool, group, epilen, offset = futures.pop(future)
                     completed += 1
                     if completed % step == 0 or completed == total:
                         print(f"  [{completed}/{total}] completed", flush=True)
