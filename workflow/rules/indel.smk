@@ -501,8 +501,11 @@ rule select_SNVs_m2:
     resources:
         mem_mb=1024,
     params:
-        # --exclude-filtered: keep only PASS calls (see select_short_indels_m2)
-        extra="--select-type-to-include SNP --exclude-filtered",
+        # --exclude-filtered: keep only PASS calls (see select_short_indels_m2).
+        # MNP: Mutect2 emits adjacent substitutions on one haplotype as a single
+        # record (e.g. GG>AT), which GATK types as MNP, not SNP. Kept whole, since
+        # each base alone encodes a different amino acid than the pair.
+        extra="--select-type-to-include SNP --select-type-to-include MNP --exclude-filtered",
         java_opts="",  # optional
     message:
         "Selecting somatic SNVs with SelectVariants on sample:{wildcards.sample}"
