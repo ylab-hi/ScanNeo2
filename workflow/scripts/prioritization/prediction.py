@@ -10,6 +10,7 @@ import time
 import os
 import contextlib
 import concurrent.futures
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -17,6 +18,7 @@ import utility as ut
 
 BATCH_SIZE = 500
 PREDICTION_TIMEOUT_SEC = 3600  # per-batch wall-clock cap for netMHCpan / netMHCIIpan
+BINDER_IC50 = 500  # nM; a mt epitope below this is reported as a neoepitope
 
 class BindingAffinities:
     def __init__(self, threads):
@@ -26,7 +28,9 @@ class BindingAffinities:
     def start(self, allele_file, epitope_lengths, output_dir, mhc_class, vartype):
         # create temorary_directory
         t_start = time.time()
-        with tempfile.TemporaryDirectory() as tmp_seqs:
+        db_path = Path(output_dir, f"{vartype}_{mhc_class}_predictions.sqlite")
+        with tempfile.TemporaryDirectory() as tmp_seqs, \
+                BindingAffinities.prediction_db(db_path) as db:
             self.get_alleles(allele_file)
 
             # initialize filenames
@@ -138,7 +142,16 @@ class BindingAffinities:
 
                     subseqs.append(entries)
 
-            total_seqs = max((wt_cnt.get(epilens[0], 1),
+            # the sequences the predictions' seqnums refer to, so the database
+            # stays interpretable once the temporary fasta files are gone
+            for grp, seen in (('wt', wt_seen), ('mt', mt_seen)):
+                for epilen, seqs in seen.items():
+                    db.executemany(
+                        "INSERT INTO sequences VALUES (?, ?, ?, ?)",
+                        ((grp, epilen, seqnum, seq) for seq, seqnum in seqs.items()))
+            db.commit()
+
+            total_seqs =max((wt_cnt.get(epilens[0], 1),
                               mt_cnt.get(epilens[0], 1))) - 1
             written = sum(len(s) for s in wt_seen.values()) + \
                 sum(len(s) for s in mt_seen.values())
@@ -155,12 +168,13 @@ class BindingAffinities:
                       f"({100 * reused / (written + reused):.0f}% of windows were repeats)",
                       flush=True)
 
-            wt_affinities, mt_affinities = self.collect_binding_affinities(
+            self.collect_binding_affinities(
                 self.alleles,
                 {'wt': wt_fname, 'mt': mt_fname},
                 epilens,
                 mhc_class,
-                self.threads)
+                self.threads,
+                db)
             elapsed = (time.time() - t_start) / 60
             print(f"  [{vartype}] done in {elapsed:.1f} min", flush=True)
             print("", flush=True)
@@ -204,18 +218,18 @@ class BindingAffinities:
                         wt_seqnum = int(entry[22:][epilen_idx*2])
                         mt_seqnum = int(entry[22:][epilen_idx*2+1])
 
-                        wt = None
-                        if wt_seqnum in wt_affinities[epilens[epilen_idx]].keys():
-                            wt = wt_affinities[epilens[epilen_idx]][wt_seqnum]
-                        else:
-                            final["wt_epitope_ic50"] = None
-                            final["wt_epitope_rank"] = None
-
-                        if mt_seqnum in mt_affinities[epilens[epilen_idx]].keys():
-                            mt = mt_affinities[epilens[epilen_idx]][mt_seqnum]
-                        else:
+                        epilen = epilens[epilen_idx]
+                        mt = {}
+                        for epitope, allele, ic50, rank in db.execute(
+                                "SELECT epitope, allele, ic50, rank FROM predictions "
+                                "WHERE grp = 'mt' AND epilen = ? AND seqnum = ? "
+                                "AND ic50 < ?",
+                                (epilen, mt_seqnum, BINDER_IC50)):
+                            mt.setdefault(epitope, {})[allele] = (ic50, rank)
+                        if not mt:
                             continue
 
+                        candidates = []
                         for epitope in mt.keys():
                             # find every position of the epitope within
                             # mt_subseq -- the same k-mer can occur more than
@@ -236,36 +250,84 @@ class BindingAffinities:
                                             None)
                             if startpos is None:
                                 continue
+                            candidates.append((startpos, epitope))
 
-                            # mt[epitope] = (allele, start, end, ic50, rank)
+                        # sorted so the table does not depend on the order the
+                        # prediction units happened to complete in
+                        for startpos, epitope in sorted(candidates):
                             final["mt_epitope_seq"] = epitope
-                            final["allele"] = mt[epitope][0]
-                            final["mt_epitope_ic50"] = mt[epitope][3]
-                            final["mt_epitope_rank"] = mt[epitope][4]
 
                             # the wt epitope occupies the same coordinates in
                             # wt_subseq as the mt epitope does in mt_subseq
                             final["wt_epitope_seq"] = wt_subseq[startpos:startpos+len(epitope)]
+                            wt_alleles = {
+                                allele: (ic50, rank)
+                                for allele, ic50, rank in db.execute(
+                                    "SELECT allele, ic50, rank FROM predictions "
+                                    "WHERE grp = 'wt' AND epilen = ? AND seqnum = ? "
+                                    "AND epitope = ?",
+                                    (epilen, wt_seqnum, final["wt_epitope_seq"]))}
 
-                            # search for binidng affinities of wildtype sequence
-                            final["wt_epitope_ic50"] = None
-                            final["wt_epitope_rank"] = None
-                            if wt is not None:
-                                if final["wt_epitope_seq"] in wt.keys():
-                                    final["wt_epitope_ic50"] = wt[final["wt_epitope_seq"]][3]
-                                    final["wt_epitope_rank"] = wt[final["wt_epitope_seq"]][4]
+                            # one row per allele binding the mt epitope; the wt
+                            # affinity is looked up for that same allele, since
+                            # agretopicity and the ranking score compare the two
+                            for allele, (mt_ic50, mt_rank) in sorted(mt[epitope].items()):
+                                final["allele"] = allele
+                                final["mt_epitope_ic50"] = mt_ic50
+                                final["mt_epitope_rank"] = mt_rank
 
-                            # calculate ranking calc_ranking_score
-                            score = BindingAffinities.calc_ranking_score(final['vaf'],
-                                                                         final['wt_epitope_ic50'],
-                                                                         final['mt_epitope_ic50'])
-                            final['ranking_score'] = score
-                            final['agretopicity'] = BindingAffinities.calc_agretopicity(final["wt_epitope_ic50"],
-                                                                                        final["mt_epitope_ic50"])
+                                final["wt_epitope_ic50"] = None
+                                final["wt_epitope_rank"] = None
+                                if allele in wt_alleles:
+                                    final["wt_epitope_ic50"], final["wt_epitope_rank"] = \
+                                        wt_alleles[allele]
 
-                            BindingAffinities.write_entry(final, outfile)
+                                final['ranking_score'] = BindingAffinities.calc_ranking_score(
+                                    final['vaf'], final['wt_epitope_ic50'], final['mt_epitope_ic50'])
+                                final['agretopicity'] = BindingAffinities.calc_agretopicity(
+                                    final["wt_epitope_ic50"], final["mt_epitope_ic50"])
+
+                                BindingAffinities.write_entry(final, outfile)
 
 
+
+    @staticmethod
+    @contextlib.contextmanager
+    def prediction_db(path):
+        """Open a fresh SQLite database for one vartype/MHC class.
+
+        Predictions are stored here rather than in memory: every allele's
+        result for every wt k-mer is needed for the wt lookup, so an in-memory
+        store grows with k-mers x alleles (x tools) and exhausts RAM on large
+        transcriptomic inputs. The database is kept next to the neoepitope
+        table as a result in its own right, so predictions can be re-queried or
+        re-thresholded without rerunning the tools.
+
+        sequences   -- the fasta windows the seqnums refer to
+        predictions -- the tool's full output, one row per
+                       (tool, group, epitope length, seqnum, epitope, allele);
+                       mt rows are not filtered by binding strength
+        """
+        path = Path(path)
+        if path.exists():  # never append to a previous run's rows
+            path.unlink()
+        db = sqlite3.connect(path)
+        try:
+            # a failed run fails the rule and its output is discarded, so
+            # crash-safety journaling only costs time here
+            db.execute("PRAGMA journal_mode = OFF")
+            db.execute("PRAGMA synchronous = OFF")
+            db.execute("CREATE TABLE sequences "
+                       "(grp TEXT, epilen INTEGER, seqnum INTEGER, sequence TEXT, "
+                       "PRIMARY KEY (grp, epilen, seqnum))")
+            db.execute("CREATE TABLE predictions "
+                       "(tool TEXT, grp TEXT, epilen INTEGER, seqnum INTEGER, "
+                       "epitope TEXT, allele TEXT, start_pos INTEGER, end_pos INTEGER, "
+                       "ic50 REAL, rank REAL)")
+            yield db
+            db.commit()
+        finally:
+            db.close()
 
     def get_alleles(self, allele_file):
         self.alleles = {}
@@ -289,17 +351,14 @@ class BindingAffinities:
         return epilens
     
     @staticmethod
-    def collect_binding_affinities(alleles, fnames, epilens, mhc_class, threads):
+    def collect_binding_affinities(alleles, fnames, epilens, mhc_class, threads, db):
         """Run binding-affinity prediction for wt and mt over every allele,
         epitope length and FASTA batch in a single thread pool.
 
-        fnames is {'wt': {epilen: path}, 'mt': {epilen: path}}. Returns
-        (wt_affinities, mt_affinities), each
-        {epilen: {global_seqnum: {epitope: tuple}}}.
+        fnames is {'wt': {epilen: path}, 'mt': {epilen: path}}. Every
+        prediction is inserted into the `predictions` table of db (see
+        prediction_db); nothing is held in memory beyond one unit's result.
         """
-        affinities = {grp: {epilen: {} for epilen in epilens}
-                      for grp in ('wt', 'mt')}
-
         with contextlib.ExitStack() as stack:
             # split every (group, epilen) FASTA up front and enumerate the
             # individual (group, allele, epilen, batch) work units
@@ -335,11 +394,16 @@ class BindingAffinities:
                     call = BindingAffinities._build_call(
                         batch_file, allele, epilen, mhc_class)
                     future = executor.submit(BindingAffinities._run_prediction,
-                                             call, batch_file, group, mhc_class)
-                    futures[future] = (group, epilen, offset)
+                                             call, batch_file, mhc_class)
+                    futures[future] = (call[2], group, epilen, offset)
 
+                # results are inserted from this thread only: the workers
+                # never touch the connection. Each future is popped so its
+                # result is freed once inserted; as_completed drops its own
+                # references, and a future kept here would hold that unit's
+                # full prediction set until the pool is done.
                 for future in concurrent.futures.as_completed(futures):
-                    group, epilen, offset = futures[future]
+                    tool, group, epilen, offset = futures.pop(future)
                     completed += 1
                     if completed % step == 0 or completed == total:
                         print(f"  [{completed}/{total}] completed", flush=True)
@@ -347,14 +411,22 @@ class BindingAffinities:
                     if result is None:
                         dropped += 1
                         continue
-                    dest = affinities[group][epilen]
-                    for seqnum, epitopes in result.items():
-                        global_seqnum = offset + seqnum
-                        if global_seqnum not in dest:
-                            dest[global_seqnum] = epitopes
-                        else:
-                            for seq, val in epitopes.items():
-                                dest[global_seqnum].setdefault(seq, val)
+                    # each unit covers a single allele, and several alleles
+                    # can bind the same epitope with different affinities, so
+                    # every row carries its allele and none overwrites another
+                    db.executemany(
+                        "INSERT INTO predictions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        ((tool, group, epilen, offset + seqnum, epitope,
+                          allele, start, end, ic50, rank)
+                         for seqnum, epitopes in result.items()
+                         for epitope, (allele, start, end, ic50, rank)
+                         in epitopes.items()))
+                    db.commit()
+
+            # built once all rows are in: cheaper than maintaining it per insert
+            db.execute("CREATE INDEX predictions_lookup ON predictions "
+                       "(grp, epilen, seqnum, epitope, allele)")
+            db.commit()
 
         if dropped:
             # dropped batches = neoepitopes never predicted; surface loudly on
@@ -364,8 +436,6 @@ class BindingAffinities:
             print(msg, flush=True)
             print(msg, file=sys.stderr, flush=True)
 
-        return affinities['wt'], affinities['mt']
-    
     @staticmethod
     def split_fasta_into_batches(fa_file, batch_dir, batch_size=BATCH_SIZE):
         """Split a FASTA file into batch files of at most batch_size sequences.
@@ -407,14 +477,16 @@ class BindingAffinities:
         return batches
 
     @staticmethod
-    def _run_prediction(call, fa_file, group, mhc_class):
+    def _run_prediction(call, fa_file, mhc_class):
         """Run a single prediction subprocess and parse its output into a
         binding_affinities dict keyed by (seqnum -> epitope_seq -> tuple).
 
-        Returns None if the batch timed out or failed -- distinct from a
-        successful batch that simply yields no binders (an empty dict) -- so the
-        caller can count and surface dropped batches rather than silently
-        losing their neoepitopes."""
+        Every prediction is returned, whatever its affinity: wt values are
+        needed regardless, and mt binders are selected when the table is
+        written. Returns None if the batch timed out or failed -- distinct from
+        a successful batch with no output (an empty dict) -- so the caller can
+        count and surface dropped batches rather than silently losing their
+        neoepitopes."""
         binding_affinities = {}
 
         try:
@@ -444,9 +516,6 @@ class BindingAffinities:
 
         for line in predictions:
             entries = line.split('\t')
-            if group == 'mt':
-                if float(entries[8]) >= 500:
-                    continue
 
             # start and end in sequence (0-based)
             start = int(entries[2]) - 1

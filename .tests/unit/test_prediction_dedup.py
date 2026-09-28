@@ -5,12 +5,13 @@ usually share the residues around it, so several rows of the variant-effects
 table cut the same window. start() writes each distinct window to the
 per-length fasta once and lets the other rows share its sequence number.
 
-netMHCpan is replaced by a stub that reads the fasta start() wrote and reports
-every k-mer of every sequence as a binder. Output rows are therefore fully
-determined by which sequence each row's number points at, so a row wired to
-the wrong window loses its epitopes or gains foreign ones.
+netMHCpan is replaced by a stub that reads the batch fasta it is handed and
+reports every k-mer of every sequence as a binder. Output rows are therefore
+fully determined by which sequence each row's number points at, so a row wired
+to the wrong window loses its epitopes or gains foreign ones.
 """
 
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -58,25 +59,18 @@ def read_fasta(path):
 
 @pytest.fixture
 def run_start(tmp_path, monkeypatch):
-    """Run start() on the given rows; return (fastas, epitopes per transcript)."""
-    fastas = {}
+    """Run start() on the given rows; return (fastas, epitopes per transcript).
 
-    def every_kmer_binds(alleles, fnames, epilens, mhc_class, threads):
-        res = {}
-        for grp in ("wt", "mt"):
-            res[grp] = {}
-            for L in epilens:
-                seqs = read_fasta(fnames[grp][L])
-                fastas[(grp, L)] = seqs
-                res[grp][L] = {
-                    num: {seq[i:i + L]: ("HLA-A*02:01", i, i + L - 1, 50.0, 0.1)
-                          for i in range(len(seq) - L + 1)}
-                    for num, seq in seqs.items()
-                }
-        return res["wt"], res["mt"]
+    fastas is {(group, epilen): {seqnum: sequence}}, read back from the
+    sequences table of the prediction database.
+    """
+    def every_kmer_binds(call, fa_file, mhc_class):
+        allele, L = call[3], int(call[4])
+        return {num: {seq[i:i + L]: (allele, i, i + L - 1, 50.0, 0.1)
+                      for i in range(len(seq) - L + 1)}
+                for num, seq in read_fasta(fa_file).items()}
 
-    monkeypatch.setattr(prediction.BindingAffinities,
-                        "collect_binding_affinities",
+    monkeypatch.setattr(prediction.BindingAffinities, "_run_prediction",
                         staticmethod(every_kmer_binds))
 
     alleles = tmp_path / "mhc-I.tsv"
@@ -87,6 +81,11 @@ def run_start(tmp_path, monkeypatch):
             "\n".join([HEADER, *rows]) + "\n")
         prediction.BindingAffinities(1).start(
             str(alleles), str(EPILEN), str(tmp_path), "mhc-I", "exitrons")
+
+        fastas = {}
+        with sqlite3.connect(tmp_path / "exitrons_mhc-I_predictions.sqlite") as db:
+            for grp, L, num, seq in db.execute("SELECT * FROM sequences"):
+                fastas.setdefault((grp, L), {})[num] = seq
 
         epitopes = {}
         out = tmp_path / "exitrons_mhc-I_neoepitopes.txt"
