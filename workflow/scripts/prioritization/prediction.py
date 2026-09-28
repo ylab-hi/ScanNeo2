@@ -19,9 +19,12 @@ import utility as ut
 BATCH_SIZE = 500
 PREDICTION_TIMEOUT_SEC = 3600  # per-batch wall-clock cap for netMHCpan / netMHCIIpan
 BINDER_IC50 = 500  # nM; a mt epitope below this is reported as a neoepitope
-# the only residues the IEDB tools accept: one other character in a sequence
-# and the whole batch file is rejected, taking every window in it along
-STANDARD_RESIDUES = frozenset("ACDEFGHIKLMNPQRSTVWY")
+# the only residues the IEDB tools accept (they check case-insensitively):
+# one other character in a sequence and the whole batch file is rejected,
+# taking every window in it along
+# ponytail: one alphabet for every predictor, since IEDB is the only one; make
+# it per-tool when a second predictor is added, as its alphabet may differ
+IEDB_RESIDUES = frozenset("ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy")
 
 class BindingAffinities:
     def __init__(self, threads):
@@ -122,8 +125,8 @@ class BindingAffinities:
                         # a window with a residue the tool rejects gets number
                         # 0 like a too-short one: this row loses that window's
                         # predictions, its batch-mates keep theirs
-                        wt_ok = STANDARD_RESIDUES.issuperset(wt_epitope_seq)
-                        mt_ok = STANDARD_RESIDUES.issuperset(mt_epitope_seq)
+                        wt_ok = IEDB_RESIDUES.issuperset(wt_epitope_seq)
+                        mt_ok = IEDB_RESIDUES.issuperset(mt_epitope_seq)
                         for ok, seq in ((wt_ok, wt_epitope_seq), (mt_ok, mt_epitope_seq)):
                             if not ok and len(seq) >= epilen+1:
                                 withheld += 1
@@ -181,8 +184,9 @@ class BindingAffinities:
                   f"{','.join(map(str, epilens))})...", flush=True)
             if withheld:
                 transcript, seq = withheld_example
-                print(f"  WARNING: {withheld} epitope windows withheld from prediction "
-                      f"for a non-standard residue (e.g. {transcript}: {seq})",
+                print(f"  WARNING: {withheld} row windows (per row, length and wt/mt, "
+                      f"before de-duplication) withheld from prediction for a "
+                      f"non-standard residue (e.g. {transcript}: {seq})",
                       flush=True)
             if reused:
                 print(f"  {written} distinct epitope windows to predict; "

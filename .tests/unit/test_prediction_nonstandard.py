@@ -27,8 +27,14 @@ WT = "ACDEFGHIKLMNPQRSTVWYC"
 MT = WT[:VAR_POS] + "W" + WT[VAR_POS + 1:]
 WT_X = WT[:VAR_POS - 2] + "X" + WT[VAR_POS - 1:]  # X inside the wt window
 MT_OTHER = WT[:VAR_POS] + "Y" + WT[VAR_POS + 1:]
+MT_X = MT[:VAR_POS - 2] + "X" + MT[VAR_POS - 1:]  # X inside the mt window
 
 IEDB_RESIDUES = frozenset("ACDEFGHIKLMNPQRSTVWY")
+
+
+def iedb_accepts(seq):
+    # mirrors predict_binding.py: amino_acid.upper() in "ACDEFGHIKLMNPQRSTVWY"
+    return all(a.upper() in IEDB_RESIDUES for a in seq)
 HEADER = "\t".join(f"col{i}" for i in range(22))
 
 
@@ -54,7 +60,7 @@ def run_start(tmp_path, monkeypatch):
     def iedb_like(call, fa_file, mhc_class):
         allele, L = call[3], int(call[4])
         seqs = read_fasta(fa_file)
-        if any(not IEDB_RESIDUES.issuperset(s) for s in seqs.values()):
+        if not all(iedb_accepts(s) for s in seqs.values()):
             return None  # the tool rejects the whole file
         return {num: {seq[i:i + L]: (allele, i, i + L - 1, 50.0, 0.1)
                       for i in range(len(seq) - L + 1)}
@@ -88,12 +94,23 @@ def run_start(tmp_path, monkeypatch):
 
 def test_nonstandard_window_does_not_fail_its_batch_mates(run_start):
     windows, rows = run_start([effects_row("T1", WT_X, MT),
-                               effects_row("T2", WT, MT_OTHER)])
+                               effects_row("T2", WT, MT_OTHER),
+                               effects_row("T3", WT, MT_X)])
 
-    assert all(IEDB_RESIDUES.issuperset(w) for w in windows)
-    # T2 shares both batches with T1 and is fully predicted
+    assert all(iedb_accepts(w) for w in windows)
+    # T2 shares the wt batch with T1 and the mt batch with T3, and is fully predicted
     assert rows["T2"]
     assert all(r["wt_epitope_ic50"] != "." for r in rows["T2"])
     # T1 loses only its withheld wt window: neoepitopes, but no wt affinity
     assert rows["T1"]
     assert {r["wt_epitope_ic50"] for r in rows["T1"]} == {"."}
+    # T3's mt window is withheld, so it reports no neoepitopes
+    assert "T3" not in rows
+
+
+def test_lowercase_window_is_predicted(run_start):
+    # the tools accept lowercase residues, so the guard must not withhold them
+    windows, rows = run_start([effects_row("T1", WT.lower(), MT)])
+
+    assert any(w.islower() for w in windows)
+    assert all(r["wt_epitope_ic50"] != "." for r in rows["T1"])
