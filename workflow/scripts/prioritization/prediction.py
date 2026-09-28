@@ -19,6 +19,12 @@ import utility as ut
 BATCH_SIZE = 500
 PREDICTION_TIMEOUT_SEC = 3600  # per-batch wall-clock cap for netMHCpan / netMHCIIpan
 BINDER_IC50 = 500  # nM; a mt epitope below this is reported as a neoepitope
+# the only residues the IEDB tools accept (they check case-insensitively):
+# one other character in a sequence and the whole batch file is rejected,
+# taking every window in it along
+# ponytail: one alphabet for every predictor, since IEDB is the only one; make
+# it per-tool when a second predictor is added, as its alphabet may differ
+IEDB_RESIDUES = frozenset("ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy")
 
 class BindingAffinities:
     def __init__(self, threads):
@@ -50,6 +56,10 @@ class BindingAffinities:
             wt_seen = {}
             mt_seen = {}
             reused = 0
+            # windows kept out of the fasta for a non-standard residue, with
+            # one example, reported once the table has been read
+            withheld = 0
+            withheld_example = None
 
             epilens = self.extract_epilens(epitope_lengths)
 
@@ -112,7 +122,17 @@ class BindingAffinities:
                         wt_epitope_seq = wt_subseq_adj
                         mt_epitope_seq = mt_subseq_adj
 
-                        if len(wt_epitope_seq) >= epilen+1:
+                        # a window with a residue the tool rejects gets number
+                        # 0 like a too-short one: this row loses that window's
+                        # predictions, its batch-mates keep theirs
+                        wt_ok = IEDB_RESIDUES.issuperset(wt_epitope_seq)
+                        mt_ok = IEDB_RESIDUES.issuperset(mt_epitope_seq)
+                        for ok, seq in ((wt_ok, wt_epitope_seq), (mt_ok, mt_epitope_seq)):
+                            if not ok and len(seq) >= epilen+1:
+                                withheld += 1
+                                withheld_example = withheld_example or (entries[5], seq)
+
+                        if wt_ok and len(wt_epitope_seq) >= epilen+1:
                             seqnum = wt_seen[epilen].get(wt_epitope_seq)
                             if seqnum is None:
                                 seqnum = wt_cnt[epilen]
@@ -126,7 +146,7 @@ class BindingAffinities:
                         else:
                             entries.append(0)
 
-                        if len(mt_epitope_seq) >= epilen+1:
+                        if mt_ok and len(mt_epitope_seq) >= epilen+1:
                             seqnum = mt_seen[epilen].get(mt_epitope_seq)
                             if seqnum is None:
                                 seqnum = mt_cnt[epilen]
@@ -162,6 +182,12 @@ class BindingAffinities:
             print(f"  calculate binding affinities for {total_seqs} sequences "
                   f"({len(self.alleles)} alleles, epitope lengths: "
                   f"{','.join(map(str, epilens))})...", flush=True)
+            if withheld:
+                transcript, seq = withheld_example
+                print(f"  WARNING: {withheld} row windows (per row, length and wt/mt, "
+                      f"before de-duplication) withheld from prediction for a "
+                      f"non-standard residue (e.g. {transcript}: {seq})",
+                      flush=True)
             if reused:
                 print(f"  {written} distinct epitope windows to predict; "
                       f"{reused} further rows reuse one of them "
