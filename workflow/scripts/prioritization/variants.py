@@ -112,13 +112,15 @@ class Variants():
                                   file=sys.stderr, flush=True)
                             continue
 
+                        wt_seq, var_start = self.trim_at_unknown_residue(
+                            field["WildtypeProtein"],
+                            self.get_variant_startpos(field["Protein_position"]),
+                            csq,
+                        )
+                        if wt_seq is None:
+                            continue
+
                         if csq == "frameshift":
-                            var_start = self.get_variant_startpos(field['Protein_position'])
-                            wt_seq, var_start = self.strip_partial_codon(
-                                field["WildtypeProtein"], var_start, csq
-                            )
-                            if wt_seq is None:
-                                continue
                             # mutant/variant sequence is wt until mutation start
                             mt_seq = wt_seq[:var_start] + field["DownstreamProtein"]
 
@@ -137,19 +139,11 @@ class Variants():
                               csq == "inframe_DEL"):
 
 
-                            # retrieve the start and end of the variant / initial variant start
-                            var_start = self.get_variant_startpos(field["Protein_position"])
                             wt_aa_change, mt_aa_change = self.determine_aa_change(aa_change)
 
                             # scan for stop codons
                             wt_aa_change, wt_stop_codon = self.scan_stop_codon(wt_aa_change)
                             mt_aa_change, mt_stop_codon = self.scan_stop_codon(mt_aa_change)
-
-                            wt_seq, var_start = self.strip_partial_codon(
-                                field["WildtypeProtein"], var_start, csq
-                            )
-                            if wt_seq is None:
-                                continue
 
                             mt_seq = wt_seq[:var_start] + mt_aa_change
                             if not mt_stop_codon:
@@ -188,23 +182,28 @@ class Variants():
 
 
     @staticmethod
-    def strip_partial_codon(wt_seq, var_start, csq):
-        """Drop the leading X VEP gives a cds_start_NF transcript.
+    def trim_at_unknown_residue(wt_seq, var_start, csq):
+        """Keep an unknown residue (X) out of the wildtype and mutant.
 
-        The X is the translation of an incomplete first codon, not a residue:
-        left in, it reaches the prediction tool (which rejects the whole
-        batch) and, for a frameshift, starts mt_seq, which is then truncated
-        to nothing at the X. Returns (wt_seq, var_start) re-indexed past it,
-        or (None, None) when a non-frameshift variant changes that unknown
-        residue itself. A frameshift there keeps its row: the mutant is
-        defined by DownstreamProtein alone.
+        An X reaching the prediction tool fails its whole batch, and for a
+        frameshift an X in wt[:var_start] starts mt_seq, which is then
+        truncated to nothing at the X. Returns (wt_seq, var_start) with the
+        wildtype trimmed through an X before the variant and var_start
+        re-indexed, or (None, None) when an X sits at or after the variant.
+
+        The exception is a frameshift on a leading X, VEP's translation of a
+        cds_start_NF transcript's incomplete first codon. That fragment is
+        never translated, so the frameshift first alters the next complete
+        codon: DownstreamProtein starts opposite wt[1], and the row is kept
+        with the X dropped.
         """
-        if not wt_seq.startswith("X"):
+        x = wt_seq.find("X")
+        if x == -1:
             return wt_seq, var_start
-        if var_start > 0:
-            return wt_seq[1:], var_start - 1
-        if csq == "frameshift":
-            return wt_seq[1:], var_start
+        if x < var_start:
+            return wt_seq[x + 1:], var_start - x - 1
+        if x == 0 and csq == "frameshift":
+            return wt_seq[1:], 0
         return None, None
 
 
