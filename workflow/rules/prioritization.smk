@@ -153,28 +153,32 @@ rule prioritize_source:
 
 
 rule combine_neoepitopes:
-    # header from the first table, the others without theirs, in source order;
-    # a concatenation, so it runs on the controller instead of queueing a job
-    localrule: True
     input:
         get_prioritization_source_dirs,
     output:
-        expand(
-            "results/{{sample}}/prioritization/mhc-{cls}_neoepitopes_all.txt",
-            cls=PRIORITIZATION_CLASSES,
-        ),
+        "results/{sample}/prioritization/mhc-{cls}_neoepitopes_all.txt",
     log:
-        "logs/{sample}/prioritization/combine_neoepitopes.log",
+        "logs/{sample}/prioritization/combine_neoepitopes_mhc-{cls}.log",
+    wildcard_constraints:
+        cls="I|II",
+    # a concatenation, so it runs on the controller instead of queueing a job
+    localrule: True
+    conda:
+        "../envs/basic.yml"
+    params:
+        # each source directory holds <source>_mhc-<cls>_neoepitopes.txt
+        tables=lambda wildcards, input: [
+            os.path.join(
+                d,
+                f"{os.path.basename(os.path.normpath(d))}_mhc-{wildcards.cls}_neoepitopes.txt",
+            )
+            for d in input
+        ],
     message:
-        "Combining the per-source neoepitope tables on sample:{wildcards.sample}"
-    run:
-        for cls, out in zip(PRIORITIZATION_CLASSES, output):
-            with open(out, "w") as fh_out:
-                for i, d in enumerate(input):
-                    source = os.path.basename(os.path.normpath(d))
-                    with open(
-                        os.path.join(d, f"{source}_mhc-{cls}_neoepitopes.txt")
-                    ) as fh:
-                        if i > 0:
-                            next(fh, None)
-                        fh_out.writelines(fh)
+        "Combining the per-source MHC-{wildcards.cls} neoepitope tables on sample:{wildcards.sample}"
+    # header from the first table, the others without theirs, in source order;
+    # /dev/null keeps awk off stdin when a sample has no source
+    shell:
+        """
+        awk 'FNR > 1 || NR == 1' {params.tables} /dev/null >{output} 2>{log}
+        """
