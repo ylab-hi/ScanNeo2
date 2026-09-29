@@ -1742,6 +1742,24 @@ def get_prioritization_source_dirs(wildcards):
     )
 
 
+def summary_entries():
+    """Every (sample, source) that runs, with its output directory and inputs,
+    in the order the summary lists them."""
+    entries = []
+    for sample in SAMPLES:
+        w = SimpleNamespace(sample=sample)
+        for source in prioritization_sources(sample):
+            entries.append(
+                {
+                    "sample": sample,
+                    "source": source,
+                    "dir": f"results/{sample}/prioritization/{source}/",
+                    "inputs": list(PRIORITIZATION_SOURCES[source][0](w)),
+                }
+            )
+    return entries
+
+
 def get_prioritization_mhcI(wildcards):
     alleles = []
     if config["prioritization"]["class"] in ["I", "BOTH"]:
@@ -1794,3 +1812,35 @@ def get_prioritization_counts(wildcards):
             sample=wildcards.sample,
         )
     return counts
+
+
+# The status report is written after every run, successful or not. A rule
+# could not do this: a rule never runs once an upstream job has failed. The
+# handlers run in the controller process, so report.py's main() is called
+# in-process rather than through whichever `python` the shell finds first.
+def write_status_report(master_log):
+    sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
+    from report import main as report_main
+
+    try:
+        report_main(
+            [
+                "--master-log",
+                # the handlers receive the run's master log(s) as a list
+                str(
+                    master_log[0]
+                    if isinstance(master_log, (list, tuple))
+                    else master_log
+                ),
+                "--prioritization-class",
+                config["prioritization"]["class"],
+                "--markdown",
+                "--output",
+                "results/report.md",
+                # this run's samples only, not every sample under results/
+                "--samples",
+                *SAMPLES.keys(),
+            ]
+        )
+    except Exception as e:  # the report must never mask the run's outcome
+        print(f"WARNING: status report not written: {e}", file=sys.stderr)

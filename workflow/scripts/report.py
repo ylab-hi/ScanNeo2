@@ -29,7 +29,9 @@ Usage:
 """
 
 import argparse
+import csv
 import re
+from datetime import datetime
 import sys
 from collections import deque
 from dataclasses import dataclass, field
@@ -206,6 +208,59 @@ def parse_master_log(path: Path) -> List[JobBlock]:
         flush(pending)
 
     return list(jobs.values())
+
+
+def log_start_time(master_log: Optional[Path]) -> Optional[float]:
+    """Start of the run a master log belongs to, as an epoch timestamp.
+
+    Snakemake names each log after its start, e.g.
+    ``2026-09-29T062759.145952.snakemake.log``; None if the name doesn't parse.
+    """
+    if master_log is None:
+        return None
+    stamp = master_log.name.split(".snakemake.log")[0]
+    try:
+        return datetime.strptime(stamp, "%Y-%m-%dT%H%M%S.%f").timestamp()
+    except ValueError:
+        return None
+
+
+def read_summary(path: Path, run_start: Optional[float]):
+    """(state, non-ok rows) of the per-source summary.
+
+    state is "missing", "stale" (written before the run the report describes,
+    so it would describe an earlier run) or "fresh"; rows are only read when
+    fresh. With no known run start the summary is taken as fresh.
+    """
+    if not path.is_file():
+        return "missing", []
+    if run_start is not None and path.stat().st_mtime < run_start:
+        return "stale", []
+    with open(path, newline="") as fh:
+        rows = [r for r in csv.DictReader(fh, delimiter="\t") if r.get("status") != "ok"]
+    return "fresh", rows
+
+
+def render_source_warnings(summary, markdown: bool) -> str:
+    state, rows = summary
+    title = "Source warnings"
+    lines = ["", f"## {title}" if markdown else f"{title}\n{'-' * len(title)}"]
+    if state == "missing":
+        lines.append("No per-source summary (results/summary.tsv) was found.")
+    elif state == "stale":
+        lines.append(
+            "The per-source summary predates this run (the run did not reach "
+            "the summarize rule), so no source warnings are shown."
+        )
+    elif not rows:
+        lines.append("Every source produced neoepitopes.")
+    else:
+        for r in rows:
+            counts = ", ".join(
+                f"{k} {v}" for k, v in r.items() if k not in ("sample", "source", "status")
+            )
+            lines.append(f"- {r['sample']} / {r['source']}: {r['status']} ({counts})")
+    return "\n".join(lines) + "\n"
 
 
 def find_latest_master_log(log_dir: Path) -> Optional[Path]:
@@ -482,6 +537,20 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         "(default: config/config.yaml)",
     )
     p.add_argument(
+        "--prioritization-class",
+        choices=sorted(CLASS_TO_COMBINED),
+        default=None,
+        help="prioritization.class of the run; overrides --config (the "
+        "workflow's end-of-run handlers pass it directly)",
+    )
+    p.add_argument(
+        "--summary",
+        type=Path,
+        default=Path("results/summary.tsv"),
+        help="per-source summary whose non-ok rows are listed as warnings "
+        "(default: results/summary.tsv)",
+    )
+    p.add_argument(
         "--samples",
         nargs="+",
         default=None,
@@ -522,7 +591,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"ERROR: --master-log not found: {master_log}", file=sys.stderr)
         return 1
 
-    prio_class = load_prioritization_class(args.config)
+    prio_class = args.prioritization_class or load_prioritization_class(args.config)
     if prio_class is None:
         print(
             f"WARNING: could not derive prioritization class from "
@@ -564,6 +633,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         prio_class,
         show_excerpts=not args.no_excerpts,
         markdown=args.markdown,
+    )
+    out += render_source_warnings(
+        read_summary(args.summary, log_start_time(master_log)), args.markdown
     )
 
     if args.output:

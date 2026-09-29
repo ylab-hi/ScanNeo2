@@ -332,3 +332,68 @@ def test_fallback_when_config_missing(tmp_path):
     assert r.returncode == 0, r.stderr + r.stdout
     assert "WARNING" in r.stderr
     assert "1 complete" in r.stdout
+
+
+# --- per-source summary warnings (#227) ---
+
+def write_summary(tmp_path: Path, rows) -> None:
+    header = "sample\tsource\tinput_records\tvariant_effects\tneoepitopes_mhc-I\tdistinct_peptides_mhc-I\tstatus"
+    lines = [header] + ["\t".join(r) for r in rows]
+    (tmp_path / "results").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "results" / "summary.tsv").write_text("\n".join(lines) + "\n")
+
+
+def complete_run(tmp_path: Path, log_name: str) -> None:
+    write_config(tmp_path, "I")
+    write_results(tmp_path, "S1", mhc_i=True)
+    write_log(tmp_path, log_name,
+              rule_block("prioritize_source", 1, "S1", "logs/S1/prioritization/x.log")
+              + finished_block(1))
+
+
+def test_summary_warnings_list_non_ok_sources(tmp_path):
+    complete_run(tmp_path, "2026-06-16T120000.0.snakemake.log")
+    write_summary(tmp_path, [
+        ["S1", "somatic.snvs", "10", "5", "7", "4", "ok"],
+        ["S1", "exitrons", "11", "0", "0", "0", "no_effects"],
+    ])
+
+    r = run_report(tmp_path)
+
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "S1 / exitrons: no_effects (input_records 11, variant_effects 0" in r.stdout
+    assert "somatic.snvs" not in r.stdout.split("Source warnings")[1]
+
+
+def test_summary_older_than_the_run_is_not_used(tmp_path):
+    # a log started after the summary was written: the summary is from an
+    # earlier run, and its rows must not be reported as this run's
+    complete_run(tmp_path, "2099-01-01T000000.0.snakemake.log")
+    write_summary(tmp_path, [["S1", "exitrons", "11", "0", "0", "0", "no_effects"]])
+
+    r = run_report(tmp_path)
+
+    assert "predates this run" in r.stdout
+    assert "no_effects" not in r.stdout
+
+
+def test_missing_summary_is_reported(tmp_path):
+    complete_run(tmp_path, "2026-06-16T120000.0.snakemake.log")
+
+    r = run_report(tmp_path)
+
+    assert "No per-source summary" in r.stdout
+
+
+def test_prioritization_class_argument_overrides_config(tmp_path):
+    # no config file: the class comes from the argument, as in the handlers
+    write_results(tmp_path, "S1", mhc_ii=True)
+    write_log(tmp_path, "2026-06-16T120000.0.snakemake.log",
+              rule_block("prioritize_source", 1, "S1", "logs/S1/prioritization/x.log")
+              + finished_block(1))
+
+    r = run_report(tmp_path, "--prioritization-class", "II")
+
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "1 complete" in r.stdout
+    assert "fell back" not in r.stdout
