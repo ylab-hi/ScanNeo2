@@ -1,4 +1,4 @@
-"""Entry point for the neoantigen prioritization stage, invoked by the `prioritization` Snakemake rule.
+"""Entry point for the neoantigen prioritization stage, invoked by the `prioritize_source` Snakemake rule.
 
 For each variant source it is given (the rule passes one: SNVs, short/long indels, exitrons, alternative
 splicing, fusions, custom) it annotates variant effects, predicts MHC binding affinities and applies

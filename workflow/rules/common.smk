@@ -1728,10 +1728,17 @@ def get_prioritization_source(wildcards):
 
 
 def get_prioritization_source_dirs(wildcards):
+    sources = prioritization_sources(wildcards.sample)
+    if not sources:
+        config_error(
+            f"sample {wildcards.sample!r}: no neoepitope source is active (all "
+            "variant-calling modules are off or lack their input) -- nothing to "
+            "prioritize."
+        )
     return expand(
         "results/{sample}/prioritization/{source}/",
         sample=wildcards.sample,
-        source=prioritization_sources(wildcards.sample),
+        source=sources,
     )
 
 

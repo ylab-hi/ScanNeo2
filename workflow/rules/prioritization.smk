@@ -106,6 +106,9 @@ rule prioritize_source:
         mhcI=get_prioritization_mhcI,
         mhcII=get_prioritization_mhcII,
         refgenome="resources/refs/genome.fasta",
+        # built by its own rule, so concurrent source jobs never race to create
+        # it on first open
+        refgenome_idx="resources/refs/genome.fasta.fai",
         peptide="resources/refs/peptide.fasta",
         annotation="resources/refs/genome_tmp.gtf",
         counts=get_prioritization_counts,
@@ -133,8 +136,12 @@ rule prioritize_source:
         mhcII_len=f"""{config["prioritization"]["lengths"]["MHC-II"]}""",
     message:
         "Prioritize {wildcards.source} on sample:{wildcards.sample}"
+    # The combined tables are removed first: they are not this job's output, so
+    # a failed run would otherwise leave an earlier sample-wide table in place,
+    # and the report takes a present table as a finished sample.
     shell:
         """
+        rm -f results/{wildcards.sample}/prioritization/mhc-*_neoepitopes_all.txt
         python workflow/scripts/prioritization/compile.py \
             {params.flag} "{input.variants}" \
             --proteome {input.peptide} \
