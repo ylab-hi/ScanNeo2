@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-29
+
 ### Added
 
 - **Per-source cohort summary and an automatic status report**: a source that came out empty was invisible unless its tables were opened, and the status report only existed when someone ran it. A new `summarize` rule writes `results/summary.tsv`, with one row per sample and neoepitope source: input records, variant effects, neoepitopes and distinct peptides per MHC class, and a status naming the first stage that came out empty (`no_input`, `no_effects`, `no_neoepitopes`). End-of-run handlers write `results/report.md` for the run's samples, with the non-`ok` sources as warnings. On the TESLA cohort it flags melanoma_patient8's exitrons (23 variant effects, 0 binders) and melanoma_patient4's long indels (none protein-changing). ([#227](https://github.com/ylab-hi/ScanNeo2/issues/227), [#228](https://github.com/ylab-hi/ScanNeo2/pull/228))
