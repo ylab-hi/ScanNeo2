@@ -609,7 +609,7 @@ rule subtract_germline_snvs:
         germline=matched_normal_germline_vcf,
         germline_idx=matched_normal_germline_tbi,
     output:
-        "results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs.germsub.vcf.gz",
+        temp("results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs.isec.vcf.gz"),
     log:
         "logs/{sample}/indel/subtract_germline_snvs_{group}.log",
     conda:
@@ -624,6 +624,28 @@ rule subtract_germline_snvs:
             bcftools isec -C -w1 -O z -o {output} $tmp/in.vcf.gz {input.germline}
             rm -rf $tmp
         ) >{log} 2>&1
+        """
+
+
+rule subtract_germline_mnps:
+    input:
+        vcf="results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs.isec.vcf.gz",
+        germline=matched_normal_germline_vcf,
+        germline_idx=matched_normal_germline_tbi,
+    output:
+        "results/{sample}/rnaseq/indel/mutect2/{group}_somatic.snvs.germsub.vcf.gz",
+    log:
+        "logs/{sample}/indel/subtract_germline_mnps_{group}.log",
+    conda:
+        "../envs/basic.yml"
+    message:
+        "Subtracting matched-normal germline SNV pairs from RNA somatic MNPs on sample:{wildcards.sample} group:{wildcards.group}"
+    # isec matches exact alleles, but the germline reference holds a phased
+    # pair of SNVs as two records while RNA Mutect2 merges it into one MNP
+    shell:
+        """
+        python workflow/scripts/subtract_germline_mnps.py \
+            {input.vcf} {input.germline} {output} >{log} 2>&1
         """
 
 
