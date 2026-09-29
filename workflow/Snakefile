@@ -57,4 +57,8 @@ include: "rules/prioritization.smk"
 
 rule all:
     input:
-        expand("results/{sample}/prioritization/", sample=SAMPLES.keys()),
+        expand(
+            "results/{sample}/prioritization/mhc-{cls}_neoepitopes_all.txt",
+            sample=SAMPLES.keys(),
+            cls=PRIORITIZATION_CLASSES,
+        ),

@@ -3,7 +3,9 @@ import shutil
 import sys
 import glob
 import gzip
+import re
 from pathlib import Path
+from types import SimpleNamespace
 
 
 def _arriba_extra():
@@ -1699,6 +1701,38 @@ def get_prioritization_proteins(wildcards):
     if SAMPLES[wildcards.sample]["custom"]["proteins"] is None:
         return []
     return [SAMPLES[wildcards.sample]["custom"]["proteins"]]
+
+
+# Neoepitope sources, in the order their tables are combined: name (compile.py's
+# vartype and the per-source subdirectory) -> (input function, compile.py flag).
+PRIORITIZATION_SOURCES = {
+    "somatic.snvs": (get_prioritization_snvs, "--SNVs"),
+    "somatic.short.indels": (get_prioritization_indels, "--indels"),
+    "long.indels": (get_prioritization_long_indels, "--long_indels"),
+    "exitrons": (get_prioritization_exitrons, "--exitrons"),
+    "altsplicing": (get_prioritization_altsplicing, "--altsplicing"),
+    "custom": (get_prioritization_custom, "--custom"),
+    "fusions": (get_fusions, "--fusions"),
+    "custom_protein": (get_prioritization_proteins, "--proteins"),
+}
+
+
+def prioritization_sources(sample):
+    """The sources that have input for this sample, in combine order."""
+    w = SimpleNamespace(sample=sample)
+    return [s for s, (inputs, _) in PRIORITIZATION_SOURCES.items() if inputs(w)]
+
+
+def get_prioritization_source(wildcards):
+    return PRIORITIZATION_SOURCES[wildcards.source][0](wildcards)
+
+
+def get_prioritization_source_dirs(wildcards):
+    return expand(
+        "results/{sample}/prioritization/{source}/",
+        sample=wildcards.sample,
+        source=prioritization_sources(wildcards.sample),
+    )
 
 
 def get_prioritization_mhcI(wildcards):

@@ -28,7 +28,6 @@ def write_results(
     tmp_path: Path,
     sample: str,
     *,
-    marker: bool = False,
     mhc_i: bool = False,
     mhc_ii: bool = False,
     mhc_i_text: str = "record\n",
@@ -36,8 +35,6 @@ def write_results(
 ) -> Path:
     pri = tmp_path / "results" / sample / "prioritization"
     pri.mkdir(parents=True)
-    if marker:
-        (pri / ".snakemake_timestamp").touch()
     if mhc_i:
         (pri / "mhc-I_neoepitopes_all.txt").write_text(mhc_i_text)
     if mhc_ii:
@@ -101,8 +98,8 @@ def error_block(rule: str, jobid: int, log_path: str) -> str:
 
 def test_all_complete(tmp_path):
     write_config(tmp_path, "I")
-    write_results(tmp_path, "S1", marker=True, mhc_i=True)
-    write_results(tmp_path, "S2", marker=True, mhc_i=True)
+    write_results(tmp_path, "S1", mhc_i=True)
+    write_results(tmp_path, "S2", mhc_i=True)
     body = (
         rule_block("prioritization", 1, "S1", "logs/S1/prioritization/prio.log")
         + finished_block(1)
@@ -171,7 +168,7 @@ def test_not_started_via_samples_filter(tmp_path):
 
 def test_multi_sample_mixed_states(tmp_path):
     write_config(tmp_path, "I")
-    write_results(tmp_path, "ok", marker=True, mhc_i=True)
+    write_results(tmp_path, "ok", mhc_i=True)
     write_results(tmp_path, "broken")
     write_results(tmp_path, "running")
     broken_log = tmp_path / "logs" / "broken" / "step.log"
@@ -194,7 +191,7 @@ def test_multi_sample_mixed_states(tmp_path):
 
 def test_malformed_log_lines_skipped(tmp_path):
     write_config(tmp_path, "I")
-    write_results(tmp_path, "S1", marker=True, mhc_i=True)
+    write_results(tmp_path, "S1", mhc_i=True)
     body = (
         "garbage line\n"
         "@@@ random noise\n"
@@ -229,7 +226,7 @@ def test_missing_per_rule_log_for_error(tmp_path):
 
 def test_shared_rule_without_wildcards_ignored(tmp_path):
     write_config(tmp_path, "I")
-    write_results(tmp_path, "S1", marker=True, mhc_i=True)
+    write_results(tmp_path, "S1", mhc_i=True)
     body = (
         "[Mon Jun 16 12:00:00 2026]\n"
         "localrule bwa_index:\n"
@@ -253,7 +250,7 @@ def test_shared_rule_without_wildcards_ignored(tmp_path):
 
 def test_markdown_output(tmp_path):
     write_config(tmp_path, "I")
-    write_results(tmp_path, "S1", marker=True, mhc_i=True)
+    write_results(tmp_path, "S1", mhc_i=True)
     body = rule_block("done", 1, "S1", "logs/S1/done.log") + finished_block(1)
     write_log(tmp_path, "2026-06-16T120000.0.snakemake.log", body)
 
@@ -266,7 +263,7 @@ def test_markdown_output(tmp_path):
 
 def test_picks_latest_master_log(tmp_path):
     write_config(tmp_path, "I")
-    write_results(tmp_path, "S1", marker=True, mhc_i=True)
+    write_results(tmp_path, "S1", mhc_i=True)
     # The older log lacks any rule for S1 (so S1 would be classified by
     # results state alone) — same effect, but the report header must name the
     # newer log either way.
@@ -286,7 +283,7 @@ def test_picks_latest_master_log(tmp_path):
 
 def test_complete_class_II_only(tmp_path):
     write_config(tmp_path, "II")
-    write_results(tmp_path, "S1", marker=True, mhc_ii=True)
+    write_results(tmp_path, "S1", mhc_ii=True)
     body = rule_block("done", 1, "S1", "logs/S1/done.log") + finished_block(1)
     write_log(tmp_path, "2026-06-16T120000.0.snakemake.log", body)
 
@@ -300,7 +297,7 @@ def test_complete_class_II_only(tmp_path):
 def test_class_BOTH_requires_both_files(tmp_path):
     """BOTH config + only class-I combined output present → incomplete, not complete."""
     write_config(tmp_path, "BOTH")
-    write_results(tmp_path, "S1", marker=True, mhc_i=True)  # mhc-II missing
+    write_results(tmp_path, "S1", mhc_i=True)  # mhc-II missing
     body = rule_block("done", 1, "S1", "logs/S1/done.log") + finished_block(1)
     write_log(tmp_path, "2026-06-16T120000.0.snakemake.log", body)
 
@@ -326,7 +323,7 @@ def test_negative_excerpt_lines_rejected(tmp_path):
 
 def test_fallback_when_config_missing(tmp_path):
     """No config/config.yaml — script warns, falls back to any-one-combined."""
-    write_results(tmp_path, "S1", marker=True, mhc_i=True)  # only mhc-I present
+    write_results(tmp_path, "S1", mhc_i=True)  # only mhc-I present
     body = rule_block("done", 1, "S1", "logs/S1/done.log") + finished_block(1)
     write_log(tmp_path, "2026-06-16T120000.0.snakemake.log", body)
 

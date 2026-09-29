@@ -90,16 +90,19 @@ rule make_proteome_blastdb:
         """
 
 
-rule prioritization:
+# the sources whose prediction is large enough to use a full node; the rest
+# (a few to a few thousand records) finish in about a minute on 8
+PRIORITIZATION_LARGE_SOURCES = {"somatic.snvs", "somatic.short.indels", "altsplicing"}
+PRIORITIZATION_CLASSES = {"I": ["I"], "II": ["II"], "BOTH": ["I", "II"]}[
+    config["prioritization"]["class"]
+]
+
+
+# One job per (sample, source), so a sample's sources are predicted
+# concurrently and its wall-clock is its slowest source rather than their sum.
+rule prioritize_source:
     input:
-        snv=get_prioritization_snvs,
-        indels=get_prioritization_indels,
-        long_indels=get_prioritization_long_indels,
-        altsplicing=get_prioritization_altsplicing,
-        exitrons=get_prioritization_exitrons,
-        fusions=get_fusions,
-        custom=get_prioritization_custom,
-        proteins=get_prioritization_proteins,
+        variants=get_prioritization_source,
         mhcI=get_prioritization_mhcI,
         mhcII=get_prioritization_mhcII,
         refgenome="resources/refs/genome.fasta",
@@ -111,33 +114,29 @@ rule prioritization:
         mhcI_im=get_mhcI_immunogenicity_tools,
         proteome_db=PROTEOME_BLASTDB,
     output:
-        directory("results/{sample}/prioritization/"),
+        directory("results/{sample}/prioritization/{source}/"),
     log:
-        "logs/{sample}/prioritization/prioritization.log",
+        "logs/{sample}/prioritization/{source}.log",
+    wildcard_constraints:
+        source="|".join(re.escape(s) for s in PRIORITIZATION_SOURCES),
     conda:
         "../envs/prioritization.yml"
     # The binding-affinity pool is one set of (allele x epitope length x wt/mt x
     # FASTA batch) units, so it uses as many threads as it is given, unlike the
     # rest of the workflow; 48 fills a 52-core node. Snakemake clamps this to
     # --cores, so a smaller local run is unaffected.
-    threads: 48
+    threads: lambda wildcards: 48 if wildcards.source in PRIORITIZATION_LARGE_SOURCES else 8
     params:
+        flag=lambda wildcards: PRIORITIZATION_SOURCES[wildcards.source][1],
         mhc_class=f"""{config["prioritization"]["class"]}""",
         mhcI_len=f"""{config["prioritization"]["lengths"]["MHC-I"]}""",
         mhcII_len=f"""{config["prioritization"]["lengths"]["MHC-II"]}""",
     message:
-        "Prioritize on sample:{wildcards.sample}"
+        "Prioritize {wildcards.source} on sample:{wildcards.sample}"
     shell:
         """
         python workflow/scripts/prioritization/compile.py \
-            --SNV "{input.snv}" \
-            --indels "{input.indels}" \
-            --long_indels "{input.long_indels}" \
-            --exitrons "{input.exitrons}" \
-            --altsplicing "{input.altsplicing}" \
-            --fusions "{input.fusions}" \
-            --custom "{input.custom}" \
-            --proteins "{input.proteins}" \
+            {params.flag} "{input.variants}" \
             --proteome {input.peptide} \
             --anno {input.annotation} \
             --confidence medium \
@@ -151,3 +150,31 @@ rule prioritization:
             --output_dir {output} \
             --reference {input.refgenome} >{log} 2>&1
         """
+
+
+rule combine_neoepitopes:
+    # header from the first table, the others without theirs, in source order;
+    # a concatenation, so it runs on the controller instead of queueing a job
+    localrule: True
+    input:
+        get_prioritization_source_dirs,
+    output:
+        expand(
+            "results/{{sample}}/prioritization/mhc-{cls}_neoepitopes_all.txt",
+            cls=PRIORITIZATION_CLASSES,
+        ),
+    log:
+        "logs/{sample}/prioritization/combine_neoepitopes.log",
+    message:
+        "Combining the per-source neoepitope tables on sample:{wildcards.sample}"
+    run:
+        for cls, out in zip(PRIORITIZATION_CLASSES, output):
+            with open(out, "w") as fh_out:
+                for i, d in enumerate(input):
+                    source = os.path.basename(os.path.normpath(d))
+                    with open(
+                        os.path.join(d, f"{source}_mhc-{cls}_neoepitopes.txt")
+                    ) as fh:
+                        if i > 0:
+                            next(fh, None)
+                        fh_out.writelines(fh)
