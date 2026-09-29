@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Per-source cohort summary and an automatic status report**: a source that came out empty was invisible unless its tables were opened, and the status report only existed when someone ran it. A new `summarize` rule writes `results/summary.tsv`, with one row per sample and neoepitope source: input records, variant effects, neoepitopes and distinct peptides per MHC class, and a status naming the first stage that came out empty (`no_input`, `no_effects`, `no_neoepitopes`). End-of-run handlers write `results/report.md` for the run's samples, with the non-`ok` sources as warnings. On the TESLA cohort it flags melanoma_patient8's exitrons (23 variant effects, 0 binders) and melanoma_patient4's long indels (none protein-changing). ([#227](https://github.com/ylab-hi/ScanNeo2/issues/227), [#228](https://github.com/ylab-hi/ScanNeo2/pull/228))
+
 ### Changed
 
 - **Each neoepitope source prioritized as its own job**: prioritization ran all of a sample's sources one after another in one job, so its wall-clock was their sum. The new `prioritize_source` rule runs one job per sample and source, writing to `results/{sample}/prioritization/{source}/`. SNVs, short indels and altsplicing get 48 threads, the other sources 8. A local `combine_neoepitopes` rule concatenates the per-source tables into `mhc-{I,II}_neoepitopes_all.txt` at the previous path, and `report.py` decides completion from those tables. On the TESLA cohort, per-sample prioritization fell from 69–112 to 45–67 min, with identical per-source tables. **The per-source files move into subdirectories, and the rule is renamed:** profiles with `set-resources`/`set-threads` for `prioritization` must use `prioritize_source`. ([#195](https://github.com/ylab-hi/ScanNeo2/issues/195), [#226](https://github.com/ylab-hi/ScanNeo2/pull/226))

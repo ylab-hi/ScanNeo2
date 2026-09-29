@@ -209,3 +209,10 @@ aligncov = \frac{\text{length of alignment}}{\text{length of mutant epitope}}
 
 
 
+
+## SUMMARY AND STATUS REPORT
+
+Two cohort-level files are written under `results/`:
+
+- `summary.tsv` — one row per sample and neoepitope source that ran, kept up to date by the `summarize` rule (part of every full run). It lists the source's `input_records` (VCF records, or data rows of the fusion/custom input), the `variant_effects` derived from them, the `neoepitopes_mhc-<class>` rows and `distinct_peptides_mhc-<class>` for each predicted MHC class, and a `status`: `ok`, or the first stage that came out empty — `no_input`, `no_effects` (no protein-changing effect) or `no_neoepitopes` (no binder). An empty source is often legitimate (a sample without exitrons), but can also point to an upstream problem.
+- `report.md` — the status report, written at the end of every run that executes jobs, successful or failed (a run with nothing to do leaves the previous report, which still holds). It lists each sample of the run as `complete`, `error` (with the failed rule and the tail of its log), `incomplete` or `not started`, followed by the non-`ok` rows of `summary.tsv` as source warnings. After a failed run the summary may be an earlier run's, so the report shows its warnings only if it was written during that run, and says otherwise. The report can also be produced by hand with `python workflow/scripts/report.py`.

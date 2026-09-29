@@ -332,3 +332,115 @@ def test_fallback_when_config_missing(tmp_path):
     assert r.returncode == 0, r.stderr + r.stdout
     assert "WARNING" in r.stderr
     assert "1 complete" in r.stdout
+
+
+# --- per-source summary warnings (#227) ---
+
+def write_summary(tmp_path: Path, rows) -> None:
+    header = "sample\tsource\tinput_records\tvariant_effects\tneoepitopes_mhc-I\tdistinct_peptides_mhc-I\tstatus"
+    lines = [header] + ["\t".join(r) for r in rows]
+    (tmp_path / "results").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "results" / "summary.tsv").write_text("\n".join(lines) + "\n")
+
+
+def complete_run(tmp_path: Path, log_name: str) -> None:
+    write_config(tmp_path, "I")
+    write_results(tmp_path, "S1", mhc_i=True)
+    write_log(tmp_path, log_name,
+              rule_block("prioritize_source", 1, "S1", "logs/S1/prioritization/x.log")
+              + finished_block(1))
+
+
+def test_summary_warnings_list_non_ok_sources(tmp_path):
+    complete_run(tmp_path, "2026-06-16T120000.0.snakemake.log")
+    write_summary(tmp_path, [
+        ["S1", "somatic.snvs", "10", "5", "7", "4", "ok"],
+        ["S1", "exitrons", "11", "0", "0", "0", "no_effects"],
+    ])
+
+    r = run_report(tmp_path)
+
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "S1 / exitrons: no_effects (input_records 11, variant_effects 0" in r.stdout
+    assert "somatic.snvs" not in r.stdout.split("Source warnings")[1]
+
+
+def test_summary_older_than_the_run_is_not_used(tmp_path):
+    # a log started after the summary was written: the summary is from an
+    # earlier run, and its rows must not be reported as this run's
+    complete_run(tmp_path, "2099-01-01T000000.0.snakemake.log")
+    write_summary(tmp_path, [["S1", "exitrons", "11", "0", "0", "0", "no_effects"]])
+
+    r = run_report(tmp_path)
+
+    assert "predates this run" in r.stdout
+    assert "no_effects" not in r.stdout
+
+
+def test_missing_summary_is_reported(tmp_path):
+    complete_run(tmp_path, "2026-06-16T120000.0.snakemake.log")
+
+    r = run_report(tmp_path)
+
+    assert "No per-source summary" in r.stdout
+
+
+def test_prioritization_class_argument_overrides_config(tmp_path):
+    # no config file: the class comes from the argument, as in the handlers
+    write_results(tmp_path, "S1", mhc_ii=True)
+    write_log(tmp_path, "2026-06-16T120000.0.snakemake.log",
+              rule_block("prioritize_source", 1, "S1", "logs/S1/prioritization/x.log")
+              + finished_block(1))
+
+    r = run_report(tmp_path, "--prioritization-class", "II")
+
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "1 complete" in r.stdout
+    assert "fell back" not in r.stdout
+
+
+def test_successful_run_trusts_an_older_summary(tmp_path):
+    # a successful run that did not re-execute summarize: every target is up
+    # to date, so the older summary is current, not stale
+    complete_run(tmp_path, "2099-01-01T000000.0.snakemake.log")
+    write_summary(tmp_path, [["S1", "exitrons", "11", "0", "0", "0", "no_effects"]])
+
+    r = run_report(tmp_path, "--run-succeeded")
+
+    assert "S1 / exitrons: no_effects" in r.stdout
+    assert "predates" not in r.stdout
+
+
+def test_source_warnings_follow_the_sample_filter(tmp_path):
+    complete_run(tmp_path, "2026-06-16T120000.0.snakemake.log")
+    write_results(tmp_path, "S2", mhc_i=True)
+    write_summary(tmp_path, [
+        ["S1", "exitrons", "11", "0", "0", "0", "no_effects"],
+        ["S2", "fusions", "5", "2", "0", "0", "no_neoepitopes"],
+    ])
+
+    r = run_report(tmp_path, "--samples", "S1")
+
+    assert "S1 / exitrons" in r.stdout
+    assert "S2" not in r.stdout
+
+
+def test_report_creates_its_output_directory(tmp_path):
+    # a run can fail before any job has created results/
+    write_config(tmp_path, "I")
+    write_log(tmp_path, "2026-06-16T120000.snakemake.log", "")
+    out = tmp_path / "results" / "report.md"
+
+    r = run_report(tmp_path, "--output", str(out))
+
+    assert r.returncode == 0, r.stderr
+    assert out.is_file()
+
+
+def test_log_start_time_with_and_without_microseconds():
+    sys.path.insert(0, str(SCRIPT.parent))
+    import report
+
+    with_us = report.log_start_time(Path("2026-06-16T120000.500000.snakemake.log"))
+    without = report.log_start_time(Path("2026-06-16T120000.snakemake.log"))
+    assert without is not None and with_us - without == 0.5

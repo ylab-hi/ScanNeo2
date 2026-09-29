@@ -189,3 +189,31 @@ rule combine_neoepitopes:
         """
         awk 'FNR > 1 || NR == 1' {params.tables} /dev/null >{output} 2>{log}
         """
+
+
+# One row per (sample, source) that ran, so a source that came out empty is
+# visible without opening its tables; the status report lists those rows.
+rule summarize:
+    input:
+        dirs=[e["dir"] for e in summary_entries()],
+        sources=[p for e in summary_entries() for p in e["inputs"]],
+    output:
+        "results/summary.tsv",
+    log:
+        "logs/summarize.log",
+    localrule: True
+    conda:
+        "../envs/basic.yml"
+    params:
+        # JSON, so any user-supplied input path (custom proteins) passes intact
+        entries=json.dumps(summary_entries()),
+        classes=PRIORITIZATION_CLASSES,
+    message:
+        "Summarizing the per-source prioritization results of all samples"
+    shell:
+        """
+        python workflow/scripts/summarize.py \\
+        --output {output} \\
+        --classes {params.classes} \\
+        --entries {params.entries:q} >{log} 2>&1
+        """
