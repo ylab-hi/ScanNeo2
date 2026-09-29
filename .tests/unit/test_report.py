@@ -397,3 +397,50 @@ def test_prioritization_class_argument_overrides_config(tmp_path):
     assert r.returncode == 0, r.stderr + r.stdout
     assert "1 complete" in r.stdout
     assert "fell back" not in r.stdout
+
+
+def test_successful_run_trusts_an_older_summary(tmp_path):
+    # a successful run that did not re-execute summarize: every target is up
+    # to date, so the older summary is current, not stale
+    complete_run(tmp_path, "2099-01-01T000000.0.snakemake.log")
+    write_summary(tmp_path, [["S1", "exitrons", "11", "0", "0", "0", "no_effects"]])
+
+    r = run_report(tmp_path, "--run-succeeded")
+
+    assert "S1 / exitrons: no_effects" in r.stdout
+    assert "predates" not in r.stdout
+
+
+def test_source_warnings_follow_the_sample_filter(tmp_path):
+    complete_run(tmp_path, "2026-06-16T120000.0.snakemake.log")
+    write_results(tmp_path, "S2", mhc_i=True)
+    write_summary(tmp_path, [
+        ["S1", "exitrons", "11", "0", "0", "0", "no_effects"],
+        ["S2", "fusions", "5", "2", "0", "0", "no_neoepitopes"],
+    ])
+
+    r = run_report(tmp_path, "--samples", "S1")
+
+    assert "S1 / exitrons" in r.stdout
+    assert "S2" not in r.stdout
+
+
+def test_report_creates_its_output_directory(tmp_path):
+    # a run can fail before any job has created results/
+    write_config(tmp_path, "I")
+    write_log(tmp_path, "2026-06-16T120000.snakemake.log", "")
+    out = tmp_path / "results" / "report.md"
+
+    r = run_report(tmp_path, "--output", str(out))
+
+    assert r.returncode == 0, r.stderr
+    assert out.is_file()
+
+
+def test_log_start_time_with_and_without_microseconds():
+    sys.path.insert(0, str(SCRIPT.parent))
+    import report
+
+    with_us = report.log_start_time(Path("2026-06-16T120000.500000.snakemake.log"))
+    without = report.log_start_time(Path("2026-06-16T120000.snakemake.log"))
+    assert without is not None and with_us - without == 0.5

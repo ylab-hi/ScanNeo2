@@ -3,6 +3,7 @@ import shutil
 import sys
 import glob
 import gzip
+import json
 import re
 from pathlib import Path
 from types import SimpleNamespace
@@ -1818,7 +1819,7 @@ def get_prioritization_counts(wildcards):
 # could not do this: a rule never runs once an upstream job has failed. The
 # handlers run in the controller process, so report.py's main() is called
 # in-process rather than through whichever `python` the shell finds first.
-def write_status_report(master_log):
+def write_status_report(master_log, succeeded):
     sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
     from report import main as report_main
 
@@ -1841,6 +1842,9 @@ def write_status_report(master_log):
                 "--samples",
                 *SAMPLES.keys(),
             ]
+            # after a success the summary is up to date even if this run did
+            # not re-execute it; after a failure it may be an earlier run's
+            + (["--run-succeeded"] if succeeded else []),
         )
     except Exception as e:  # the report must never mask the run's outcome
         print(f"WARNING: status report not written: {e}", file=sys.stderr)

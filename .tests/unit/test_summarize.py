@@ -81,7 +81,20 @@ def test_write_summary(tmp_path):
     assert (snvs["neoepitopes_mhc-I"], snvs["distinct_peptides_mhc-I"], snvs["status"]) == ("3", "2", "ok")
 
 
-def test_parse_entry():
-    e = summarize.parse_entry("S1|fusions|results/S1/prioritization/fusions/|a.tsv,b.tsv")
-    assert e == {"sample": "S1", "source": "fusions",
-                 "dir": "results/S1/prioritization/fusions/", "inputs": ["a.tsv", "b.tsv"]}
+def test_cli_keeps_paths_with_separators(tmp_path):
+    # a user-supplied custom protein path may contain , or |; the JSON entries
+    # must carry it through unchanged
+    import json
+    import subprocess
+
+    tsv = write(tmp_path / "prot,pairs|v2.tsv", "id\twildtype_protein\tmutant_protein\nx\tMK\tMR\n")
+    entries = [{"sample": "S1", "source": "custom_protein", "inputs": [tsv],
+                "dir": source_dir(tmp_path, "custom_protein", 1, [["A*01:01", "KLMNPQRST"]])}]
+    out = tmp_path / "summary.tsv"
+    r = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "workflow/scripts/summarize.py"),
+         "--output", str(out), "--classes", "I", "--entries", json.dumps(entries)],
+        capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    row = next(csv.DictReader(open(out), delimiter="\t"))
+    assert (row["input_records"], row["status"]) == ("1", "ok")

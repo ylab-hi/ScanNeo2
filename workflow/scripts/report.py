@@ -219,25 +219,35 @@ def log_start_time(master_log: Optional[Path]) -> Optional[float]:
     if master_log is None:
         return None
     stamp = master_log.name.split(".snakemake.log")[0]
-    try:
-        return datetime.strptime(stamp, "%Y-%m-%dT%H%M%S.%f").timestamp()
-    except ValueError:
-        return None
+    # isoformat() leaves the fraction out when the microseconds are exactly 0
+    for fmt in ("%Y-%m-%dT%H%M%S.%f", "%Y-%m-%dT%H%M%S"):
+        try:
+            return datetime.strptime(stamp, fmt).timestamp()
+        except ValueError:
+            pass
+    return None
 
 
-def read_summary(path: Path, run_start: Optional[float]):
-    """(state, non-ok rows) of the per-source summary.
+def read_summary(path: Path, run_start: Optional[float], samples=None):
+    """(state, non-ok rows) of the per-source summary, limited to `samples`.
 
-    state is "missing", "stale" (written before the run the report describes,
-    so it would describe an earlier run) or "fresh"; rows are only read when
-    fresh. With no known run start the summary is taken as fresh.
+    state is "missing", "stale" or "fresh"; rows are only read when fresh.
+    After a successful run every target, the summary included, is up to date,
+    whether or not this run re-executed it, so the caller passes no run_start
+    then. Otherwise a summary older than the run's start is stale: a failed
+    run never reached the summarize rule, and the file describes an earlier
+    run. With no run start the summary is taken as fresh.
     """
     if not path.is_file():
         return "missing", []
     if run_start is not None and path.stat().st_mtime < run_start:
         return "stale", []
     with open(path, newline="") as fh:
-        rows = [r for r in csv.DictReader(fh, delimiter="\t") if r.get("status") != "ok"]
+        rows = [
+            r
+            for r in csv.DictReader(fh, delimiter="\t")
+            if r.get("status") != "ok" and (samples is None or r.get("sample") in samples)
+        ]
     return "fresh", rows
 
 
@@ -551,6 +561,12 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         "(default: results/summary.tsv)",
     )
     p.add_argument(
+        "--run-succeeded",
+        action="store_true",
+        help="the run finished successfully, so the summary is up to date "
+        "even if this run did not re-execute it (passed by the onsuccess handler)",
+    )
+    p.add_argument(
         "--samples",
         nargs="+",
         default=None,
@@ -634,11 +650,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         show_excerpts=not args.no_excerpts,
         markdown=args.markdown,
     )
+    run_start = None if args.run_succeeded else log_start_time(master_log)
     out += render_source_warnings(
-        read_summary(args.summary, log_start_time(master_log)), args.markdown
+        read_summary(args.summary, run_start, set(samples)), args.markdown
     )
 
     if args.output:
+        # a run can fail before any job has created results/
+        args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(out)
     else:
         sys.stdout.write(out)

@@ -205,11 +205,8 @@ rule summarize:
     conda:
         "../envs/basic.yml"
     params:
-        # one SAMPLE|SOURCE|DIR|INPUT[,INPUT...] token per source that runs
-        entries=[
-            "|".join([e["sample"], e["source"], e["dir"], ",".join(e["inputs"])])
-            for e in summary_entries()
-        ],
+        # JSON, so any user-supplied input path (custom proteins) passes intact
+        entries=json.dumps(summary_entries()),
         classes=PRIORITIZATION_CLASSES,
     message:
         "Summarizing the per-source prioritization results of all samples"

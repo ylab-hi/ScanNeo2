@@ -9,12 +9,13 @@ upstream failure; this makes it visible without failing the run.
 Run by the `summarize` rule:
 
     summarize.py --output results/summary.tsv --classes I [II] \
-        --entries SAMPLE|SOURCE|DIR|INPUT[,INPUT...] ...
+        --entries '[{"sample": ..., "source": ..., "dir": ..., "inputs": [...]}, ...]'
 """
 
 import argparse
 import csv
 import gzip
+import json
 import os
 
 def count_input_records(path):
@@ -100,17 +101,10 @@ def write_summary(entries, classes, out_path):
             )
 
 
-def parse_entry(token):
-    """SAMPLE|SOURCE|DIR|INPUT[,INPUT...] -> entry dict."""
-    sample, source, source_dir, inputs = token.split("|")
-    return {"sample": sample, "source": source, "dir": source_dir,
-            "inputs": [p for p in inputs.split(",") if p]}
-
-
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--output", required=True)
     p.add_argument("--classes", nargs="+", required=True)
-    p.add_argument("--entries", nargs="*", default=[])
+    p.add_argument("--entries", required=True, help="JSON list of source entries")
     args = p.parse_args()
-    write_summary([parse_entry(t) for t in args.entries], args.classes, args.output)
+    write_summary(json.loads(args.entries), args.classes, args.output)

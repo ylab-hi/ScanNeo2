@@ -67,8 +67,8 @@ rule all:
 
 # the status report after every run, successful or not (see write_status_report)
 onsuccess:
-    write_status_report(log)
+    write_status_report(log, succeeded=True)
 
 
 onerror:
-    write_status_report(log)
+    write_status_report(log, succeeded=False)
