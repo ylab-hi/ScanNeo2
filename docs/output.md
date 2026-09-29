@@ -87,39 +87,31 @@ The `indel.type` config key selects which callers run (`short`, `long`, or `all`
 
 ## PRIORITIZATION
 
-In the prioritization, the output files are generated in `results/<name/of/sample>/prioritization/`. For each variant type, this includes the `<variant_type>_variant_effects.tsv` in which the effects of each variant are listed, and for each MHC class the file `<variant_type>_<mhc_class>_neoepitopes.txt` which contains the detected neoepitopes. In addition, `<mhc_class>_neoepitopes_all.txt` contains all detected neoepitopes in one file. 
+In the prioritization, each variant type is prioritized as its own job, and its output files are generated in `results/<name/of/sample>/prioritization/<variant_type>/`. This includes the `<variant_type>_variant_effects.tsv` in which the effects of each variant are listed, for each MHC class the file `<variant_type>_<mhc_class>_neoepitopes.txt` which contains the detected neoepitopes, and `<variant_type>_<mhc_class>_predictions.sqlite` with the prediction tools' full output. In addition, `results/<name/of/sample>/prioritization/<mhc_class>_neoepitopes_all.txt` contains all detected neoepitopes of a class in one file.
 
-The folder structure looks this this (if all modules were activated)
+The folder structure looks like this (if all modules were activated, for MHC class I; class II adds the corresponding `mhc-II` files)
 ```
-﻿- altsplicing_mhc-I_neoepitopes.txt
-- altsplicing_variant_effects.tsv
-- exitrons_mhc-I_neoepitopes.txt
-- exitrons_variant_effects.tsv
-- fusions_mhc-I_neoepitopes.txt
-- fusions_variant_effects.tsv
-- long.indels_mhc-I_neoepitopes.txt
-- long.indels_variant_effects.tsv
-- somatic.short.indels_mhc-I_neoepitopes.txt
-- somatic.short.indels_variant_effects.tsv
-- somatic.snvs_mhc-I_neoepitopes.txt
-- somatic.snvs_variant_effects.tsv
-- custom_protein_mhc-I_neoepitopes.txt
-- custom_protein_variant_effects.tsv
 - mhc-I_neoepitopes_all.txt
-
-﻿- altsplicing_mhc-II_neoepitopes.txt
-- altsplicing_variant_effects.tsv
-- exitrons_mhc-II_neoepitopes.txt
-- exitrons_variant_effects.tsv
-- fusions_mhc-II_neoepitopes.txt
-- fusions_variant_effects.tsv
-- long.indels_mhc-II_neoepitopes.txt
-- long.indels_variant_effects.tsv
-- somatic.short.indels_mhc-II_neoepitopes.txt
-- somatic.short.indels_variant_effects.tsv
-- somatic.snvs_mhc-II_neoepitopes.txt
-- somatic.snvs_variant_effects.tsv
-- mhc-II_neoepitopes_all.txt                     
+- somatic.snvs/
+    - somatic.snvs_variant_effects.tsv
+    - somatic.snvs_mhc-I_neoepitopes.txt
+    - somatic.snvs_mhc-I_predictions.sqlite
+- somatic.short.indels/
+    - somatic.short.indels_variant_effects.tsv
+    - somatic.short.indels_mhc-I_neoepitopes.txt
+    - somatic.short.indels_mhc-I_predictions.sqlite
+- long.indels/
+    - ...
+- exitrons/
+    - ...
+- altsplicing/
+    - ...
+- fusions/
+    - ...
+- custom/
+    - ...
+- custom_protein/
+    - ...
 ```
 These include the files `<vartype>_variant_effects.tsv` and include `variant_effects.txt` and individual files for predicted MHC classes (e.g., `mhc-I_neoepitopes.txt` and `mhc-II_neoepitopes.txt`). The former is an intermediate file that contains the variants and their effects on the protein sequence. It can be used as a reference and provides more information about the variants. The following table describes its content.
 

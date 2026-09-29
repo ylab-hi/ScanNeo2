@@ -90,19 +90,25 @@ rule make_proteome_blastdb:
         """
 
 
-rule prioritization:
+# the sources whose prediction is large enough to use a full node; the rest
+# (a few to a few thousand records) finish in about a minute on 8
+PRIORITIZATION_LARGE_SOURCES = {"somatic.snvs", "somatic.short.indels", "altsplicing"}
+PRIORITIZATION_CLASSES = {"I": ["I"], "II": ["II"], "BOTH": ["I", "II"]}[
+    config["prioritization"]["class"]
+]
+
+
+# One job per (sample, source), so a sample's sources are predicted
+# concurrently and its wall-clock is its slowest source rather than their sum.
+rule prioritize_source:
     input:
-        snv=get_prioritization_snvs,
-        indels=get_prioritization_indels,
-        long_indels=get_prioritization_long_indels,
-        altsplicing=get_prioritization_altsplicing,
-        exitrons=get_prioritization_exitrons,
-        fusions=get_fusions,
-        custom=get_prioritization_custom,
-        proteins=get_prioritization_proteins,
+        variants=get_prioritization_source,
         mhcI=get_prioritization_mhcI,
         mhcII=get_prioritization_mhcII,
         refgenome="resources/refs/genome.fasta",
+        # built by its own rule, so concurrent source jobs never race to create
+        # it on first open
+        refgenome_idx="resources/refs/genome.fasta.fai",
         peptide="resources/refs/peptide.fasta",
         annotation="resources/refs/genome_tmp.gtf",
         counts=get_prioritization_counts,
@@ -111,33 +117,33 @@ rule prioritization:
         mhcI_im=get_mhcI_immunogenicity_tools,
         proteome_db=PROTEOME_BLASTDB,
     output:
-        directory("results/{sample}/prioritization/"),
+        directory("results/{sample}/prioritization/{source}/"),
     log:
-        "logs/{sample}/prioritization/prioritization.log",
+        "logs/{sample}/prioritization/{source}.log",
+    wildcard_constraints:
+        source="|".join(re.escape(s) for s in PRIORITIZATION_SOURCES),
     conda:
         "../envs/prioritization.yml"
     # The binding-affinity pool is one set of (allele x epitope length x wt/mt x
     # FASTA batch) units, so it uses as many threads as it is given, unlike the
     # rest of the workflow; 48 fills a 52-core node. Snakemake clamps this to
     # --cores, so a smaller local run is unaffected.
-    threads: 48
+    threads: lambda wildcards: 48 if wildcards.source in PRIORITIZATION_LARGE_SOURCES else 8
     params:
+        flag=lambda wildcards: PRIORITIZATION_SOURCES[wildcards.source][1],
         mhc_class=f"""{config["prioritization"]["class"]}""",
         mhcI_len=f"""{config["prioritization"]["lengths"]["MHC-I"]}""",
         mhcII_len=f"""{config["prioritization"]["lengths"]["MHC-II"]}""",
     message:
-        "Prioritize on sample:{wildcards.sample}"
+        "Prioritize {wildcards.source} on sample:{wildcards.sample}"
+    # The combined tables are removed first: they are not this job's output, so
+    # a failed run would otherwise leave an earlier sample-wide table in place,
+    # and the report takes a present table as a finished sample.
     shell:
         """
+        rm -f results/{wildcards.sample}/prioritization/mhc-*_neoepitopes_all.txt
         python workflow/scripts/prioritization/compile.py \
-            --SNV "{input.snv}" \
-            --indels "{input.indels}" \
-            --long_indels "{input.long_indels}" \
-            --exitrons "{input.exitrons}" \
-            --altsplicing "{input.altsplicing}" \
-            --fusions "{input.fusions}" \
-            --custom "{input.custom}" \
-            --proteins "{input.proteins}" \
+            {params.flag} "{input.variants}" \
             --proteome {input.peptide} \
             --anno {input.annotation} \
             --confidence medium \
@@ -150,4 +156,36 @@ rule prioritization:
             --threads {threads} \
             --output_dir {output} \
             --reference {input.refgenome} >{log} 2>&1
+        """
+
+
+rule combine_neoepitopes:
+    input:
+        get_prioritization_source_dirs,
+    output:
+        "results/{sample}/prioritization/mhc-{cls}_neoepitopes_all.txt",
+    log:
+        "logs/{sample}/prioritization/combine_neoepitopes_mhc-{cls}.log",
+    wildcard_constraints:
+        cls="I|II",
+    # a concatenation, so it runs on the controller instead of queueing a job
+    localrule: True
+    conda:
+        "../envs/basic.yml"
+    params:
+        # each source directory holds <source>_mhc-<cls>_neoepitopes.txt
+        tables=lambda wildcards, input: [
+            os.path.join(
+                d,
+                f"{os.path.basename(os.path.normpath(d))}_mhc-{wildcards.cls}_neoepitopes.txt",
+            )
+            for d in input
+        ],
+    message:
+        "Combining the per-source MHC-{wildcards.cls} neoepitope tables on sample:{wildcards.sample}"
+    # header from the first table, the others without theirs, in source order;
+    # /dev/null keeps awk off stdin when a sample has no source
+    shell:
+        """
+        awk 'FNR > 1 || NR == 1' {params.tables} /dev/null >{output} 2>{log}
         """

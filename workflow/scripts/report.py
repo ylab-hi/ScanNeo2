@@ -10,8 +10,10 @@ The completion check follows ``config['prioritization']['class']``: a run
 configured for class I requires ``mhc-I_neoepitopes_all.txt`` non-empty, class
 II requires ``mhc-II_neoepitopes_all.txt`` non-empty, and BOTH requires both.
 If the config can't be loaded (no PyYAML, missing path, malformed) the script
-falls back to "marker plus any-one combined output non-empty" and warns on
-stderr.
+falls back to "any one combined output non-empty" and warns on stderr. The
+combined tables are written by the last rule of a sample, only after every
+source job succeeded, and Snakemake removes them if that rule fails, so their
+presence alone marks a finished sample.
 
 Fragility: this script parses ``.snakemake/log/*.snakemake.log``, which is
 **human-facing console output, not a stable Snakemake API**. Upstream changes
@@ -87,7 +89,6 @@ class SampleStatus:
 
 @dataclass
 class ResultsInfo:
-    marker_present: bool = False
     combined_files: Dict[str, bool] = field(default_factory=dict)
 
 
@@ -261,17 +262,16 @@ def scan_results_dir(
         if not sub.is_dir():
             continue
         pri = sub / "prioritization"
-        marker = (pri / ".snakemake_timestamp").exists()
         combined = {}
         for fname in required_combined:
             p = pri / fname
             combined[fname] = p.exists() and p.stat().st_size > 0
-        info[sub.name] = ResultsInfo(marker_present=marker, combined_files=combined)
+        info[sub.name] = ResultsInfo(combined_files=combined)
     return info
 
 
 def is_complete(info: Optional[ResultsInfo], required: List[str]) -> bool:
-    if info is None or not info.marker_present:
+    if info is None:
         return False
     if not required:
         return any(info.combined_files.values())

@@ -1,8 +1,8 @@
-"""Entry point for the neoantigen prioritization stage, invoked by the `prioritization` Snakemake rule.
+"""Entry point for the neoantigen prioritization stage, invoked by the `prioritize_source` Snakemake rule.
 
-For each variant source (SNVs, short/long indels, exitrons, alternative splicing, fusions, custom) it
-annotates variant effects, predicts MHC binding affinities, applies similarity/immunogenicity scoring,
-and combines the per-source neoepitope tables into the final output.
+For each variant source it is given (the rule passes one: SNVs, short/long indels, exitrons, alternative
+splicing, fusions, custom) it annotates variant effects, predicts MHC binding affinities and applies
+similarity/immunogenicity scoring. The combine_neoepitopes rule concatenates the per-source tables.
 """
 
 import os
@@ -21,8 +21,6 @@ import filtering
 
 class Compile:
     def __init__(self, options):
-        # per-class lists of neoepitope files to concatenate at the end
-        self.combined = {"mhc-I": [], "mhc-II": []}
         self.options = options
 
         if options.SNVs != "":
@@ -41,21 +39,6 @@ class Compile:
             self.prioritize(options.fusions, options, "fusions")
         if options.proteins != "":
             self.prioritize(options.proteins, options, "custom_protein")
-
-        # combine neoepitopes per MHC class: take header from the first file,
-        # strip header from subsequent ones.
-        for mhc_class, files in self.combined.items():
-            if not files:
-                continue
-            outfile = os.path.join(
-                options.output_dir, f"{mhc_class}_neoepitopes_all.txt")
-            with open(outfile, "w") as out_fh:
-                for idx, fname in enumerate(files):
-                    with open(fname, "r") as in_fh:
-                        if idx > 0:
-                            next(in_fh, None)
-                        for line in in_fh:
-                            out_fh.write(line)
 
     def prioritize(self, inputfile, options, vartype):
         if (vartype == "somatic.snvs" or
@@ -92,8 +75,6 @@ class Compile:
                 # this overwrites the previous outfile (now including sequence similarity)
                 filtering.SequenceSimilarity(options.output_dir, "mhc-I", vartype)
 
-                outfile = os.path.join(options.output_dir, f"{vartype}_mhc-I_neoepitopes.txt")
-                self.combine_neoepitopes(outfile, "mhc-I")
             
 
             else:
@@ -117,18 +98,12 @@ class Compile:
                 # this overwrites the previous outfile (now including sequence similarity)
                 filtering.SequenceSimilarity(options.output_dir, "mhc-II", vartype)
                
-                outfile = os.path.join(options.output_dir, f"{vartype}_mhc-II_neoepitopes.txt")
-                self.combine_neoepitopes(outfile, "mhc-II")
                 
 
             else:
                 print(f"No MHC-II alleles were detected: {options.mhcII} is empty")
                 sys.exit(1)
 
-
-
-    def combine_neoepitopes(self, neoepitopes_file, mhc_class):
-        self.combined[mhc_class].append(neoepitopes_file)
 
 def main():
     options = parse_arguments()
