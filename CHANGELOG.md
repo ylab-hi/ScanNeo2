@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Prioritization env moved from Python 3.7 to 3.11**: 3.7 is end-of-life, and the pin was an undocumented snapshot. The solve brings `vcfpy` 0.14.2, `pandas` 2.2.3 and an explicit `setuptools` (for `pyfaidx` 0.7.0's `pkg_resources` import). The commercial `anaconda` channel, whose terms-of-service prompt can stall an unattended env build, is dropped in favour of `nodefaults`. On the TESLA cohort every per-source and combined table, and `summary.tsv`, is byte-identical. **The changed env makes Snakemake re-run prioritization for existing results.** Since the output is unchanged, `--rerun-triggers mtime` skips that safely. ([#229](https://github.com/ylab-hi/ScanNeo2/issues/229), [#231](https://github.com/ylab-hi/ScanNeo2/pull/231))
+
 ## [0.7.0] - 2026-09-29
 
 ### Added
