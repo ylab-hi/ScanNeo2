@@ -11,6 +11,7 @@ dependencies:
  - setuptools=80.10.2
  - configargparse=1.7
  - pandas=2.2.3
+ - numpy=2.4.6
  - blast=2.15.0
  - zstd=1.5.5
  - pip=24.0
