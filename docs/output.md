@@ -171,7 +171,7 @@ In addition, the `mhc-I_neoepitopes.txt` is partly redundant to `variant_effects
 | NMD_escape_rule | Integer | Rule used to escape the NMD pathway (if applicable) |
 | wt_immunogenicity | Float | Immunogenicity score of the wildtype epitope. A higher score indicates a greater probability of eliciting an immune response |
 | mt_immunogenicity | Float | Immunogenicity score of the mutant epitope. A higher score indicates a greater probability of eliciting an immune response |
-| self-similarity | Float | Similarity measure between the wildtype and mutant epitope. Float values between 0 and 1. `0` Indicates no similarity or a complete difference between the WT and MT sequences. `1` Indicates perfect similarity, meaning the WT and MT sequences are identical in terms of their k-mer similarities.
+| self-similarity | Float | Similarity measure between the wildtype and mutant epitope. Float values between 0 and 1. `0` Indicates no similarity or a complete difference between the WT and MT sequences. `1` Indicates perfect similarity, meaning the WT and MT sequences are identical in terms of their k-mer similarities. `.` when the mutant epitope has no full-length wildtype counterpart (it lies wholly or partly in sequence created by a frameshift or insertion); `proteome_similarity` then describes how self-like it is.
 | pathogen_similarity | Float | Similarity measure between the mutant epitope and known pathogens - more details below |
 | pathogen_evalue | Float | BLAST e-value for the pathogen similarity |
 | pathogen_bitscore | Float | BLAST bitscore for the pathogen similarity |
