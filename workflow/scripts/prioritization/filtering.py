@@ -173,12 +173,12 @@ class SequenceSimilarity:
             wt_seq = wt_seqs[i]
             mt_seq = mt_seqs[i]
 
-            # The wt epitope is the wildtype at the mt epitope's positions, so
-            # it is empty or shorter where the mt epitope lies (partly) in
-            # sequence a frameshift or insertion created. There is no
-            # full-length wildtype counterpart to compare against then, and
-            # corr_kernel compares positionally, so the score is not
-            # computable: "." as for the table's other missing values.
+            # The wt epitope is the wildtype at the mt epitope's positions.
+            # Where it is empty or shorter than the mt epitope (the mt epitope
+            # runs past the end of the wildtype, as after a frameshift or an
+            # insertion) there is no full-length counterpart, and corr_kernel
+            # compares positionally, so the score is not computable: "." as
+            # for the table's other missing values.
             if pd.isna(wt_seq) or pd.isna(mt_seq) or len(wt_seq) != len(mt_seq):
                 selfsim.append(".")
             else:
