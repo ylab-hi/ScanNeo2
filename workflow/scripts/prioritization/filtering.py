@@ -173,19 +173,14 @@ class SequenceSimilarity:
             wt_seq = wt_seqs[i]
             mt_seq = mt_seqs[i]
 
-            # skip if either sequence is missing (NaN) — happens when
-            # the wt or mt epitope didn't meet length requirements in
-            # prediction.py and was written as a 0 seqnum
-            if pd.isna(wt_seq) or pd.isna(mt_seq):
-                selfsim.append(-1)
-                continue
-
-            # corr_kernel compares positionally and needs equal-length
-            # sequences. A wt epitope shorter than its mt counterpart is the
-            # wt-padding region of an insertion/frameshift — there is no real
-            # wildtype to compare against, so skip it with the -1 sentinel.
-            if len(wt_seq) != len(mt_seq):
-                selfsim.append(-1)
+            # The wt epitope is the wildtype at the mt epitope's positions.
+            # Where it is empty or shorter than the mt epitope (the mt epitope
+            # runs past the end of the wildtype, as after a frameshift or an
+            # insertion) there is no full-length counterpart, and corr_kernel
+            # compares positionally, so the score is not computable: "." as
+            # for the table's other missing values.
+            if pd.isna(wt_seq) or pd.isna(mt_seq) or len(wt_seq) != len(mt_seq):
+                selfsim.append(".")
             else:
                 # calculate the correlation kernel
                 corr_wt_mt = self.corr_kernel(wt_seq, mt_seq)

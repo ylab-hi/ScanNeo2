@@ -11,7 +11,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install pytest + report.py runtime deps
-        run: pip install pytest pyyaml
+      # pandas and blosum at the prioritization env's versions, so tests run
+      # filtering.py's real code with the libraries the workflow uses
+      - name: Install pytest + report.py / filtering.py runtime deps
+        run: pip install pytest pyyaml pandas==2.2.3 blosum==2.0.2
       - name: Run unit tests
         run: pytest .tests/unit/ -v
