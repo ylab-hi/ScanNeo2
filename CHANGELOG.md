@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Prioritization env moved from Python 3.7 to 3.11**: 3.7 is end-of-life, and the pin was an undocumented snapshot. The solve brings `vcfpy` 0.14.2, `pandas` 2.2.3 and an explicit `setuptools` (for `pyfaidx` 0.7.0's `pkg_resources` import). The commercial `anaconda` channel, whose terms-of-service prompt can stall an unattended env build, is dropped in favour of `nodefaults`. On the TESLA cohort every per-source and combined table, and `summary.tsv`, is byte-identical. **The changed env makes Snakemake re-run prioritization for existing results.** Since the output is unchanged, `--rerun-triggers mtime` skips that safely. ([#229](https://github.com/ylab-hi/ScanNeo2/issues/229), [#231](https://github.com/ylab-hi/ScanNeo2/pull/231))
 
+### Fixed
+
+- **`self-similarity` is `.` instead of `-1` when it can't be computed**: when the WT epitope (the wildtype at the mutant epitope's positions) is empty or shorter than the mutant epitope, there is no full-length counterpart, and the `-1` written there read as a score outside the documented 0–1 range. It's now `.`, like the table's other missing values. On the TESLA cohort that is 9.9% of MHC-I rows, all frameshifts and in-frame insertions. **The column now mixes `.` and numbers**, so read it with `na_values="."` to filter or sort it numerically. ([#89](https://github.com/ylab-hi/ScanNeo2/issues/89), [#233](https://github.com/ylab-hi/ScanNeo2/pull/233))
+
 ## [0.7.0] - 2026-09-29
 
 ### Added
