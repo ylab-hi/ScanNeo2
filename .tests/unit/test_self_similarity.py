@@ -2,9 +2,11 @@
 
 The expected values are rows of a real neoepitope table (TESLA lung_patient12),
 and the score is computed by the unmodified self_similarity / corr_kernel with
-the workflow's BLOSUM62 matrix. When the mt epitope has no full-length wildtype
-counterpart (it lies in sequence a frameshift or insertion created), the wt
-epitope is empty or shorter and the score is ".".
+the workflow's BLOSUM62 matrix. Where the mt epitope runs past the end of the
+wildtype protein those positions carry the '$' padding effects.py applied (or
+the wt epitope is empty or shorter), the wildtype presents nothing there, and
+the score is ".". BLOSUM scores '$' as -inf, so a '$' row slipping past the
+guard would give a meaningless number rather than an error.
 """
 
 import sys
@@ -24,6 +26,8 @@ VIGFAISQQK\tVVGFAISQQK\t0.651784218713048
 MLTCPEAN\tSPVQRPTL\t2.084304252823848e-06
 YH\tVPLRTVAV\t.
 \tRTVAVLIRK\t.
+MK$$$$$$$\tRTVAVLIRK\t.
+$$$$$$$$$\tRTVAVLIRK\t.
 """
 
 
