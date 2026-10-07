@@ -63,8 +63,9 @@ class Immunogenicity:
         # IEDB's predict_immunogenicity.py only accepts peptides of the 20
         # standard amino acids: it sys.exit(1)s (reporting on stdout) on any
         # other character, and raises UnboundLocalError when handed an empty
-        # peptide list. After the wt-padding strip in prediction.py a fully
-        # novel epitope yields an empty wt sequence, so keep only the entries
+        # peptide list. Where the mt epitope runs past the end of the wildtype
+        # protein the wt epitope carries '$' padding (or is empty), and the
+        # wildtype presents nothing there to score, so keep only the entries
         # the tool can score; the rest get the '.' fallback in assign_scores().
         standard_aa = set("ACDEFGHIKLMNPQRSTVWY")
 
@@ -174,12 +175,14 @@ class SequenceSimilarity:
             mt_seq = mt_seqs[i]
 
             # The wt epitope is the wildtype at the mt epitope's positions.
-            # Where it is empty or shorter than the mt epitope (the mt epitope
-            # runs past the end of the wildtype, as after a frameshift or an
-            # insertion) there is no full-length counterpart, and corr_kernel
-            # compares positionally, so the score is not computable: "." as
-            # for the table's other missing values.
-            if pd.isna(wt_seq) or pd.isna(mt_seq) or len(wt_seq) != len(mt_seq):
+            # Where the mt epitope runs past the end of the wildtype protein
+            # (after an insertion or a frameshift) those positions are '$' and
+            # the wildtype presents nothing there, so there is nothing to
+            # compare and the score is not computable: "." as for the table's
+            # other missing values. BLOSUM scores '$' as -inf, so this guard
+            # also keeps corr_kernel from returning a meaningless number.
+            if (pd.isna(wt_seq) or pd.isna(mt_seq)
+                    or len(wt_seq) != len(mt_seq) or "$" in wt_seq):
                 selfsim.append(".")
             else:
                 # calculate the correlation kernel

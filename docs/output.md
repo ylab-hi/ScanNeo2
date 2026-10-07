@@ -155,7 +155,7 @@ In addition, the `mhc-I_neoepitopes.txt` is partly redundant to `variant_effects
 | group | String | The group of the variant |
 | var_type | String | The effect of the variant (e.g., inframe deletion,...) |
 | var_start | Number | 0-based start position of the variant in the annotation |
-| wt_epitope_seq | String | wildtype sequence of the epitope |
+| wt_epitope_seq | String | The peptide the wildtype protein presents at the mutant epitope's position. A trailing run of `$` marks positions past the end of the wildtype protein, where it has no residue because the mutant is longer (after an insertion, or a frameshift reading past the wildtype stop); an all-`$` value means the wildtype presents nothing there. Those positions have no wildtype peptide, so `wt_epitope_ic50`, `wt_epitope_rank`, `agretopicity` and `self-similarity` are `.` |
 | wt_epitope_seq_ic50 | Float | binding affinity of the wildtype sequence |
 | wt_epitope_rank | Float | rank of the wildtype epitope | 
 | mt_epitope_seq | String | mutant sequence of the epitope |
@@ -169,7 +169,7 @@ In addition, the `mhc-I_neoepitopes.txt` is partly redundant to `variant_effects
 | PTC_dist_ejc | Integer | Distance of the premature stop codon (PTC) to the next exon junction |
 | PTC_exon_number | Integer | Exon number the PTC occurs in |
 | NMD_escape_rule | Integer | Rule used to escape the NMD pathway (if applicable) |
-| wt_immunogenicity | Float | Immunogenicity score of the wildtype epitope. A higher score indicates a greater probability of eliciting an immune response |
+| wt_immunogenicity | Float | Immunogenicity score of the wildtype epitope. A higher score indicates a greater probability of eliciting an immune response. `.` where the wildtype presents no peptide at that position (see `wt_epitope_seq`), so there is nothing to score |
 | mt_immunogenicity | Float | Immunogenicity score of the mutant epitope. A higher score indicates a greater probability of eliciting an immune response |
 | self-similarity | Float | Similarity measure between the wildtype and mutant epitope. Float values between 0 and 1. `0` Indicates no similarity or a complete difference between the WT and MT sequences. `1` Indicates perfect similarity, meaning the WT and MT sequences are identical in terms of their k-mer similarities. `.` when the wildtype epitope (the wildtype at the mutant epitope's positions) is empty or shorter than the mutant epitope, as when the mutant epitope runs past the end of the wildtype after a frameshift or insertion; `proteome_similarity` then describes how self-like it is. A frameshift or insertion epitope that does have a full-length wildtype at its positions is still scored, against that positional wildtype, which need not be its biological counterpart.
 | pathogen_similarity | Float | Similarity measure between the mutant epitope and known pathogens - more details below |

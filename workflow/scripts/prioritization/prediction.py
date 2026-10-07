@@ -86,9 +86,11 @@ class BindingAffinities:
                 next(fh)   # skip header
                 for line in fh:
                     entries = line.rstrip().split('\t')
-                    # drop the wt-padding sentinel: '$' marks positions where
-                    # the wildtype has no residue (mt is longer). It is internal
-                    # to effects.py and must not reach epitope output or scoring.
+                    # '$' marks positions past the end of the wildtype protein,
+                    # where it has no residue because the mutant is longer
+                    # (effects.py: adjust_wildtype). Strip it here so it never
+                    # reaches the prediction tool; the reported wt epitope keeps
+                    # it, to show that the wildtype presents nothing there.
                     entries[9] = entries[9].split('$')[0]
                     for epilen in epilens:
                         aa_var_start = int(entries[12])
@@ -236,6 +238,11 @@ class BindingAffinities:
                     # extract the subsequences (needed to determine the wt epitope)
                     wt_subseq = entry[9]
                     mt_subseq = entry[10]
+                    # effects.py padded the wildtype to the mutant's length with
+                    # '$' and the parse above stripped it; restore it so an
+                    # epitope reaching past the end of the wildtype protein
+                    # reports which positions have no wildtype residue
+                    wt_padded = wt_subseq.ljust(len(mt_subseq), '$')
 
                     for epilen_idx in range(0, len(epilens)):
 
@@ -284,8 +291,11 @@ class BindingAffinities:
                             final["mt_epitope_seq"] = epitope
 
                             # the wt epitope occupies the same coordinates in
-                            # wt_subseq as the mt epitope does in mt_subseq
-                            final["wt_epitope_seq"] = wt_subseq[startpos:startpos+len(epitope)]
+                            # the wildtype as the mt epitope does in mt_subseq;
+                            # trailing '$' means the wildtype protein ends there,
+                            # so it has no peptide to present and no prediction,
+                            # which leaves the ic50 lookup below empty
+                            final["wt_epitope_seq"] = wt_padded[startpos:startpos+len(epitope)]
                             wt_alleles = {
                                 allele: (ic50, rank)
                                 for allele, ic50, rank in db.execute(
