@@ -406,10 +406,50 @@ rule index_merged_short_indels_m2:
         "v4.0.0/bio/bcftools/index"
 
 
-rule select_short_indels_m2:
+rule normalize_calls_m2:
     input:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz",
         idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz.tbi",
+        ref="resources/refs/genome.fasta",
+    output:
+        "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
+    log:
+        "logs/{sample}/indel/normalize_calls_m2_{seqtype}_{group}.log",
+    conda:
+        "../envs/bcftools.yml"
+    message:
+        "Splitting multiallelic records and trimming to minimal representation on sample:{wildcards.sample} with group:{wildcards.group}"
+    # GATK types a multiallelic record whose ALTs are of different kinds (a
+    # substitution and an indel) as MIXED, which neither select_SNVs_m2 (SNP,
+    # MNP) nor select_short_indels_m2 (INDEL) selects, so the whole record was
+    # dropped. Splitting into biallelic records types every allele on its own.
+    # -f also trims to the minimal representation, which turns such a record's
+    # padded substitution (GCACA>ACACA) into the SNV it is (G>A); without it
+    # GATK would read that allele as an MNP. bcftools subsets AD/AF and the
+    # other per-allele fields as it splits.
+    shell:
+        """
+        bcftools norm -m -any -f {input.ref} -O z -o {output} {input.vcf} >{log} 2>&1
+        """
+
+
+rule index_normalized_calls_m2:
+    input:
+        "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
+    output:
+        "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz.tbi",
+    log:
+        "logs/{sample}/indel/index_normalized_calls_m2_{seqtype}_{group}.log",
+    message:
+        "Indexing the normalized somatic calls on sample:{wildcards.sample} with group:{wildcards.group}"
+    wrapper:
+        "v4.0.0/bio/bcftools/index"
+
+
+rule select_short_indels_m2:
+    input:
+        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
+        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz.tbi",
         ref="resources/refs/genome.fasta",
     output:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf",
@@ -491,8 +531,8 @@ rule combine_aug_short_indels_m2:
 
 rule select_SNVs_m2:
     input:
-        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz",
-        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz.tbi",
+        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
+        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz.tbi",
         ref="resources/refs/genome.fasta",
     output:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf",
