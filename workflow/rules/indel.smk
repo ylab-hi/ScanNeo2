@@ -411,6 +411,7 @@ rule normalize_calls_m2:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz",
         idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz.tbi",
         ref="resources/refs/genome.fasta",
+        ref_idx="resources/refs/genome.fasta.fai",
     output:
         "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
     log:
@@ -621,6 +622,8 @@ rule build_germline_reference:
     input:
         snvs="results/{sample}/{seqtype}/indel/htcaller/{group}_snvs.final.flt.vcf",
         indels="results/{sample}/{seqtype}/indel/htcaller/{group}_indel.final.flt.vcf",
+        ref="resources/refs/genome.fasta",
+        ref_idx="resources/refs/genome.fasta.fai",
     output:
         vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_germline.final.vcf.gz",
         tbi="results/{sample}/{seqtype}/indel/htcaller/{group}_germline.final.vcf.gz.tbi",
@@ -630,13 +633,22 @@ rule build_germline_reference:
         "../envs/bcftools.yml"
     message:
         "Building germline reference (final-round SNVs + indels) for sample:{wildcards.sample} group:{wildcards.group}"
+    # subtract_germline_* match with `bcftools isec`, which compares whole
+    # REF/ALT sets, so a germline variant is only subtracted when both sides
+    # write it the same way. Normalizing here with the same `norm -m -any -f`
+    # the somatic calls get keeps the two sides comparable: every allele is its
+    # own biallelic record in the minimal representation, so a germline allele
+    # matches whether HaplotypeCaller grouped it with others or padded it
+    # differently than Mutect2 did.
     shell:
         """
         (
             tmp=$(mktemp -d)
             bcftools view -O z -o $tmp/snvs.vcf.gz {input.snvs} && bcftools index -t $tmp/snvs.vcf.gz
             bcftools view -O z -o $tmp/indels.vcf.gz {input.indels} && bcftools index -t $tmp/indels.vcf.gz
-            bcftools concat -a $tmp/snvs.vcf.gz $tmp/indels.vcf.gz | bcftools sort -O z -o {output.vcf}
+            bcftools concat -a $tmp/snvs.vcf.gz $tmp/indels.vcf.gz \
+                | bcftools norm -m -any -f {input.ref} \
+                | bcftools sort -O z -o {output.vcf}
             bcftools index -t {output.vcf}
             rm -rf $tmp
         ) >{log} 2>&1
