@@ -412,39 +412,43 @@ rule normalize_calls_m2:
         idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz.tbi",
         ref="resources/refs/genome.fasta",
         ref_idx="resources/refs/genome.fasta.fai",
+        ref_dict="resources/refs/genome.dict",
     output:
-        "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
+        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
+        tbi="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz.tbi",
     log:
         "logs/{sample}/indel/normalize_calls_m2_{seqtype}_{group}.log",
     conda:
-        "../envs/bcftools.yml"
+        "../envs/gatk.yml"
+    resources:
+        mem_mb=1024,
     message:
-        "Splitting multiallelic records and trimming to minimal representation on sample:{wildcards.sample} with group:{wildcards.group}"
-    # GATK types a multiallelic record whose ALTs are of different kinds (a
-    # substitution and an indel) as MIXED, which neither select_SNVs_m2 (SNP,
-    # MNP) nor select_short_indels_m2 (INDEL) selects, so the whole record was
-    # dropped. Splitting into biallelic records types every allele on its own.
-    # -f also trims to the minimal representation, which turns such a record's
-    # padded substitution (GCACA>ACACA) into the SNV it is (G>A); without it
-    # GATK would read that allele as an MNP. bcftools subsets AD/AF and the
-    # other per-allele fields as it splits.
+        "Splitting multiallelic records into biallelic ones on sample:{wildcards.sample} with group:{wildcards.group}"
+    # A multiallelic record whose ALTs are of different kinds (a substitution and
+    # an indel) is typed MIXED, which neither select_SNVs_m2 (SNP, MNP) nor
+    # select_short_indels_m2 (INDEL) selects, so the whole record is lost.
+    # Splitting types every allele on its own, and trimming turns a padded
+    # substitution (GCACA>ACACA) into the SNV it is (G>A) so it is not read as
+    # an MNP.
+    #
+    # This has to be GATK and not `bcftools norm`: the FILTER column holds the
+    # most lenient status across all alleles, so an allele Mutect2 rejected
+    # inherits PASS when the record is split, and the per-allele truth lives in
+    # AS_FilterStatus. That field declares Number=A but separates alleles with
+    # '|' and the filters within one allele with ',', so a spec-compliant parser
+    # splits it on the wrong delimiter and misassigns it. GATK knows its own
+    # annotation, and promotes each allele's status into that record's FILTER
+    # on top of the site-level filters, which is what --exclude-filtered then
+    # reads downstream.
     shell:
         """
-        bcftools norm -m -any -f {input.ref} -O z -o {output} {input.vcf} >{log} 2>&1
+        (
+            tmp=$(mktemp -d)
+            trap 'st=$?; rm -rf "$tmp" || true; exit $st' EXIT
+            gatk LeftAlignAndTrimVariants -R {input.ref} -V {input.vcf} \
+                -O {output.vcf} --split-multi-allelics --tmp-dir "$tmp"
+        ) >{log} 2>&1
         """
-
-
-rule index_normalized_calls_m2:
-    input:
-        "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
-    output:
-        "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz.tbi",
-    log:
-        "logs/{sample}/indel/index_normalized_calls_m2_{seqtype}_{group}.log",
-    message:
-        "Indexing the normalized somatic calls on sample:{wildcards.sample} with group:{wildcards.group}"
-    wrapper:
-        "v4.0.0/bio/bcftools/index"
 
 
 rule select_short_indels_m2:
