@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Multiallelic Mutect2 records no longer lose alleles, get mis-annotated, or launder rejected alleles**: GATK types a *record* by its whole ALT set, so a record mixing a substitution and an indel is `MIXED` — selected by neither the `INDEL` nor the `SNP`/`MNP` path, so the record and all its alleles vanished silently (1,589 PASS `MIXED` sites across the TESLA cohort, 86–372 per sample). Records whose ALTs were all one kind *were* selected, but VEP annotates a multiallelic record's per-allele fields incorrectly: the Downstream plugin prepends spurious residues and both alleles share one `Protein_position`, so every frameshift peptide built from such a record was fabricated. A new `normalize_calls_m2` rule splits the merged calls into biallelic records with `gatk LeftAlignAndTrimVariants --split-multi-allelics` before selection, and trimming collapses a padded substitution (`GCACA>ACACA`) to the SNV it is (`G>A`) rather than an `MNP`. GATK is required rather than `bcftools norm` because `FILTER` holds the *most lenient* status across all alleles, so a naive split copies `PASS` onto alleles Mutect2 rejected, and the per-allele truth in `AS_FilterStatus` declares `Number=A` while separating alleles with `|` — a spec-compliant parser splits it on the wrong delimiter. GATK reads its own annotation and promotes each allele's status into that record's `FILTER` on top of the site-level filters, so `--exclude-filtered` sees it: 26,877 of 7,687,117 PASS alleles (0.35%) carry an allele-specific rejection and are now excluded. The germline reference is normalized the same way, because `bcftools isec` compares whole REF/ALT sets and would otherwise stop matching the now-biallelic somatic calls (32,140 of 1,137,660 germline records are multiallelic; 118 germline alleles per sample were leaking through). TESLA validated recall is unchanged at 32/34. ([#222](https://github.com/ylab-hi/ScanNeo2/issues/222), [#236](https://github.com/ylab-hi/ScanNeo2/pull/236))
+
 ## [0.7.1] - 2026-10-07
 
 ### Changed
