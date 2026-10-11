@@ -421,7 +421,7 @@ rule normalize_calls_m2:
     conda:
         "../envs/gatk.yml"
     resources:
-        mem_mb=1024,
+        mem_mb=4096,
     message:
         "Splitting multiallelic records into biallelic ones on sample:{wildcards.sample} with group:{wildcards.group}"
     # A multiallelic record whose ALTs are of different kinds (a substitution and
@@ -440,13 +440,26 @@ rule normalize_calls_m2:
     # annotation, and promotes each allele's status into that record's FILTER
     # on top of the site-level filters, which is what --exclude-filtered then
     # reads downstream.
+    #
+    # --max-indel-length has to clear the longest indel Mutect2 emits (401 bp
+    # across the TESLA cohort): past the limit the record is still written and
+    # still split, but it is left where it is instead of being left-aligned,
+    # and build_germline_reference has no such limit. A shiftable indel over
+    # the limit would then be written one way on the germline side and another
+    # on the somatic side, and the subtraction compares whole REF/ALT sets.
+    #
+    # -Xmx is set explicitly because gatk is invoked directly rather than
+    # through a wrapper, so nothing derives the heap from resources.mem_mb. The
+    # JVM would otherwise default to a quarter of the node's memory and could
+    # grow past the allocation under GC pressure; measured peak RSS is ~404 MB.
     shell:
         """
         (
             tmp=$(mktemp -d)
             trap 'st=$?; rm -rf "$tmp" || true; exit $st' EXIT
-            gatk LeftAlignAndTrimVariants -R {input.ref} -V {input.vcf} \
-                -O {output.vcf} --split-multi-allelics --tmp-dir "$tmp"
+            gatk --java-options "-Xmx3g" LeftAlignAndTrimVariants \
+                -R {input.ref} -V {input.vcf} -O {output.vcf} \
+                --split-multi-allelics --max-indel-length 1000 --tmp-dir "$tmp"
         ) >{log} 2>&1
         """
 
@@ -639,11 +652,13 @@ rule build_germline_reference:
         "Building germline reference (final-round SNVs + indels) for sample:{wildcards.sample} group:{wildcards.group}"
     # subtract_germline_* match with `bcftools isec`, which compares whole
     # REF/ALT sets, so a germline variant is only subtracted when both sides
-    # write it the same way. Normalizing here with the same `norm -m -any -f`
-    # the somatic calls get keeps the two sides comparable: every allele is its
-    # own biallelic record in the minimal representation, so a germline allele
-    # matches whether HaplotypeCaller grouped it with others or padded it
-    # differently than Mutect2 did.
+    # write it the same way. Splitting and trimming here puts this side in the
+    # same form normalize_calls_m2 puts the somatic calls in, so a germline
+    # allele matches whether HaplotypeCaller grouped it with others or padded
+    # it differently than Mutect2 did. bcftools rather than GATK because these
+    # calls carry no allele-specific annotation for a generic parser to
+    # mangle; the two tools were measured to agree on (CHROM, POS, REF, ALT)
+    # over a whole sample's calls.
     shell:
         """
         (
@@ -748,9 +763,11 @@ rule remove_rna_editing:
     # tumor-specific edits as their own neoepitope class needs a dedicated
     # RNA-vs-DNA editing caller, tracked separately (see issue #189).
     #
-    # RE is a record-level flag set when *any* ALT is a known edit, so restrict the
-    # drop to biallelic records (N_ALT=1); a multiallelic record mixing an edit with
-    # a real somatic ALT is kept intact rather than dropping the somatic allele too.
+    # RE is a record-level flag set when *any* ALT is a known edit, so dropping on
+    # it alone would take a somatic ALT sharing the record with an edit. Every
+    # record here is biallelic -- select_SNVs_m2 reads the split calls -- so RE=1
+    # names exactly one allele and the edit is dropped without touching anything
+    # else. N_ALT=1 is kept so the rule stays correct for a multiallelic input.
     shell:
         """
         bcftools view -e 'INFO/RE=1 && N_ALT=1' -O z -o {output} {input} >{log} 2>&1
