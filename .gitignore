@@ -16,8 +16,3 @@ __pycache__/
 # which a depth-agnostic pattern would silently ignore.
 /results/
 /logs/
-
-# TESLA benchmark export. Regenerated from the tracked tables by
-# `python benchmark/tesla_recall.py --export <file>`; ~0.9 MB and specific to one
-# pipeline run, so the headline numbers live in benchmark/TESLA/README.md instead.
-/benchmark/TESLA/scanneo2_matched_predictions.tsv

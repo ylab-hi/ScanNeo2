@@ -30,11 +30,13 @@ S7 also lacks `MHC`, `FRAC_HYDROPHOBIC`, `NUMBER_PREDICTING`, `TCR_FLOW_I` and
 
 ## Reachable denominator
 
-`config/samples_tesla.tsv` covers melanoma 1, 2, 3, 4, 8, 9 and lung 12, 16 — i.e. five of
-the six main-cohort subjects plus all three validation-cohort subjects. **Subject 10 is not
-reachable**: it holds 3 immunogenic pMHC but its WES/RNA is not available via Synapse
-(<https://www.synapse.org/#!Synapse:syn21048999>), so it is excluded, as it is in published
-comparisons.
+The benchmark runs over melanoma subjects 1, 2, 3, 4, 8, 9 and lung subjects 12, 16 — five of
+the six main-cohort subjects plus all three validation-cohort subjects. The subject-to-sample
+mapping is in `SAMPLES` at the top of `benchmark/tesla_recall.py`.
+
+**Subject 10 is not reachable**: it holds 3 immunogenic pMHC, but its WES/RNA is not
+available via Synapse (<https://www.synapse.org/#!Synapse:syn21048999>), so it is excluded,
+as it is in published comparisons.
 
 ```
 main cohort   37 immunogenic - 3 (subject 10) = 34 reachable
@@ -55,19 +57,36 @@ are MHC class I, 8-11 aa, so none falls outside what ScanNeo2 predicts.
   of them means they were already discarded before any prioritisation filter ran. A low
   number here is not a sensitivity gap, and should not be chased.
 
-Run `python benchmark/tesla_recall.py` to reproduce. `--export <file>` additionally writes
-every matching prediction row with `tesla_subject` and `tesla_validated` prepended to the
-full neoepitope record, which is how the per-hit gene, IC50, VAF and TPM were obtained
-below. That export is gitignored: it is ~0.9 MB and specific to one pipeline run, so the
-numbers here are the durable record. Regenerate it with
+Run `python benchmark/tesla_recall.py` to reproduce, and regenerate the overlap file with
 
 ```
-python benchmark/tesla_recall.py --export benchmark/TESLA/scanneo2_matched_predictions.tsv
+python benchmark/tesla_recall.py --export benchmark/TESLA/scanneo2_tesla_overlap.tsv
 ```
 
 The script asserts the two published invariants (38 reachable immunogenic pMHC, 845
 reachable assessed pMHC), so a mangled table or a wrong subject mapping fails loudly
 instead of quietly changing the score.
+
+## `scanneo2_tesla_overlap.tsv`
+
+Every ScanNeo2 prediction that overlaps a TESLA-assessed pMHC, committed alongside the
+reference tables so the numbers below can be inspected without rerunning the pipeline.
+3322 rows: `tesla_subject` and `tesla_validated` prepended to the full neoepitope record,
+so each hit carries its gene, source, IC50, VAF, TPM, agretopicity, self-similarity,
+NMD and pathogen/proteome-similarity fields.
+
+210 rows are immunogenic and 3112 non-immunogenic; a pMHC can appear on several rows when
+the peptide arises from more than one transcript, so de-duplicate on
+`(tesla_subject, mt_epitope_seq)` to recover the 36 and 586 counted below.
+
+## Version
+
+Measured with **ScanNeo2 v0.7.1 plus the then-unreleased changes from #236**, which is
+`ecfd314` on `main`. Recorded because the score is only meaningful against a known
+pipeline version. These numbers should be stable: variant calling, annotation and
+prediction are fixed, so only a change that alters which peptides are proposed — a new
+neoepitope source, a filter change, a different caller or HLA typer — should move them.
+If a routine change does move them, that is worth investigating rather than accepting.
 
 ## Results
 
