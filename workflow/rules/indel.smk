@@ -406,10 +406,68 @@ rule index_merged_short_indels_m2:
         "v4.0.0/bio/bcftools/index"
 
 
-rule select_short_indels_m2:
+rule normalize_calls_m2:
     input:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz",
         idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz.tbi",
+        ref="resources/refs/genome.fasta",
+        ref_idx="resources/refs/genome.fasta.fai",
+        ref_dict="resources/refs/genome.dict",
+    output:
+        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
+        tbi="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz.tbi",
+    log:
+        "logs/{sample}/indel/normalize_calls_m2_{seqtype}_{group}.log",
+    conda:
+        "../envs/gatk.yml"
+    resources:
+        mem_mb=4096,
+    message:
+        "Splitting multiallelic records into biallelic ones on sample:{wildcards.sample} with group:{wildcards.group}"
+    # A multiallelic record whose ALTs are of different kinds (a substitution and
+    # an indel) is typed MIXED, which neither select_SNVs_m2 (SNP, MNP) nor
+    # select_short_indels_m2 (INDEL) selects, so the whole record is lost.
+    # Splitting types every allele on its own, and trimming turns a padded
+    # substitution (GCACA>ACACA) into the SNV it is (G>A) so it is not read as
+    # an MNP.
+    #
+    # This has to be GATK and not `bcftools norm`: the FILTER column holds the
+    # most lenient status across all alleles, so an allele Mutect2 rejected
+    # inherits PASS when the record is split, and the per-allele truth lives in
+    # AS_FilterStatus. That field declares Number=A but separates alleles with
+    # '|' and the filters within one allele with ',', so a spec-compliant parser
+    # splits it on the wrong delimiter and misassigns it. GATK knows its own
+    # annotation, and promotes each allele's status into that record's FILTER
+    # on top of the site-level filters, which is what --exclude-filtered then
+    # reads downstream.
+    #
+    # --max-indel-length has to clear the longest indel Mutect2 emits (401 bp
+    # across the TESLA cohort): past the limit the record is still written and
+    # still split, but it is left where it is instead of being left-aligned,
+    # and build_germline_reference has no such limit. A shiftable indel over
+    # the limit would then be written one way on the germline side and another
+    # on the somatic side, and the subtraction compares whole REF/ALT sets.
+    #
+    # -Xmx is set explicitly because gatk is invoked directly rather than
+    # through a wrapper, so nothing derives the heap from resources.mem_mb. The
+    # JVM would otherwise default to a quarter of the node's memory and could
+    # grow past the allocation under GC pressure; measured peak RSS is ~404 MB.
+    shell:
+        """
+        (
+            tmp=$(mktemp -d)
+            trap 'st=$?; rm -rf "$tmp" || true; exit $st' EXIT
+            gatk --java-options "-Xmx3g" LeftAlignAndTrimVariants \
+                -R {input.ref} -V {input.vcf} -O {output.vcf} \
+                --split-multi-allelics --max-indel-length 1000 --tmp-dir "$tmp"
+        ) >{log} 2>&1
+        """
+
+
+rule select_short_indels_m2:
+    input:
+        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
+        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz.tbi",
         ref="resources/refs/genome.fasta",
     output:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.short.indels.vcf",
@@ -491,8 +549,8 @@ rule combine_aug_short_indels_m2:
 
 rule select_SNVs_m2:
     input:
-        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz",
-        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.vcf.gz.tbi",
+        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
+        idx="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz.tbi",
         ref="resources/refs/genome.fasta",
     output:
         vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_somatic.snvs.vcf",
@@ -581,6 +639,8 @@ rule build_germline_reference:
     input:
         snvs="results/{sample}/{seqtype}/indel/htcaller/{group}_snvs.final.flt.vcf",
         indels="results/{sample}/{seqtype}/indel/htcaller/{group}_indel.final.flt.vcf",
+        ref="resources/refs/genome.fasta",
+        ref_idx="resources/refs/genome.fasta.fai",
     output:
         vcf="results/{sample}/{seqtype}/indel/htcaller/{group}_germline.final.vcf.gz",
         tbi="results/{sample}/{seqtype}/indel/htcaller/{group}_germline.final.vcf.gz.tbi",
@@ -590,13 +650,24 @@ rule build_germline_reference:
         "../envs/bcftools.yml"
     message:
         "Building germline reference (final-round SNVs + indels) for sample:{wildcards.sample} group:{wildcards.group}"
+    # subtract_germline_* match with `bcftools isec`, which compares whole
+    # REF/ALT sets, so a germline variant is only subtracted when both sides
+    # write it the same way. Splitting and trimming here puts this side in the
+    # same form normalize_calls_m2 puts the somatic calls in, so a germline
+    # allele matches whether HaplotypeCaller grouped it with others or padded
+    # it differently than Mutect2 did. bcftools rather than GATK because these
+    # calls carry no allele-specific annotation for a generic parser to
+    # mangle; the two tools were measured to agree on (CHROM, POS, REF, ALT)
+    # over a whole sample's calls.
     shell:
         """
         (
             tmp=$(mktemp -d)
             bcftools view -O z -o $tmp/snvs.vcf.gz {input.snvs} && bcftools index -t $tmp/snvs.vcf.gz
             bcftools view -O z -o $tmp/indels.vcf.gz {input.indels} && bcftools index -t $tmp/indels.vcf.gz
-            bcftools concat -a $tmp/snvs.vcf.gz $tmp/indels.vcf.gz | bcftools sort -O z -o {output.vcf}
+            bcftools concat -a $tmp/snvs.vcf.gz $tmp/indels.vcf.gz \
+                | bcftools norm -m -any -f {input.ref} \
+                | bcftools sort -O z -o {output.vcf}
             bcftools index -t {output.vcf}
             rm -rf $tmp
         ) >{log} 2>&1
@@ -692,9 +763,11 @@ rule remove_rna_editing:
     # tumor-specific edits as their own neoepitope class needs a dedicated
     # RNA-vs-DNA editing caller, tracked separately (see issue #189).
     #
-    # RE is a record-level flag set when *any* ALT is a known edit, so restrict the
-    # drop to biallelic records (N_ALT=1); a multiallelic record mixing an edit with
-    # a real somatic ALT is kept intact rather than dropping the somatic allele too.
+    # RE is a record-level flag set when *any* ALT is a known edit, so dropping on
+    # it alone would take a somatic ALT sharing the record with an edit. Every
+    # record here is biallelic -- select_SNVs_m2 reads the split calls -- so RE=1
+    # names exactly one allele and the edit is dropped without touching anything
+    # else. N_ALT=1 is kept so the rule stays correct for a multiallelic input.
     shell:
         """
         bcftools view -e 'INFO/RE=1 && N_ALT=1' -O z -o {output} {input} >{log} 2>&1
