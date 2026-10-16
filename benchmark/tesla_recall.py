@@ -84,15 +84,20 @@ def read_tesla(paths):
 
 
 def read_predicted(sample):
-    """Our predictions as {(allele, peptide): [row, ...]}, allele stripped of 'HLA-'."""
+    """Predictions as {(allele, peptide): [row, ...]}, allele stripped of 'HLA-'.
+
+    Also returns the file's column names, so --export knows the schema even when
+    nothing matched.
+    """
     hits = {}
     with open(predictions_path(sample), newline="") as fh:
         reader = csv.DictReader(fh, delimiter="\t")
+        columns = list(reader.fieldnames or [])
         for row in reader:
             allele = row["allele"].removeprefix("HLA-")
             hits.setdefault((allele, row["mt_epitope_seq"]), []).append(row)
     peptides = {pep for _, pep in hits}
-    return hits, peptides
+    return hits, peptides, columns
 
 
 def main():
@@ -112,7 +117,7 @@ def main():
         problems.append("edit SAMPLES at the top of this script for your own run")
         sys.exit("\n".join(problems))
 
-    export_rows, fieldnames = [], None
+    export_rows, columns = [], None
     totals = {k: 0 for k in ("v_found", "v_tot", "n_found", "n_tot", "pep_found")}
 
     assessed_total = sum(len(tesla[s]) for s in subjects)
@@ -126,7 +131,15 @@ def main():
     for subject in sorted(subjects, key=int):
         sample = subjects[subject]
         assessed = tesla[subject]
-        hits, peptides = read_predicted(sample)
+        hits, peptides, sample_columns = read_predicted(sample)
+        if columns is None:
+            columns = sample_columns
+        elif sample_columns != columns:
+            sys.exit(
+                f"{predictions_path(sample)} has different columns than the first "
+                "sample read; the export would be inconsistent. Re-run the pipeline "
+                "so every sample's prioritization table has the same schema."
+            )
 
         counts = {k: 0 for k in ("v_found", "v_tot", "n_found", "n_tot", "pep_found")}
         for allele, peptide, validated in assessed:
@@ -137,8 +150,6 @@ def main():
             if (allele, peptide) in hits:
                 counts[f"{key}_found"] += 1
                 for row in hits[(allele, peptide)]:
-                    if fieldnames is None:
-                        fieldnames = ["tesla_subject", "tesla_validated"] + list(row)
                     export_rows.append(
                         {"tesla_subject": subject,
                          "tesla_validated": "yes" if validated else "no", **row}
@@ -178,6 +189,10 @@ def main():
         f"{totals['v_tot']} scored vs {immunogenic_total} immunogenic")
 
     if args.export:
+        # columns come from the prediction files, not from a matched row, so a run
+        # with no matches writes a header-only file instead of truncating the
+        # destination and then failing in writeheader()
+        fieldnames = ["tesla_subject", "tesla_validated"] + columns
         with open(args.export, "w", newline="") as fh:
             writer = csv.DictWriter(fh, fieldnames=fieldnames, delimiter="\t")
             writer.writeheader()
