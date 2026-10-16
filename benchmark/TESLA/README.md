@@ -33,22 +33,14 @@ S7 also lacks `MHC`, `FRAC_HYDROPHOBIC`, `NUMBER_PREDICTING`, `TCR_FLOW_I` and
 The benchmark runs over five of the six main-cohort subjects plus all three
 validation-cohort subjects.
 
-Which TESLA subject corresponds to which sample is **a required input**, not something
-this directory can supply: the sample directory names come from whatever sample sheet
-configured the run, and nothing under `results/` records that a given directory is a
-particular TESLA subject. Pass a two-column TSV via `--subjects`:
-
-```
-# subject   sample          (a '#' comment or a header line is skipped)
-1           <sample dir under results/>
-2           <sample dir under results/>
-...
-```
-
-List only the subjects whose data you have — the denominators are derived from the
-subjects you list, so a partial cohort scores correctly against its own totals rather
-than looking like a low score. A subject that is not in the tables, or one whose
-`results/<sample>/prioritization/mhc-I_neoepitopes_all.txt` is absent, is reported and
+The subject-to-sample mapping is the `SAMPLES` dict at the top of
+`benchmark/tesla_recall.py`, with instructions to edit it. It has to be set by hand: the
+sample directory names come from whatever sample sheet configured the run, and nothing
+under `results/` records that a given directory is a particular TESLA subject. Delete any
+subject whose data you do not have — the denominators are derived from whatever is
+listed, so a partial cohort scores correctly against its own totals rather than looking
+like a low score. A subject absent from the tables, or one whose
+`results/<sample>/prioritization/mhc-I_neoepitopes_all.txt` is missing, is reported and
 the run stops before printing any figures.
 
 **Subject 10 is not reachable**: it holds 3 immunogenic pMHC, but its WES/RNA is not
@@ -77,7 +69,7 @@ are MHC class I, 8-11 aa, so none falls outside what ScanNeo2 predicts.
 Reproduce with
 
 ```
-python benchmark/tesla_recall.py --subjects <map.tsv> \
+python benchmark/tesla_recall.py \
     --export benchmark/TESLA/scanneo2_tesla_overlap.tsv
 ```
 
