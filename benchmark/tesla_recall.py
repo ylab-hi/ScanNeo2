@@ -14,7 +14,11 @@ A pMHC is counted as found when the mutant epitope sequence AND the HLA allele b
 match a row of results/<sample>/prioritization/mhc-I_neoepitopes_all.txt. Peptide-only
 matches are reported too, since the two differ when HLA typing disagrees.
 
-Usage: python benchmark/tesla_recall.py [--export <out.tsv>]
+Which TESLA subject corresponds to which sample is not derivable from anything in the
+repository or under results/ -- only whoever configured the run knows it -- so it is a
+required input rather than a constant here. See --subjects.
+
+Usage: python benchmark/tesla_recall.py --subjects <map.tsv> [--export <out.tsv>]
 """
 
 import argparse
@@ -27,21 +31,37 @@ TABLES = [
     "benchmark/TESLA/tesla_validation_cohort_tableS7.tsv",
 ]
 
-# TESLA subject id -> our sample directory. Subject 10 is omitted: it has 3 immunogenic
-# pMHC but its WES/RNA is not available via Synapse, so no pipeline can reach it.
-SAMPLES = {
-    "1": "melanoma_patient1",
-    "2": "melanoma_patient2",
-    "3": "melanoma_patient3",
-    "4": "melanoma_patient4",
-    "8": "melanoma_patient8",
-    "9": "melanoma_patient9",
-    "12": "lung_patient12",
-    "16": "lung_patient16",
-}
-
 # S4 writes VALIDATED as TRUE/FALSE, S7 as 1/0.
 TRUTHY = {"TRUE", "1"}
+
+
+def predictions_path(sample):
+    return Path(f"results/{sample}/prioritization/mhc-I_neoepitopes_all.txt")
+
+
+def read_subjects(path):
+    """{TESLA subject id: sample directory under results/} from a two-column TSV.
+
+    Blank lines and lines starting with '#' are skipped, as is a header row whose
+    first field is not a subject id.
+    """
+    mapping = {}
+    for lineno, line in enumerate(Path(path).read_text().splitlines(), 1):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        fields = line.split("\t")
+        if len(fields) < 2:
+            sys.exit(f"{path}:{lineno}: expected '<subject>\\t<sample>', got {line!r}")
+        subject, sample = fields[0].strip(), fields[1].strip()
+        if not subject.isdigit():  # tolerate a header line
+            continue
+        if subject in mapping:
+            sys.exit(f"{path}:{lineno}: subject {subject} listed twice")
+        mapping[subject] = sample
+    if not mapping:
+        sys.exit(f"{path}: no subject/sample pairs found")
+    return mapping
 
 
 def read_tesla(paths):
@@ -64,11 +84,8 @@ def read_tesla(paths):
 
 def read_predicted(sample):
     """Our predictions as {(allele, peptide): [row, ...]}, allele stripped of 'HLA-'."""
-    path = Path(f"results/{sample}/prioritization/mhc-I_neoepitopes_all.txt")
-    if not path.exists():
-        return None, None
     hits = {}
-    with open(path, newline="") as fh:
+    with open(predictions_path(sample), newline="") as fh:
         reader = csv.DictReader(fh, delimiter="\t")
         for row in reader:
             allele = row["allele"].removeprefix("HLA-")
@@ -79,23 +96,43 @@ def read_predicted(sample):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "--subjects", required=True, metavar="FILE",
+        help="TSV mapping each TESLA subject id to its sample directory under "
+             "results/, one '<subject>\\t<sample>' pair per line. Required: the "
+             "correspondence is specific to how the run was configured and cannot "
+             "be inferred. Omit subjects whose data you do not have -- the "
+             "denominators are derived from the subjects you list.",
+    )
     ap.add_argument("--export", help="write the matching prediction rows here")
     args = ap.parse_args()
 
+    subjects = read_subjects(args.subjects)
     tesla = read_tesla(TABLES)
+
+    # fail before reporting anything, so a partial cohort cannot look like a low score
+    problems = [f"subject {s} is not in the TESLA tables" for s in subjects
+                if s not in tesla]
+    problems += [f"subject {s}: no predictions at {predictions_path(d)}"
+                 for s, d in subjects.items() if not predictions_path(d).exists()]
+    if problems:
+        sys.exit("\n".join(problems))
+
     export_rows, fieldnames = [], None
     totals = {k: 0 for k in ("v_found", "v_tot", "n_found", "n_tot", "pep_found")}
 
+    assessed_total = sum(len(tesla[s]) for s in subjects)
+    immunogenic_total = sum(1 for s in subjects for *_, v in tesla[s] if v)
+    print(f"{len(subjects)} subjects from {args.subjects}: "
+          f"{assessed_total} assessed pMHC, {immunogenic_total} immunogenic")
+    print()
     print(f"{'subject':<9} {'sample':<20} {'immunogenic':>12} {'true neg':>12} {'assessed':>12}")
     print(f"{'':<9} {'':<20} {'(want high)':>12} {'(want low)':>12} {'':>12}")
     print("-" * 70)
-    for subject in sorted(SAMPLES, key=int):
-        sample = SAMPLES[subject]
-        assessed = tesla.get(subject, [])
+    for subject in sorted(subjects, key=int):
+        sample = subjects[subject]
+        assessed = tesla[subject]
         hits, peptides = read_predicted(sample)
-        if hits is None:
-            print(f"{subject:<9} {sample:<20} {'(no results)':>12}")
-            continue
 
         counts = {k: 0 for k in ("v_found", "v_tot", "n_found", "n_tot", "pep_found")}
         for allele, peptide, validated in assessed:
@@ -140,9 +177,11 @@ def main():
     print(f"peptide-only match      : {totals['pep_found']}/{a_tot}"
           "   (ignores the HLA allele)")
 
-    # the tables are fixed published data, so these totals are invariants
-    assert totals["v_tot"] == 38, f"expected 38 reachable immunogenic, got {totals['v_tot']}"
-    assert a_tot == 845, f"expected 845 reachable assessed pMHC, got {a_tot}"
+    # every listed subject is in the tables and has predictions, both checked above,
+    # so the scored denominators must equal the ones derived from the mapping
+    assert a_tot == assessed_total, f"{a_tot} scored vs {assessed_total} assessed"
+    assert totals["v_tot"] == immunogenic_total, (
+        f"{totals['v_tot']} scored vs {immunogenic_total} immunogenic")
 
     if args.export:
         with open(args.export, "w", newline="") as fh:

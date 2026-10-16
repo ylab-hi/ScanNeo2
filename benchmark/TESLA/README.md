@@ -30,9 +30,26 @@ S7 also lacks `MHC`, `FRAC_HYDROPHOBIC`, `NUMBER_PREDICTING`, `TCR_FLOW_I` and
 
 ## Reachable denominator
 
-The benchmark runs over melanoma subjects 1, 2, 3, 4, 8, 9 and lung subjects 12, 16 — five of
-the six main-cohort subjects plus all three validation-cohort subjects. The subject-to-sample
-mapping is in `SAMPLES` at the top of `benchmark/tesla_recall.py`.
+The benchmark runs over five of the six main-cohort subjects plus all three
+validation-cohort subjects.
+
+Which TESLA subject corresponds to which sample is **a required input**, not something
+this directory can supply: the sample directory names come from whatever sample sheet
+configured the run, and nothing under `results/` records that a given directory is a
+particular TESLA subject. Pass a two-column TSV via `--subjects`:
+
+```
+# subject   sample          (a '#' comment or a header line is skipped)
+1           <sample dir under results/>
+2           <sample dir under results/>
+...
+```
+
+List only the subjects whose data you have — the denominators are derived from the
+subjects you list, so a partial cohort scores correctly against its own totals rather
+than looking like a low score. A subject that is not in the tables, or one whose
+`results/<sample>/prioritization/mhc-I_neoepitopes_all.txt` is absent, is reported and
+the run stops before printing any figures.
 
 **Subject 10 is not reachable**: it holds 3 immunogenic pMHC, but its WES/RNA is not
 available via Synapse (<https://www.synapse.org/#!Synapse:syn21048999>), so it is excluded,
@@ -57,15 +74,19 @@ are MHC class I, 8-11 aa, so none falls outside what ScanNeo2 predicts.
   of them means they were already discarded before any prioritisation filter ran. A low
   number here is not a sensitivity gap, and should not be chased.
 
-Run `python benchmark/tesla_recall.py` to reproduce, and regenerate the overlap file with
+Reproduce with
 
 ```
-python benchmark/tesla_recall.py --export benchmark/TESLA/scanneo2_tesla_overlap.tsv
+python benchmark/tesla_recall.py --subjects <map.tsv> \
+    --export benchmark/TESLA/scanneo2_tesla_overlap.tsv
 ```
 
-The script asserts the two published invariants (38 reachable immunogenic pMHC, 845
-reachable assessed pMHC), so a mangled table or a wrong subject mapping fails loudly
-instead of quietly changing the score.
+Run it from the repository root; the table and `results/` paths are relative to it.
+
+The script prints the denominators it derived from the mapping before scoring anything —
+for the eight subjects above, 845 assessed pMHC of which 38 are immunogenic — so a
+mangled table or a short mapping is visible in the output rather than silently lowering
+the score.
 
 ## `scanneo2_tesla_overlap.tsv`
 
