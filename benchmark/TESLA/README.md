@@ -88,9 +88,22 @@ reference tables so the numbers below can be inspected without rerunning the pip
 so each hit carries its gene, source, IC50, VAF, TPM, agretopicity, self-similarity,
 NMD and pathogen/proteome-similarity fields.
 
-210 rows are immunogenic and 3112 non-immunogenic; a pMHC can appear on several rows when
-the peptide arises from more than one transcript, so de-duplicate on
-`(tesla_subject, mt_epitope_seq)` to recover the 36 and 586 counted below.
+210 rows are immunogenic and 3112 non-immunogenic. A pMHC spans several rows when the
+peptide arises from more than one transcript, and again when the variant was called by
+both DNA and RNA ([#244](https://github.com/ylab-hi/ScanNeo2/issues/244)), so the row
+count is not a pMHC count. De-duplicating does not return the figures below either,
+because those are assay-row counts — see the note on counting under Results:
+
+| de-duplication key | immunogenic | true negatives |
+|---|---|---|
+| none — assay rows, as reported below | 36 | **586** |
+| `(tesla_subject, allele, mt_epitope_seq)` | 36 | 583 |
+| `(tesla_subject, mt_epitope_seq)` | 36 | 580 |
+
+The immunogenic count is 36 under every key. For the true negatives, 586 → 583 drops the
+three pMHC that Table S4 lists twice, and 583 → 580 drops three peptides matched under
+two alleles in the same subject (`FLVYGVRPGM` and `SLFALGNVI` in subject 4 under
+`A*02:01` and `B*15:01`, `TTLATLVLPY` in subject 9 under `A*01:01` and `A*26:01`).
 
 ## Version
 
@@ -110,6 +123,14 @@ If a routine change does move them, that is worth investigating rather than acce
 | true negatives excluded | **221** | 120 |
 
 Identical sensitivity, with 101 more confirmed true negatives discarded before filtering.
+
+**On counting.** These are **assay rows**, not unique pMHC: Table S4 lists three of
+subject 12's pMHC twice, once per assay tissue (TIL and PBMC), identical in every other
+column. The row convention is the published one — the paper reports 608 tested pMHC for a
+608-row table, and nextNEOpi's subject-12 denominator of 89 is likewise its row count — so
+it is what makes the comparison above like-for-like. On unique pMHC the reachable
+denominators are 842 assessed / 804 true negatives / 38 immunogenic, and ScanNeo2 scores
+36/38 and 583/804 (72.5%); the ratio is unchanged.
 
 Per-subject immunogenic recall is identical to nextNEOpi in every subject: 9/9, 4/4, 12/13,
 4/4, 3/4 (main cohort) and 1/1, 1/1, 2/2 (validation cohort). nextNEOpi's figures are its
