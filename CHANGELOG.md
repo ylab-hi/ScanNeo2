@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **TESLA recall benchmark**: `benchmark/TESLA/` holds the published Wells et al. 2020 reference tables and `benchmark/tesla_recall.py` scores ScanNeo2's neoepitopes against them, replacing a hand-run check against an untracked file. Currently 36 of 38 validated peptides recovered. No workflow behaviour changes. ([#243](https://github.com/ylab-hi/ScanNeo2/pull/243))
+
 ### Changed
 
 - **A-to-I editing alleles are no longer kept by sharing a record with a somatic allele**: `INFO/RE` is set at the record level when *any* ALT is a known REDIportal edit, so `remove_rna_editing` restricts its drop to single-ALT records to avoid discarding a real somatic ALT alongside an edit. Now that multiallelic records are split before selection, `RE` names exactly one allele and the edit is removed on its own while its somatic neighbour survives — e.g. `chr1:68170326 TG>CA,CG` previously kept both alleles because the record carried two ALTs, and now drops only the `T>C` edit and keeps the `TG>CA` MNP. On a melanoma RNA sample this newly removes 465 editing alleles across 238 positions (0.6% of that sample's 71,992 editing drops), so **`somatic.snvs` candidate counts fall slightly** against earlier runs. Recovering tumour-specific edits as their own neoepitope class is tracked separately in [#189](https://github.com/ylab-hi/ScanNeo2/issues/189). ([#222](https://github.com/ylab-hi/ScanNeo2/issues/222), [#236](https://github.com/ylab-hi/ScanNeo2/pull/236))
