@@ -75,6 +75,14 @@ python benchmark/tesla_recall.py \
 
 Run it from the repository root; the table and `results/` paths are relative to it.
 
+**Interpreter.** Unlike the workflow rules, this script is run by hand and so has no
+`conda:` directive to pin one. It needs **Python ≥ 3.9** and nothing outside the standard
+library, so any sufficiently recent environment works — the Snakemake environment you run
+ScanNeo2 from is the obvious one, or `workflow/envs/prioritization.yml` (Python 3.11).
+Note that `workflow/envs/basic.yml` is Python 3.8 and will **not** run it, despite being
+the env most rules use. Do not assume the interpreter on `PATH` as `python3` is new
+enough; activate an environment first.
+
 The script prints the denominators it derived from the mapping before scoring anything —
 for the eight subjects above, 845 assessed pMHC of which 38 are immunogenic — so a
 mangled table or a short mapping is visible in the output rather than silently lowering
