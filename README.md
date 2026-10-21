@@ -14,7 +14,7 @@
 </div>
 
 ## What is ScanNeo22
-`Scanneo2` is a Snakemake workflow for predicting neoantigens from multiple sources. In its current state, 
+`ScanNeo2` is a Snakemake workflow for predicting neoantigens from multiple sources. In its current state, 
 this includes canonical splicing, exitron splicing, gene fusion, indels, and SNVs.
 
 ## Getting Started
