@@ -13,20 +13,20 @@
     <img src="https://img.shields.io/github/forks/ylab-hi/ScanNeo2?style=social">
 </div>
 
-## What is ScanNeo2
-`Scanneo2` is a snakemake workflow for the prediction of neoantigens from multiple sources. In its current state, 
-this includes canonical-splicing, exitron-splicing, gene fusion, indels and snvs.
+## What is ScanNeo22
+`Scanneo2` is a Snakemake workflow for predicting neoantigens from multiple sources. In its current state, 
+this includes canonical splicing, exon skipping, gene fusion, indels, and SNVs.
 
 ## Getting Started
 
-In principle, Scanneo2 aims to resolve its dependencies automatically and requires only snakemake and snakedeploy.
+In principle, ScanNeo2 aims to resolve its dependencies automatically and requires only snakemake and snakedeploy.
 
 ### Prerequisites
 
 Before installing and using ScanNeo2, make sure you have the following software installed:
 
 1. [Mamba](https://github.com/conda-forge/miniforge#mambaforge): An open-source package manager. 
-Mamba should be installed independently by the user.
+Users should install Mamba independently.
 
 ### Installation
 
@@ -52,8 +52,8 @@ cd ScanNeo2
 
 3. (Optional) Install HLA-HD
 
-    ScanNeo2 employs HLA-HD for HLA Class II genotyping which is required when ScanNeo2 has been configured to predict class II neoantigens. 
-    Due to license reasons it has to be installed manually (download request). Please follow the instructions on the official 
+    ScanNeo2 employs HLA-HD for HLA Class II genotyping, which is required when ScanNeo2 has been configured to predict class II neoantigens. 
+    Due to licensing reasons, it has to be installed manually (download request). Please follow the instructions on the official 
     [website](https://w3.genome.med.kyoto-u.ac.jp/HLA-HD/). ScanNeo2 invokes HLA-HD's `hlahd.sh` script directly, so the 
     HLA-HD `bin/` directory must be on your `PATH` (i.e. running `hlahd.sh` from any directory must succeed). 
     ScanNeo2 has been tested using HLA-HD v1.7.1
@@ -78,9 +78,9 @@ cd /path/to/your/working/directory/
 snakemake --cores all --software-deployment-method conda 
 ```
 
-Note that snakemake currently does not support Mamba v2. We recommend to either use Mamba v1, or provide the option `--conda-frontend conda`.
+Note that snakemake currently does not support Mamba v2. We recommend either using Mamba v1 or providing the option `--conda-frontend conda`.
 
-In addition, custom configfiles can be configured using `--configfile <path/to/configfile>`. In principle, this merely 
+In addition, custom config files can be configured using `--configfile <path/to/configfile>`. In principle, this merely 
 overwrites the default config, and should include all key/value pairs of the valid config file.
 
 For more detailed instructions and explanations on how to use ScanNeo2, please consult the [documentation site](https://ylab-hi.github.io/ScanNeo2/) (the GitHub [wiki](https://github.com/ylab-hi/ScanNeo2/wiki) is kept in sync as a fallback).
@@ -106,7 +106,7 @@ easier to get started.
 In additon, we provided test data in `.tests/integration` with configuration and resulting file that can be used 
 to test the installation. 
 
-For example, the following will run the the workflow with custom provided variants:
+For example, the following will run the workflow with custom-provided variants:
 ```
 snakemake --cores all --sdm conda --configfile .tests/integration/custom-test/config/config.yaml
 ```
@@ -117,7 +117,7 @@ snakemake --cores all --sdm conda --configfile .tests/integration/indel-test/con
 
 ## System requirements
 
-We recommend to run ScanNeo2 on a system with at least 64GB
+We recommend running ScanNeo2 on a system with at least 64GB
 
 
 ## Troubleshooting
@@ -144,7 +144,7 @@ Please don't hesitate to reach out with any questions or feedback
 
 ## License
 
-ScanNeo2 is licensed under MIT License.
+ScanNeo2 is licensed under the MIT License.
 
 ## Contact
 
