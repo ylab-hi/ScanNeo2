@@ -145,7 +145,8 @@ rule long_indel_augment:
             {input} \
             long_indel \
             {wildcards.group} \
-            {output}_infos >{log} 2>&1
+            {output}_infos \
+            {wildcards.seqtype} >{log} 2>&1
 
         python3 workflow/scripts/add_contigs_to_vcf.py \
             {output}_infos \
@@ -505,7 +506,8 @@ rule augment_short_indels_m2:
             {input} \
             short_indel \
             {wildcards.group} \
-            {output} >{log} 2>&1
+            {output} \
+            {wildcards.seqtype} >{log} 2>&1
         """
 
 
@@ -588,7 +590,8 @@ rule augment_somatic_SNVs_m2:
             {input} \
             snv \
             {wildcards.group} \
-            {output} >{log} 2>&1
+            {output} \
+            {wildcards.seqtype} >{log} 2>&1
         """
 
 

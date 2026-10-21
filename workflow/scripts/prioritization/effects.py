@@ -46,7 +46,7 @@ class VariantEffects:
     def change_entry(self, chrom, start, end, gene_id, gene_name, 
                      transcript_id, transcript, transcript_bp, source, 
                      group, var_type, var_start, wt_seq, mt_seq, vaf, ao, 
-                     dp, nmd_event):
+                     dp, nmd_event, seqtype=None):
 
         self.data = {}
         self.data["chrom"] = chrom
@@ -59,6 +59,9 @@ class VariantEffects:
         self.data["transcript_bp"] = transcript_bp
         self.data["source"] = source
         self.data["group"] = group
+        # which assay called the variant; None for sources that have no
+        # seqtype, e.g. a user-supplied VCF (issue #244)
+        self.data["seqtype"] = seqtype
         self.data["var_type"] = var_type
         self.data["var_start"] = var_start
         self.data["wt_seq"] = VariantEffects.adjust_wildtype(wt_seq, mt_seq)
@@ -388,7 +391,7 @@ class VariantEffects:
     # TODO: no hard coding of output
     def write_header(self):
         self.fh.write("chrom\tstart\tend\tgene_id\tgene_name\ttranscript_id\t")
-        self.fh.write("source\tgroup\tvar_type\twt_subseq\tmt_subseq\t")
+        self.fh.write("source\tgroup\tseqtype\tvar_type\twt_subseq\tmt_subseq\t")
         self.fh.write("var_start\taa_var_start\taa_var_end\t")
         self.fh.write("vaf\tao\tdp\tTPM\tNMD\tPTC_dist_ejc\tPTC_exon_number\t")
         self.fh.write("NMD_escape_rule\n")
@@ -402,6 +405,7 @@ class VariantEffects:
         self.fh.write(f'{ut.format_output(self.data["transcript_id"])}\t')
         self.fh.write(f'{ut.format_output(self.data["source"])}\t')
         self.fh.write(f'{ut.format_output(self.data["group"])}\t')
+        self.fh.write(f'{ut.format_output(self.data["seqtype"])}\t')
         self.fh.write(f'{ut.format_output(self.data["var_type"])}\t')
         self.fh.write(f'{ut.format_output(self.data["wt_subseq"])}\t')
         self.fh.write(f'{ut.format_output(self.data["mt_subseq"])}\t')

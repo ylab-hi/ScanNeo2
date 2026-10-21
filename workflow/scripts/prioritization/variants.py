@@ -167,6 +167,7 @@ class Variants():
                                                    transcript_bp=transcript_bp,
                                                    source=entry.INFO["SRC"],
                                                    group=entry.INFO["GRP"],
+                                                   seqtype=entry.INFO.get("SEQ"),
                                                    var_type=csq,
                                                    var_start=var_start,
                                                    wt_seq=wt_seq,

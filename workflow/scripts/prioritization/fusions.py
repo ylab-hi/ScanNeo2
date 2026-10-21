@@ -95,6 +95,10 @@ class Fusions:
                                                        transcript_bp=transcript_bp,
                                                        source="fusion",
                                                        group=group,
+                                                       # arriba reads the STAR
+                                                       # rnaseq alignment, so this
+                                                       # source is RNA-only
+                                                       seqtype="rnaseq",
                                                        var_type=csq,
                                                        var_start=var_start,
                                                        wt_seq=wt_seq,

@@ -93,7 +93,8 @@ rule exitron_augment:
             {input} \
             exitron \
             {wildcards.group} \
-            {output} >{log} 2>&1
+            {output} \
+            rnaseq >{log} 2>&1
         """
 
 
