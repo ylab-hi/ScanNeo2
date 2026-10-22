@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pytest
 
+from effects_schema import HEADER, effects_row, read_table
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "workflow/scripts/prioritization"))
 import prediction  # noqa: E402
@@ -28,16 +30,8 @@ WT = "ACDEFGHIKLMNPQRSTVWYC"
 MT_A = WT[:VAR_POS] + "W" + WT[VAR_POS + 1:]  # M11W
 MT_B = WT[:VAR_POS] + "Y" + WT[VAR_POS + 1:]  # M11Y
 
-# variant-effects columns start() reads, by index: 5 transcript_id,
-# 9 wt_subseq, 10 mt_subseq, 12/13 aa_var_start/end, 14 vaf; 0-21 all present
-HEADER = "\t".join(f"col{i}" for i in range(22))
 
 
-def effects_row(transcript, wt, mt):
-    cols = ["chr1", "100", "101", "G1", "GENE1", transcript, "DNA", "g1",
-            "SNV", wt, mt, "100", str(VAR_POS), str(VAR_POS), "0.5", "10",
-            "20", "1.0", "NA", "NA", "NA", "NA"]
-    return "\t".join(cols)
 
 
 def expected_epitopes(mt):
@@ -88,27 +82,26 @@ def run_start(tmp_path, monkeypatch):
                 fastas.setdefault((grp, L), {})[num] = seq
 
         epitopes = {}
-        out = tmp_path / "exitrons_mhc-I_neoepitopes.txt"
-        for line in out.read_text().splitlines()[1:]:
-            cols = line.split("\t")
-            epitopes.setdefault(cols[6], set()).add(cols[14])
+        for row in read_table(tmp_path / "exitrons_mhc-I_neoepitopes.txt"):
+            epitopes.setdefault(row["transcript_id"],
+                                set()).add(row["mt_epitope_seq"])
         return fastas, epitopes
 
     return run
 
 
 def test_identical_windows_are_written_once(run_start):
-    fastas, _ = run_start([effects_row("T1", WT, MT_A),
-                           effects_row("T2", WT, MT_A),
-                           effects_row("T3", WT, MT_A)])
+    fastas, _ = run_start([effects_row("T1", WT, MT_A, VAR_POS, VAR_POS),
+                           effects_row("T2", WT, MT_A, VAR_POS, VAR_POS),
+                           effects_row("T3", WT, MT_A, VAR_POS, VAR_POS)])
 
     assert len(fastas[("mt", EPILEN)]) == 1
     assert len(fastas[("wt", EPILEN)]) == 1
 
 
 def test_rows_sharing_a_window_all_receive_its_epitopes(run_start):
-    _, epitopes = run_start([effects_row("T1", WT, MT_A),
-                             effects_row("T2", WT, MT_A)])
+    _, epitopes = run_start([effects_row("T1", WT, MT_A, VAR_POS, VAR_POS),
+                             effects_row("T2", WT, MT_A, VAR_POS, VAR_POS)])
 
     assert epitopes["T1"] == expected_epitopes(MT_A)
     assert epitopes["T2"] == expected_epitopes(MT_A)
@@ -120,9 +113,9 @@ def test_each_row_points_at_its_own_window(run_start):
     T3 repeats T1 after a distinct window has been written in between, so a
     reused number that were off by one would hand T3 the MT_B window.
     """
-    fastas, epitopes = run_start([effects_row("T1", WT, MT_A),
-                                  effects_row("T2", WT, MT_B),
-                                  effects_row("T3", WT, MT_A)])
+    fastas, epitopes = run_start([effects_row("T1", WT, MT_A, VAR_POS, VAR_POS),
+                                  effects_row("T2", WT, MT_B, VAR_POS, VAR_POS),
+                                  effects_row("T3", WT, MT_A, VAR_POS, VAR_POS)])
 
     mt = fastas[("mt", EPILEN)]
     assert sorted(mt) == [1, 2]

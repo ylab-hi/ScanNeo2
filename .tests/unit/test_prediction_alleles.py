@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pytest
 
+from effects_schema import HEADER, effects_row
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "workflow/scripts/prioritization"))
 import prediction  # noqa: E402
@@ -31,10 +33,7 @@ WT_EPITOPE = WT[2:2 + EPILEN]  # same coordinates in the wildtype
 
 A, B = "HLA-A*02:01", "HLA-B*07:02"
 
-HEADER = "\t".join(f"col{i}" for i in range(22))
-ROW = "\t".join(["chr1", "100", "101", "G1", "GENE1", "T1", "DNA", "g1",
-                 "SNV", WT, MT, "100", str(VAR_POS), str(VAR_POS), "0.5",
-                 "10", "20", "1.0", "NA", "NA", "NA", "NA"])
+ROW = effects_row("T1", WT, MT, VAR_POS, VAR_POS)
 
 
 def read_fasta(path):

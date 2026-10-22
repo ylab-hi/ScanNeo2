@@ -242,7 +242,8 @@ def main():
                                                  ('SVLEN', sv_len),
                                                  ('PSI', psi),
                                                  ('GRP', options.group),
-                                                 ('SRC', event_type)]),
+                                                 ('SRC', event_type),
+                                                 ('SEQ', 'rnaseq')]),
 
                                             FORMAT=['GT'],
                                             calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
