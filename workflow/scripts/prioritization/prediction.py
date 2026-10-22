@@ -83,20 +83,26 @@ class BindingAffinities:
                 fh_wt = {epilen: stack.enter_context(open(wt_fname[epilen], 'w')) for epilen in epilens}
                 fh_mt = {epilen: stack.enter_context(open(mt_fname[epilen], 'w')) for epilen in epilens}
                 fh = stack.enter_context(open(Path(output_dir, f"{vartype}_variant_effects.tsv"), 'r'))
-                next(fh)   # skip header
+                # columns are looked up by name: effects.py's layout must be
+                # free to change without silently shifting every field here
+                col = {name: i for i, name
+                       in enumerate(next(fh).rstrip('\n').split('\t'))}
                 for line in fh:
                     entries = line.rstrip().split('\t')
+                    # kept beside the row, not appended to it: the row is a
+                    # parsed record and must not double as an accumulator
+                    seqnums = []
                     for epilen in epilens:
-                        aa_var_start = int(entries[12])
-                        aa_var_end = int(entries[13])
+                        aa_var_start = int(entries[col["aa_var_start"]])
+                        aa_var_end = int(entries[col["aa_var_end"]])
 
                         # '$' marks positions past the end of the wildtype
                         # protein, where it has no residue because the mutant is
                         # longer (effects.py: adjust_wildtype). It must not
                         # reach the prediction tool, so drop it here; the
                         # reported wt epitope below keeps the column as written.
-                        wt_subseq = entries[9].split('$')[0]
-                        mt_subseq = entries[10]
+                        wt_subseq = entries[col["wt_subseq"]].split('$')[0]
+                        mt_subseq = entries[col["mt_subseq"]]
 
                         # adjust the length of the subsequence according to epilen
                         if aa_var_start >= epilen + 1:
@@ -131,7 +137,7 @@ class BindingAffinities:
                         for ok, seq in ((wt_ok, wt_epitope_seq), (mt_ok, mt_epitope_seq)):
                             if not ok and len(seq) >= epilen+1:
                                 withheld += 1
-                                withheld_example = withheld_example or (entries[5], seq)
+                                withheld_example = withheld_example or (entries[col["transcript_id"]], seq)
 
                         if wt_ok and len(wt_epitope_seq) >= epilen+1:
                             seqnum = wt_seen[epilen].get(wt_epitope_seq)
@@ -142,10 +148,10 @@ class BindingAffinities:
                                 wt_cnt[epilen] += 1
                             else:
                                 reused += 1
-                            entries.append(seqnum)
+                            seqnums.append(seqnum)
 
                         else:
-                            entries.append(0)
+                            seqnums.append(0)
 
                         if mt_ok and len(mt_epitope_seq) >= epilen+1:
                             seqnum = mt_seen[epilen].get(mt_epitope_seq)
@@ -156,12 +162,12 @@ class BindingAffinities:
                                 mt_cnt[epilen] += 1
                             else:
                                 reused += 1
-                            entries.append(seqnum)
+                            seqnums.append(seqnum)
 
                         else:
-                            entries.append(0)
+                            seqnums.append(0)
 
-                    subseqs.append(entries)
+                    subseqs.append((entries, seqnums))
 
             # the sequences the predictions' seqnums refer to, so the database
             # stays interpretable once the temporary fasta files are gone
@@ -210,43 +216,44 @@ class BindingAffinities:
                                    f"{vartype}_{mhc_class}_neoepitopes.txt"), "w") as outfile:
                 BindingAffinities.write_header(outfile)
 
-                for entry in subseqs:
+                for entry, seqnums in subseqs:
                     final = {}
-                    final["chrom"] = entry[0]
-                    final["start"] = entry[1]
-                    final["end"] = entry[2]
-                    final["gene_id"] = entry[3]
-                    final["gene_name"] = entry[4]
-                    final["transcript_id"] = entry[5]
-                    final["source"] = entry[6]
-                    final["group"] = entry[7]
-                    final["var_type"] = entry[8]
-                    final["var_start"] = entry[11]
-                    final["vaf"] = float(entry[14])
-                    final["supp"] = entry[15]
-                    final["depth"] = entry[16]
-                    final["TPM"] = entry[17]
-                    final["NMD"] = entry[18]
-                    final["PTC_dist_ejc"] = entry[19]
-                    final["PTC_exon_number"] = entry[20]
-                    final["NMD_escape_rule"] = entry[21]
+                    final["chrom"] = entry[col["chrom"]]
+                    final["start"] = entry[col["start"]]
+                    final["end"] = entry[col["end"]]
+                    final["gene_id"] = entry[col["gene_id"]]
+                    final["gene_name"] = entry[col["gene_name"]]
+                    final["transcript_id"] = entry[col["transcript_id"]]
+                    final["source"] = entry[col["source"]]
+                    final["group"] = entry[col["group"]]
+                    final["seqtype"] = entry[col["seqtype"]]
+                    final["var_type"] = entry[col["var_type"]]
+                    final["var_start"] = entry[col["var_start"]]
+                    final["vaf"] = float(entry[col["vaf"]])
+                    final["supp"] = entry[col["ao"]]
+                    final["depth"] = entry[col["dp"]]
+                    final["TPM"] = entry[col["TPM"]]
+                    final["NMD"] = entry[col["NMD"]]
+                    final["PTC_dist_ejc"] = entry[col["PTC_dist_ejc"]]
+                    final["PTC_exon_number"] = entry[col["PTC_exon_number"]]
+                    final["NMD_escape_rule"] = entry[col["NMD_escape_rule"]]
 
-                    aa_var_start = int(entry[12])
-                    aa_var_end = int(entry[13])
+                    aa_var_start = int(entry[col["aa_var_start"]])
+                    aa_var_end = int(entry[col["aa_var_end"]])
 
                     # extract the subsequences (needed to determine the wt epitope)
                     # kept as effects.py wrote it, '$' padding included, so
                     # an epitope reaching past the end of the wildtype protein
                     # reports which positions have no wildtype residue
-                    wt_subseq = entry[9]
-                    mt_subseq = entry[10]
+                    wt_subseq = entry[col["wt_subseq"]]
+                    mt_subseq = entry[col["mt_subseq"]]
 
                     for epilen_idx in range(0, len(epilens)):
 
                         # the sequence number of each entry corresponds to the
                         # sequence number of the epitope in the fasta file
-                        wt_seqnum = int(entry[22:][epilen_idx*2])
-                        mt_seqnum = int(entry[22:][epilen_idx*2+1])
+                        wt_seqnum = int(seqnums[epilen_idx*2])
+                        mt_seqnum = int(seqnums[epilen_idx*2+1])
 
                         epilen = epilens[epilen_idx]
                         mt = {}
@@ -612,7 +619,7 @@ class BindingAffinities:
     @staticmethod
     def write_header(outputfile):
         outputfile.write(f"chrom\tstart\tend\tallele\tgene_id\tgene_name\t")
-        outputfile.write(f"transcript_id\tsource\tgroup\tvar_type\t")
+        outputfile.write(f"transcript_id\tsource\tgroup\tseqtype\tvar_type\t")
         outputfile.write(f"var_start\twt_epitope_seq\twt_epitope_ic50\t")
         outputfile.write(f"wt_epitope_rank\tmt_epitope_seq\t")
         outputfile.write(f"mt_epitope_ic50\tmt_epitope_rank\tvaf\tsupporting\t")
@@ -630,6 +637,7 @@ class BindingAffinities:
         outputfile.write(f'{ut.format_output(row["transcript_id"])}\t')
         outputfile.write(f'{ut.format_output(row["source"])}\t')
         outputfile.write(f'{ut.format_output(row["group"])}\t')
+        outputfile.write(f'{ut.format_output(row["seqtype"])}\t')
         outputfile.write(f'{ut.format_output(row["var_type"])}\t')
         outputfile.write(f'{ut.format_output(row["var_start"])}\t')
         outputfile.write(f'{ut.format_output(row["wt_epitope_seq"])}\t')

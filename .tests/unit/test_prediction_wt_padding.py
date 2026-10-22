@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pytest
 
+from effects_schema import HEADER, effects_row
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "workflow/scripts/prioritization"))
 import prediction  # noqa: E402
@@ -28,12 +30,6 @@ def insertion(insert_len):
     """(wt padded as effects.py writes it, mt, aa_var_start, aa_var_end)."""
     mt = WT[:10] + "W" * insert_len + WT[10:]
     return WT.ljust(len(mt), "$"), mt, 10, 10 + insert_len - 1
-
-
-def effects_row(transcript, wt, mt, var_start, var_end):
-    return "\t".join(["chr1", "100", "101", "G1", "GENE1", transcript, "DNA", "g1",
-                      "inframe_INS", wt, mt, "100", str(var_start), str(var_end),
-                      "0.5", "10", "20", "1.0", "NA", "NA", "NA", "NA"])
 
 
 def read_fasta(path):
@@ -63,8 +59,8 @@ def run_start(tmp_path, monkeypatch):
     def run(insert_len):
         wt, mt, a, b = insertion(insert_len)
         (tmp_path / "exitrons_variant_effects.tsv").write_text(
-            "\t".join(f"col{i}" for i in range(22)) + "\n"
-            + effects_row("T1", wt, mt, a, b) + "\n")
+            HEADER + "\n"
+            + effects_row("T1", wt, mt, a, b, var_type="inframe_INS") + "\n")
         prediction.BindingAffinities(1).start(
             str(alleles), str(EPILEN), str(tmp_path), "mhc-I", "exitrons")
 

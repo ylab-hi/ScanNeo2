@@ -16,6 +16,8 @@ import sys
 import weakref
 from pathlib import Path
 
+from effects_schema import HEADER, effects_row
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "workflow/scripts/prioritization"))
 import prediction  # noqa: E402
@@ -66,12 +68,8 @@ def test_results_are_freed_once_inserted(tmp_path, monkeypatch):
 
     wt = "ACDEFGHIKLMNPQRSTVWYC"
     mt = wt[:10] + "W" + wt[11:]
-    cols = ["chr1", "100", "101", "G1", "GENE1", "T1", "DNA", "g1", "SNV",
-            wt, mt, "100", "10", "10", "0.5", "10", "20", "1.0",
-            "NA", "NA", "NA", "NA"]
-    header = "\t".join(f"col{i}" for i in range(22))
     (tmp_path / "exitrons_variant_effects.tsv").write_text(
-        f"{header}\n" + "\t".join(cols) + "\n")
+        HEADER + "\n" + effects_row("T1", wt, mt, 10, 10) + "\n")
     alleles = tmp_path / "mhc-I.tsv"
     alleles.write_text("".join(f"HLA-A*0{i}:01\tHLA-A*0{i}:01\n" for i in range(1, 7)))
 

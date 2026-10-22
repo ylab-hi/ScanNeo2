@@ -93,13 +93,13 @@ the score.
 Every ScanNeo2 prediction that overlaps a TESLA-assessed pMHC, committed alongside the
 reference tables so the numbers below can be inspected without rerunning the pipeline.
 3322 rows: `tesla_subject` and `tesla_validated` prepended to the full neoepitope record,
-so each hit carries its gene, source, IC50, VAF, TPM, agretopicity, self-similarity,
-NMD and pathogen/proteome-similarity fields.
+so each hit carries its gene, source, seqtype, IC50, VAF, TPM, agretopicity,
+self-similarity, NMD and pathogen/proteome-similarity fields.
 
 210 rows are immunogenic and 3112 non-immunogenic. A pMHC spans several rows when the
 peptide arises from more than one transcript, and again when the variant was called by
-both DNA and RNA ([#244](https://github.com/ylab-hi/ScanNeo2/issues/244)), so the row
-count is not a pMHC count. De-duplicating does not return the figures below either,
+both DNA and RNA ([#244](https://github.com/ylab-hi/ScanNeo2/issues/244)) — the `seqtype`
+column distinguishes those — so the row count is not a pMHC count. De-duplicating does not return the figures below either,
 because those are assay-row counts — see the note on counting under Results:
 
 | de-duplication key | immunogenic | true negatives |
@@ -115,8 +115,8 @@ two alleles in the same subject (`FLVYGVRPGM` and `SLFALGNVI` in subject 4 under
 
 ## Version
 
-Measured with **ScanNeo2 v0.7.1 plus the then-unreleased changes from #236**, which is
-`ecfd314` on `main`. Recorded because the score is only meaningful against a known
+Measured with **ScanNeo2 v0.7.1 plus the then-unreleased changes from #236 and #249**,
+the latter adding the `seqtype` column this file carries. Recorded because the score is only meaningful against a known
 pipeline version. These numbers should be stable: variant calling, annotation and
 prediction are fixed, so only a change that alters which peptides are proposed — a new
 neoepitope source, a filter change, a different caller or HLA typer — should move them.

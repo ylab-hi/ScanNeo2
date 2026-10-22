@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pytest
 
+from effects_schema import HEADER, effects_row
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "workflow/scripts/prioritization"))
 import prediction  # noqa: E402
@@ -35,14 +37,6 @@ IEDB_RESIDUES = frozenset("ACDEFGHIKLMNPQRSTVWY")
 def iedb_accepts(seq):
     # mirrors predict_binding.py: amino_acid.upper() in "ACDEFGHIKLMNPQRSTVWY"
     return all(a.upper() in IEDB_RESIDUES for a in seq)
-HEADER = "\t".join(f"col{i}" for i in range(22))
-
-
-def effects_row(transcript, wt, mt):
-    cols = ["chr1", "100", "101", "G1", "GENE1", transcript, "DNA", "g1",
-            "SNV", wt, mt, "100", str(VAR_POS), str(VAR_POS), "0.5", "10",
-            "20", "1.0", "NA", "NA", "NA", "NA"]
-    return "\t".join(cols)
 
 
 def read_fasta(path):
@@ -93,9 +87,9 @@ def run_start(tmp_path, monkeypatch):
 
 
 def test_nonstandard_window_does_not_fail_its_batch_mates(run_start):
-    windows, rows = run_start([effects_row("T1", WT_X, MT),
-                               effects_row("T2", WT, MT_OTHER),
-                               effects_row("T3", WT, MT_X)])
+    windows, rows = run_start([effects_row("T1", WT_X, MT, VAR_POS, VAR_POS),
+                               effects_row("T2", WT, MT_OTHER, VAR_POS, VAR_POS),
+                               effects_row("T3", WT, MT_X, VAR_POS, VAR_POS)])
 
     assert all(iedb_accepts(w) for w in windows)
     # T2 shares the wt batch with T1 and the mt batch with T3, and is fully predicted
@@ -110,7 +104,8 @@ def test_nonstandard_window_does_not_fail_its_batch_mates(run_start):
 
 def test_lowercase_window_is_predicted(run_start):
     # the tools accept lowercase residues, so the guard must not withhold them
-    windows, rows = run_start([effects_row("T1", WT.lower(), MT)])
+    windows, rows = run_start([effects_row("T1", WT.lower(), MT,
+                                           VAR_POS, VAR_POS)])
 
     assert any(w.islower() for w in windows)
     assert all(r["wt_epitope_ic50"] != "." for r in rows["T1"])

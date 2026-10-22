@@ -39,6 +39,9 @@ def create_header(samplename, ref):
     header = add_info_field(header, 'GeneName', '1', 'String', 'Gene name')
     header = add_info_field(header, 'GRP', '1', 'String', 'Name of the group')
     header = add_info_field(header, 'SRC', '1', 'String', 'Source of the variant')
+    # SplAdder runs on RNA only, so this is constant here; it exists so every
+    # source writes the same provenance fields (see issue #244)
+    header = add_info_field(header, 'SEQ', '1', 'String', 'Sequencing type the variant was called from')
             
     header.add_format_line(vcfpy.OrderedDict(
         [('ID','GT'),
@@ -139,7 +142,8 @@ def main():
                                              ('SVLEN', sv_len),
                                              ('PSI', psi),
                                              ('GRP', options.group),
-                                             ('SRC', event_type)]),
+                                             ('SRC', event_type),
+                                             ('SEQ', 'rnaseq')]),
 
                                         FORMAT=['GT'],
                                         calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
@@ -182,7 +186,8 @@ def main():
                                              ('SVLEN', sv_len),
                                              ('PSI', psi),
                                              ('GRP', options.group),
-                                             ('SRC', event_type)]),
+                                             ('SRC', event_type),
+                                             ('SEQ', 'rnaseq')]),
 
                                         FORMAT=['GT'],
                                         calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
@@ -237,7 +242,8 @@ def main():
                                                  ('SVLEN', sv_len),
                                                  ('PSI', psi),
                                                  ('GRP', options.group),
-                                                 ('SRC', event_type)]),
+                                                 ('SRC', event_type),
+                                                 ('SEQ', 'rnaseq')]),
 
                                             FORMAT=['GT'],
                                             calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]

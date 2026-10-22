@@ -15,6 +15,8 @@ from pathlib import Path
 
 import pytest
 
+from effects_schema import HEADER, effects_row, read_table
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "workflow/scripts/prioritization"))
 
@@ -123,20 +125,17 @@ def test_deletion_yields_only_junction_spanning_epitopes(tmp_path, monkeypatch):
     monkeypatch.setattr(prediction.BindingAffinities, "_run_prediction",
                         staticmethod(every_kmer_binds))
 
-    cols = ["chr1", "100", "101", "G1", "GENE1", "T1", "DNA", "g1",
-            "inframe_DEL", ve.data["wt_subseq"], ve.data["mt_subseq"], "100",
-            str(start), str(end), "0.5", "10", "20", "1.0",
-            "NA", "NA", "NA", "NA"]
-    header = "\t".join(f"col{i}" for i in range(22))
     (tmp_path / "exitrons_variant_effects.tsv").write_text(
-        header + "\n" + "\t".join(cols) + "\n")
+        HEADER + "\n"
+        + effects_row("T1", ve.data["wt_subseq"], ve.data["mt_subseq"],
+                      start, end, var_type="inframe_DEL") + "\n")
     (tmp_path / "mhc-I.tsv").write_text("HLA-A*02:01\tHLA-A*02:01\n")
 
     prediction.BindingAffinities(1).start(
         str(tmp_path / "mhc-I.tsv"), str(L), str(tmp_path), "mhc-I", "exitrons")
 
-    lines = (tmp_path / "exitrons_mhc-I_neoepitopes.txt").read_text().splitlines()
-    reported = {line.split("\t")[14] for line in lines[1:]}
+    reported = {row["mt_epitope_seq"] for row
+                in read_table(tmp_path / "exitrons_mhc-I_neoepitopes.txt")}
 
     junction = {mt[p:p + L] for p in range(cut - L + 1, cut)}
     assert reported == junction
