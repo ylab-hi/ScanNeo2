@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Altsplicing alleles were written one base off**: `altsplc2vcf.py` anchored `REF`/`ALT` one base right of the `POS` it declared, so 8,215 of 12,343 records on one sample failed `bcftools norm --check-ref`; now none do. **Every `alt_3prime`, `alt_5prime` and `intron_retention` neoepitope from v0.8.0 and earlier was built from a wrong allele** and should be regenerated; `exon_skip` is unaffected. Altsplicing rows rise 45% on the TESLA cohort, and validated recall is unchanged at 36/38. ([#254](https://github.com/ylab-hi/ScanNeo2/issues/254), [#256](https://github.com/ylab-hi/ScanNeo2/pull/256))
+
 ## [0.8.0] - 2026-10-22
 
 ### Added
