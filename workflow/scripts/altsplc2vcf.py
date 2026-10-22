@@ -108,6 +108,15 @@ def main():
                                 print("IndexError - skipping event")
                                 continue
 
+                            # every record anchors on the base before the event,
+                            # so an event starting at the first base of a
+                            # chromosome has no anchor to place it on. The
+                            # negative index would wrap to the chromosome's end
+                            # and build the allele from unrelated sequence.
+                            if start < 2:
+                                print("event at chromosome start - skipping event")
+                                continue
+
                             if (event_type == "alt_5prime" or
                                 event_type == "alt_3prime" or
                                 event_type == "intron_retention"):
@@ -115,8 +124,13 @@ def main():
                                 sv_type = "INS"
                                 sv_len = end - start + 1
 
-                                ref = str(seq[chrom][start-1:start]).upper()
-                                alt = (str(seq[chrom][start-1:start]) + str(seq[chrom][start:end+1])).upper()
+                                # POS is start-1, the base before the event, so
+                                # the alleles must begin there too. pyfaidx
+                                # indexes from 0, which puts that base at
+                                # start-2 and the event's own first base at
+                                # start-1.
+                                ref = str(seq[chrom][start-2:start-1]).upper()
+                                alt = (str(seq[chrom][start-2:start-1]) + str(seq[chrom][start-1:end])).upper()
                             
                                 ao = column[12]
 
@@ -163,8 +177,9 @@ def main():
                                 if e2_start == e2_end:
                                     continue
 
-                                ref = (str(seq[chrom][start-1:start]) + str(seq[chrom][start:end+1])).upper()
-                                alt = str(seq[chrom][start-1:start]).upper()
+                                # anchored on start-1 like the INS types above
+                                ref = (str(seq[chrom][start-2:start-1]) + str(seq[chrom][start-1:end])).upper()
+                                alt = str(seq[chrom][start-2:start-1]).upper()
                                 
                                 ao = column[16]
                                 psi = column[17]
