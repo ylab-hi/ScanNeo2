@@ -115,8 +115,8 @@ two alleles in the same subject (`FLVYGVRPGM` and `SLFALGNVI` in subject 4 under
 
 ## Version
 
-Measured with **ScanNeo2 v0.7.1 plus the then-unreleased changes from #236**, which is
-`ecfd314` on `main`. Recorded because the score is only meaningful against a known
+Measured with **ScanNeo2 v0.7.1 plus the then-unreleased changes from #236 and #249**,
+the latter adding the `seqtype` column this file carries. Recorded because the score is only meaningful against a known
 pipeline version. These numbers should be stable: variant calling, annotation and
 prediction are fixed, so only a change that alters which peptides are proposed — a new
 neoepitope source, a filter change, a different caller or HLA typer — should move them.

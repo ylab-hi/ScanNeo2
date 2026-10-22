@@ -3,10 +3,10 @@ import sys
 from pathlib import Path
 
 '''
-This script combines multiple vcfs into one vcf. It adds a new INFO field for the group name
+This script adds the source, group and sequencing-type INFO fields to one vcf.
 
 Usage:
-python combine_vcf.py '<input_vcfs>' <method> <group> <output_vcf> [<seqtype>]
+python add_infos_to_vcf.py <input_vcf> <method> <group> <output_vcf> [<seqtype>]
 
 seqtype records which assay produced the call. It is optional because not every
 source has one: a user-supplied VCF has no assay, and leaving SEQ unset there is
