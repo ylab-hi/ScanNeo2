@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-22
+
 ### Added
 
 - **TESLA recall benchmark**: `benchmark/TESLA/` holds the published Wells et al. 2020 reference tables and `benchmark/tesla_recall.py` scores ScanNeo2's neoepitopes against them, replacing a hand-run check against an untracked file. Currently 36 of 38 validated peptides recovered. No workflow behaviour changes. ([#243](https://github.com/ylab-hi/ScanNeo2/pull/243))
