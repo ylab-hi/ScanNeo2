@@ -68,9 +68,22 @@ def main():
     header = create_header(options.group, seq)
     writer = vcfpy.Writer.from_path(options.output, header)
 
-    # search for input files (in spladder output)
-    for root, dirs, files in os.walk(options.input):
-        for file in files:
+    # different spladder events can imply the same genomic change -- an exon
+    # skipped on its own and again as part of a run, say -- and each occurrence
+    # would otherwise be written again and counted as a further candidate
+    seen = set()
+
+    def write_once(rec):
+        key = (rec.CHROM, rec.POS, rec.REF, rec.ALT[0].value)
+        if key in seen:
+            return
+        seen.add(key)
+        writer.write_record(rec)
+
+    # sorted so that which event type keeps a shared allele is fixed, rather
+    # than following the order the filesystem happens to return
+    for root, dirs, files in sorted(os.walk(options.input)):
+        for file in sorted(files):
             if file.endswith(".txt.gz"):
                 print(file)
                 # determine type of splicing from file
@@ -171,7 +184,7 @@ def main():
                                         FORMAT=['GT'],
                                         calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
                                 )
-                                writer.write_record(rec)
+                                write_once(rec)
 
                             elif (event_type == "exon_skip" or
                                   event_type == "mult_exon_skip"):
@@ -224,7 +237,7 @@ def main():
                                         FORMAT=['GT'],
                                         calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
                                 )
-                                writer.write_record(rec)
+                                write_once(rec)
     writer.close()
 
 
