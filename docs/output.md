@@ -74,7 +74,9 @@ ScanNeo2 calls different variants (according to the configuration) and then coll
 
 Five of SplAdder's event classes are converted: `alt_3prime`, `alt_5prime`, `intron_retention`, `exon_skip` and `mult_exon_skip`. A multi-exon skip is written as one deletion spanning the first skipped exon through the last, which also covers the introns between them — those are spliced out either way, and both flanking introns survive, so the transcript still joins the exons either side of the skip.
 
-`mutex_exons` is **not** converted. Mutually exclusive exons are two isoforms that cannot both occur, and VCF records at different positions are independent: neither VEP nor the prioritization reads phase, so emitting one record per alternative would assert a genotype that cannot exist. There is no faithful encoding for the event, so it is skipped rather than approximated.
+Several events can imply the same genomic change — an exon skipped on its own and again as part of a run, or two alternative 5' sites trimming to the same coordinates. Each distinct allele is written **once**, so a peptide is not counted repeatedly as a further candidate. Where event classes disagree about a shared allele, the record keeps the first `SRC` in alphabetical order.
+
+`mutex_exons` is **not** converted. A VCF record is applied to every transcript of the gene, and a transcript carries one of the two alternative exons or the other, so no single record is right for all of them: deleting one alternative yields an isoform skipping both wherever the transcript held only that one, while substituting one exon's sequence for the other's misfires wherever a transcript happens to hold both. Across the TESLA cohort 83% of the transcripts involved are one-sided and 17% carry both, so either encoding produces unmarked artifacts for the remainder. The events are skipped until the output can be filtered by transcript structure.
 
 ### EXITRON
 
