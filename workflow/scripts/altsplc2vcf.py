@@ -86,9 +86,9 @@ def main():
 
                         if (event_type == "alt_5prime" or
                             event_type == "alt_3prime" or
-                            event_type == "exon_skip" or 
+                            event_type == "exon_skip" or
                             event_type == "intron_retention" or
-                            event_type == "mutex_exon"):
+                            event_type == "mult_exon_skip"):
 
                             try:
                                 chrom = column[0]
@@ -100,12 +100,21 @@ def main():
 
                                 gene_name = column[4]
 
-                                start = int(column[7])
-                                end = int(column[8])
-                            
+                                if event_type == "mult_exon_skip":
+                                    # spladder lists every skipped exon here,
+                                    # colon separated, so these two columns hold
+                                    # a list rather than a single coordinate
+                                    starts = [int(v) for v in column[7].split(':')]
+                                    ends = [int(v) for v in column[8].split(':')]
+                                    start = min(starts)
+                                    end = max(ends)
+                                else:
+                                    start = int(column[7])
+                                    end = int(column[8])
+
                             # in some cases lines are incomplete (faulty spladder output)
-                            except IndexError:
-                                print("IndexError - skipping event")
+                            except (IndexError, ValueError):
+                                print("malformed event - skipping event")
                                 continue
 
                             # every record anchors on the base before the event,
@@ -164,26 +173,34 @@ def main():
                                 )
                                 writer.write_record(rec)
 
-                            elif (event_type == "exon_skip"):
+                            elif (event_type == "exon_skip" or
+                                  event_type == "mult_exon_skip"):
                                 sv_type = "DEL"
                                 sv_len = -(end - start + 1)
-                                
-                                e2_start = column[7]
-                                e2_end = column[8]
 
                                 """ for some reason spladder reports exon skipping
-                                events in which the start and end position of the 
+                                events in which the start and end position of the
                                 skipped exon are the same... skip those events """
-                                if e2_start == e2_end:
+                                if start == end:
                                     continue
 
                                 # anchored on start-1 like the INS types above
                                 ref = (str(seq[chrom][start-2:start-1]) + str(seq[chrom][start-1:end])).upper()
                                 alt = str(seq[chrom][start-2:start-1]).upper()
-                                
-                                ao = column[16]
-                                psi = column[17]
-                                
+
+                                if event_type == "mult_exon_skip":
+                                    # the deleted span reaches from the first
+                                    # skipped exon to the last, so it also covers
+                                    # the introns between them. Those are spliced
+                                    # out either way, and both flanking introns
+                                    # survive, so the transcript still joins e1 to
+                                    # e3 -- the isoform spladder observed.
+                                    ao = column[18]
+                                    psi = column[19]
+                                else:
+                                    ao = column[16]
+                                    psi = column[17]
+
                                 rec = vcfpy.Record(
                                         CHROM=chrom,
                                         POS=start-1,
@@ -208,62 +225,6 @@ def main():
                                         calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
                                 )
                                 writer.write_record(rec)
-
-                            elif (event_type == "mutex_exons"):
-                                sv_type = "DEL"
-
-                                e2_start = column[7]
-                                e2_end = column[8]
-
-                                e3_start = column[9]
-                                e3_end = column[10]
-
-                                sv_len = []
-                                sv_len.append(-(e2_end - e2_start + 1))
-                                sv_len.append(-(e3_end - e3_start + 1))
-
-                                ref = []
-                                ref.append((str(seq[chrom][e2_start-1:e2_start]) + str(seq[chrom][e2_start:e2_end-1])).upper())
-                                ref.append((str(seq[chrom][e3_start-1:e3_start]) + str(seq[chrom][e3_start:e3_end-1])).upper())
-
-                                alt = []
-                                alt.append(str(seq[chrom][e2_start-1:e2_start]).upper())
-                                alt.append(str(seq[chrom][e3_start-1:e3_start]).upper())
-
-                                ao = []
-                                e1e2_conf = column[17]
-                                e3e4_conf = column[20]
-                                ao.append(e1e2_conf)
-                                ao.append(e3e4_conf)
-
-                                psi = column[21]
-
-                                for i in range(0,2):
-
-                                    rec = vcfpy.Record(
-                                            CHROM=chrom,
-                                            POS=start-1,
-                                            ID=[event_id],
-                                            REF=ref,
-                                            ALT=[vcfpy.Substitution(type_=sv_type, value=alt)],
-                                            QUAL='.',
-                                            FILTER=['PASS'],
-                                            INFO = vcfpy.OrderedDict(
-                                                [('SVTYPE', sv_type),
-                                                 ('END', end),
-                                                 ('AO', ao),
-                                                 ('STRAND', strand),
-                                                 ('GeneName', gene_name),
-                                                 ('SVLEN', sv_len),
-                                                 ('PSI', psi),
-                                                 ('GRP', options.group),
-                                                 ('SRC', event_type),
-                                                 ('SEQ', 'rnaseq')]),
-
-                                            FORMAT=['GT'],
-                                            calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
-                                    )
-                                    writer.write_record(rec)
     writer.close()
 
 
