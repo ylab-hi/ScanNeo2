@@ -72,9 +72,11 @@ ScanNeo2 calls different variants (according to the configuration) and then coll
 
 [SplAdder](https://spladder.readthedocs.io/) detects alternative-splicing events from the RNA-seq alignment; intermediate splice-graph files land in `results/<sample>/rnaseq/altsplicing/`. The `splicing_to_vcf` rule converts SplAdder's output to per-group VCFs that are then sorted, augmented with `GRP` / `SRC` / `SEQ` INFO keys (same convention as the exitron path below; `SEQ` is always `rnaseq` here), and merged into `results/<sample>/variants/altsplicing.vcf.gz`.
 
-Five of SplAdder's event classes are converted: `alt_3prime`, `alt_5prime`, `intron_retention`, `exon_skip` and `mult_exon_skip`. A multi-exon skip is written as one deletion spanning the first skipped exon through the last, which also covers the introns between them — those are spliced out either way, and both flanking introns survive, so the transcript still joins the exons either side of the skip.
+All six of SplAdder's event classes are converted: `alt_3prime`, `alt_5prime`, `intron_retention`, `exon_skip`, `mult_exon_skip` and `mutex_exons`.
 
-`mutex_exons` is **not** converted. Mutually exclusive exons are two isoforms that cannot both occur, and VCF records at different positions are independent: neither VEP nor the prioritization reads phase, so emitting one record per alternative would assert a genotype that cannot exist. There is no faithful encoding for the event, so it is skipped rather than approximated.
+A multi-exon skip is written as one deletion spanning the first skipped exon through the last, which also covers the introns between them — those are spliced out either way, and both flanking introns survive, so the transcript still joins the exons either side of the skip. Mutually exclusive exons are written as two deletions, one per alternative: dropping the first describes the isoform that keeps the second, and the other way round. Each alternative on its own is an ordinary exon skip, and both isoforms are present in the sample, so both contribute candidate peptides.
+
+Several events can imply the same genomic change — an exon skipped on its own and again as part of a run, or one alternative of a mutually exclusive pair that is also reported as a plain skip. Each distinct allele is written **once**, so a peptide is not counted repeatedly as a further candidate. Where event classes disagree about a shared allele, the record keeps the first `SRC` in alphabetical order.
 
 ### EXITRON
 
