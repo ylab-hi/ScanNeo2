@@ -13,7 +13,7 @@
     <img src="https://img.shields.io/github/forks/ylab-hi/ScanNeo2?style=social">
 </div>
 
-## What is ScanNeo22
+## What is ScanNeo2
 `ScanNeo2` is a Snakemake workflow for predicting neoantigens from multiple sources. In its current state, 
 this includes canonical splicing, exitron splicing, gene fusion, indels, and SNVs.
 
