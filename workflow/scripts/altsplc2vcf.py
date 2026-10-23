@@ -101,8 +101,7 @@ def main():
                             event_type == "alt_3prime" or
                             event_type == "exon_skip" or
                             event_type == "intron_retention" or
-                            event_type == "mult_exon_skip" or
-                            event_type == "mutex_exons"):
+                            event_type == "mult_exon_skip"):
 
                             try:
                                 chrom = column[0]
@@ -239,53 +238,6 @@ def main():
                                         calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
                                 )
                                 write_once(rec)
-
-                            elif (event_type == "mutex_exons"):
-                                # the two exons are alternatives: the transcript
-                                # carries e2 or e3, never both. Each alternative
-                                # on its own is an ordinary exon skip, so both
-                                # are written, and dropping e2 describes the
-                                # isoform that keeps e3 and vice versa. AO is the
-                                # junction that bypasses the dropped exon, as for
-                                # exon_skip; PSI is the event's own ratio.
-                                sv_type = "DEL"
-                                psi = column[21]
-
-                                for e_start, e_end, ao in (
-                                        (int(column[7]), int(column[8]), column[18]),
-                                        (int(column[9]), int(column[10]), column[19])):
-
-                                    if e_start < 2 or e_start == e_end:
-                                        continue
-
-                                    ref = (str(seq[chrom][e_start-2:e_start-1])
-                                           + str(seq[chrom][e_start-1:e_end])).upper()
-                                    alt = str(seq[chrom][e_start-2:e_start-1]).upper()
-
-                                    rec = vcfpy.Record(
-                                            CHROM=chrom,
-                                            POS=e_start-1,
-                                            ID=[event_id],
-                                            REF=ref,
-                                            ALT=[vcfpy.Substitution(type_=sv_type, value=alt)],
-                                            QUAL='.',
-                                            FILTER=['PASS'],
-                                            INFO = vcfpy.OrderedDict(
-                                                [('SVTYPE', sv_type),
-                                                 ('END', e_end),
-                                                 ('AO', ao),
-                                                 ('STRAND', strand),
-                                                 ('GeneName', gene_name),
-                                                 ('SVLEN', -(e_end - e_start + 1)),
-                                                 ('PSI', psi),
-                                                 ('GRP', options.group),
-                                                 ('SRC', event_type),
-                                                 ('SEQ', 'rnaseq')]),
-
-                                            FORMAT=['GT'],
-                                            calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
-                                    )
-                                    write_once(rec)
     writer.close()
 
 
