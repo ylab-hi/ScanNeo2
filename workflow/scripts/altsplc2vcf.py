@@ -11,6 +11,13 @@ from pathlib import Path
     python altsplc_to_variants.py '<input_txts>' <genome_fasta>
 """
 
+# the spladder event classes this converts. mutex_exons is deliberately absent:
+# a record applies to every transcript of the gene, and a transcript carries one
+# alternative exon or the other, so no single record is right for all of them
+# (see issue #259). Classes outside this set are left alone.
+CONVERTED = ("alt_5prime", "alt_3prime", "exon_skip",
+             "intron_retention", "mult_exon_skip")
+
 def add_info_field(header, key, number, dtype, desc):
     info = vcfpy.OrderedDict([
         ('ID', key),
@@ -68,9 +75,29 @@ def main():
     header = create_header(options.group, seq)
     writer = vcfpy.Writer.from_path(options.output, header)
 
-    # search for input files (in spladder output)
-    for root, dirs, files in os.walk(options.input):
-        for file in files:
+    # different spladder events can imply the same genomic change -- an exon
+    # skipped on its own and again as part of a run, say -- and writing each
+    # occurrence would count the same peptide as a further candidate. AO reaches
+    # the output as the supporting-read column, so the record kept is the one
+    # with the most junction support rather than whichever file was read first.
+    best = {}
+
+    def junction_support(rec):
+        try:
+            return float(rec.INFO['AO'])
+        except (KeyError, TypeError, ValueError):
+            return -1.0
+
+    def keep(rec):
+        key = (rec.CHROM, rec.POS, rec.REF, rec.ALT[0].value)
+        previous = best.get(key)
+        if previous is None or junction_support(rec) > junction_support(previous):
+            best[key] = rec
+
+    # sorted so that a tie on support resolves the same way every run, rather
+    # than following the order the filesystem happens to return
+    for root, dirs, files in sorted(os.walk(options.input)):
+        for file in sorted(files):
             if file.endswith(".txt.gz"):
                 print(file)
                 # determine type of splicing from file
@@ -81,14 +108,12 @@ def main():
 
                     fh = gzip.open(os.path.join(root, file), 'r')
                     next(fh)
+                    events = parsed = 0
                     for line in fh:
                         column = line.decode().rstrip().split('\t')
+                        events += 1
 
-                        if (event_type == "alt_5prime" or
-                            event_type == "alt_3prime" or
-                            event_type == "exon_skip" or 
-                            event_type == "intron_retention" or
-                            event_type == "mutex_exon"):
+                        if event_type in CONVERTED:
 
                             try:
                                 chrom = column[0]
@@ -100,13 +125,28 @@ def main():
 
                                 gene_name = column[4]
 
-                                start = int(column[7])
-                                end = int(column[8])
-                            
+                                if event_type == "mult_exon_skip":
+                                    # spladder lists every skipped exon here,
+                                    # colon separated, so these two columns hold
+                                    # a list rather than a single coordinate
+                                    starts = [int(v) for v in column[7].split(':')]
+                                    ends = [int(v) for v in column[8].split(':')]
+                                    start = min(starts)
+                                    end = max(ends)
+                                else:
+                                    start = int(column[7])
+                                    end = int(column[8])
+
                             # in some cases lines are incomplete (faulty spladder output)
-                            except IndexError:
-                                print("IndexError - skipping event")
+                            except (IndexError, ValueError):
+                                print("malformed event - skipping event")
                                 continue
+
+                            # the row's coordinates were readable. Counted before
+                            # the guards below, which drop events for reasons of
+                            # their own, so that the check after the loop can tell
+                            # a deliberate skip from a file this can no longer read
+                            parsed += 1
 
                             # every record anchors on the base before the event,
                             # so an event starting at the first base of a
@@ -162,28 +202,36 @@ def main():
                                         FORMAT=['GT'],
                                         calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
                                 )
-                                writer.write_record(rec)
+                                keep(rec)
 
-                            elif (event_type == "exon_skip"):
+                            elif (event_type == "exon_skip" or
+                                  event_type == "mult_exon_skip"):
                                 sv_type = "DEL"
                                 sv_len = -(end - start + 1)
-                                
-                                e2_start = column[7]
-                                e2_end = column[8]
 
                                 """ for some reason spladder reports exon skipping
-                                events in which the start and end position of the 
+                                events in which the start and end position of the
                                 skipped exon are the same... skip those events """
-                                if e2_start == e2_end:
+                                if start == end:
                                     continue
 
                                 # anchored on start-1 like the INS types above
                                 ref = (str(seq[chrom][start-2:start-1]) + str(seq[chrom][start-1:end])).upper()
                                 alt = str(seq[chrom][start-2:start-1]).upper()
-                                
-                                ao = column[16]
-                                psi = column[17]
-                                
+
+                                if event_type == "mult_exon_skip":
+                                    # the deleted span reaches from the first
+                                    # skipped exon to the last, so it also covers
+                                    # the introns between them. Those are spliced
+                                    # out either way, and both flanking introns
+                                    # survive, so the transcript still joins e1 to
+                                    # e3 -- the isoform spladder observed.
+                                    ao = column[18]
+                                    psi = column[19]
+                                else:
+                                    ao = column[16]
+                                    psi = column[17]
+
                                 rec = vcfpy.Record(
                                         CHROM=chrom,
                                         POS=start-1,
@@ -207,63 +255,19 @@ def main():
                                         FORMAT=['GT'],
                                         calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
                                 )
-                                writer.write_record(rec)
+                                keep(rec)
 
-                            elif (event_type == "mutex_exons"):
-                                sv_type = "DEL"
+                    # a layout change in a column this reads would otherwise
+                    # print one skip per row and still exit 0 with a valid but
+                    # empty vcf -- the silent drop this conversion exists to end.
+                    # Keyed on whether any row could be read, not on whether a
+                    # record came out, since a file whose events are all
+                    # degenerate legitimately yields none
+                    if event_type in CONVERTED and events and not parsed:
+                        sys.exit(f"{file}: {events} events, none readable")
 
-                                e2_start = column[7]
-                                e2_end = column[8]
-
-                                e3_start = column[9]
-                                e3_end = column[10]
-
-                                sv_len = []
-                                sv_len.append(-(e2_end - e2_start + 1))
-                                sv_len.append(-(e3_end - e3_start + 1))
-
-                                ref = []
-                                ref.append((str(seq[chrom][e2_start-1:e2_start]) + str(seq[chrom][e2_start:e2_end-1])).upper())
-                                ref.append((str(seq[chrom][e3_start-1:e3_start]) + str(seq[chrom][e3_start:e3_end-1])).upper())
-
-                                alt = []
-                                alt.append(str(seq[chrom][e2_start-1:e2_start]).upper())
-                                alt.append(str(seq[chrom][e3_start-1:e3_start]).upper())
-
-                                ao = []
-                                e1e2_conf = column[17]
-                                e3e4_conf = column[20]
-                                ao.append(e1e2_conf)
-                                ao.append(e3e4_conf)
-
-                                psi = column[21]
-
-                                for i in range(0,2):
-
-                                    rec = vcfpy.Record(
-                                            CHROM=chrom,
-                                            POS=start-1,
-                                            ID=[event_id],
-                                            REF=ref,
-                                            ALT=[vcfpy.Substitution(type_=sv_type, value=alt)],
-                                            QUAL='.',
-                                            FILTER=['PASS'],
-                                            INFO = vcfpy.OrderedDict(
-                                                [('SVTYPE', sv_type),
-                                                 ('END', end),
-                                                 ('AO', ao),
-                                                 ('STRAND', strand),
-                                                 ('GeneName', gene_name),
-                                                 ('SVLEN', sv_len),
-                                                 ('PSI', psi),
-                                                 ('GRP', options.group),
-                                                 ('SRC', event_type),
-                                                 ('SEQ', 'rnaseq')]),
-
-                                            FORMAT=['GT'],
-                                            calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
-                                    )
-                                    writer.write_record(rec)
+    for rec in best.values():
+        writer.write_record(rec)
     writer.close()
 
 
