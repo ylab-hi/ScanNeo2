@@ -357,13 +357,13 @@ class Variants():
             mt_ad = entry.calls[0].data['AD'][i+1]
 
         # transIndel
-        elif (entry.INFO['SRC'] == "long_indel" or 
-            entry.INFO['SRC'] == "exitron" or 
-            entry.INFO['SRC'] == "alt_5prime" or 
+        elif (entry.INFO['SRC'] == "long_indel" or
+            entry.INFO['SRC'] == "exitron" or
+            entry.INFO['SRC'] == "alt_5prime" or
             entry.INFO['SRC'] == "alt_3prime" or
-            entry.INFO['SRC'] == "intron_retention" or 
-            entry.INFO['SRC'] == "exon_skip" or 
-            entry.INFO['SRC'] == "mutex_exons"):
+            entry.INFO['SRC'] == "intron_retention" or
+            entry.INFO['SRC'] == "exon_skip" or
+            entry.INFO['SRC'] == "mult_exon_skip"):
 
             mt_ad = entry.INFO['AO']
             #wt_ad = str(int(float(entry.INFO['DP']) - float(mt_ad)))

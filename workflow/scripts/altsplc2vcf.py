@@ -11,6 +11,13 @@ from pathlib import Path
     python altsplc_to_variants.py '<input_txts>' <genome_fasta>
 """
 
+# the spladder event classes this converts. mutex_exons is deliberately absent:
+# a record applies to every transcript of the gene, and a transcript carries one
+# alternative exon or the other, so no single record is right for all of them
+# (see issue #259). Classes outside this set are left alone.
+CONVERTED = ("alt_5prime", "alt_3prime", "exon_skip",
+             "intron_retention", "mult_exon_skip")
+
 def add_info_field(header, key, number, dtype, desc):
     info = vcfpy.OrderedDict([
         ('ID', key),
@@ -69,18 +76,27 @@ def main():
     writer = vcfpy.Writer.from_path(options.output, header)
 
     # different spladder events can imply the same genomic change -- an exon
-    # skipped on its own and again as part of a run, say -- and each occurrence
-    # would otherwise be written again and counted as a further candidate
-    seen = set()
+    # skipped on its own and again as part of a run, say -- and writing each
+    # occurrence would count the same peptide as a further candidate. AO reaches
+    # the output as the supporting-read column, so the record kept is the one
+    # with the most junction support rather than whichever file was read first.
+    best = {}
+    built = [0]
 
-    def write_once(rec):
+    def junction_support(rec):
+        try:
+            return float(rec.INFO['AO'])
+        except (KeyError, TypeError, ValueError):
+            return -1.0
+
+    def keep(rec):
+        built[0] += 1
         key = (rec.CHROM, rec.POS, rec.REF, rec.ALT[0].value)
-        if key in seen:
-            return
-        seen.add(key)
-        writer.write_record(rec)
+        previous = best.get(key)
+        if previous is None or junction_support(rec) > junction_support(previous):
+            best[key] = rec
 
-    # sorted so that which event type keeps a shared allele is fixed, rather
+    # sorted so that a tie on support resolves the same way every run, rather
     # than following the order the filesystem happens to return
     for root, dirs, files in sorted(os.walk(options.input)):
         for file in sorted(files):
@@ -94,14 +110,12 @@ def main():
 
                     fh = gzip.open(os.path.join(root, file), 'r')
                     next(fh)
+                    before, events = built[0], 0
                     for line in fh:
                         column = line.decode().rstrip().split('\t')
+                        events += 1
 
-                        if (event_type == "alt_5prime" or
-                            event_type == "alt_3prime" or
-                            event_type == "exon_skip" or
-                            event_type == "intron_retention" or
-                            event_type == "mult_exon_skip"):
+                        if event_type in CONVERTED:
 
                             try:
                                 chrom = column[0]
@@ -184,7 +198,7 @@ def main():
                                         FORMAT=['GT'],
                                         calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
                                 )
-                                write_once(rec)
+                                keep(rec)
 
                             elif (event_type == "exon_skip" or
                                   event_type == "mult_exon_skip"):
@@ -237,7 +251,16 @@ def main():
                                         FORMAT=['GT'],
                                         calls = [vcfpy.Call(sample=options.group, data={'GT': '0/1'})]
                                 )
-                                write_once(rec)
+                                keep(rec)
+
+                    # a layout change in a column this reads would otherwise
+                    # print one skip per row and still exit 0 with a valid but
+                    # empty vcf -- the silent drop this conversion exists to end
+                    if event_type in CONVERTED and events and built[0] == before:
+                        sys.exit(f"{file}: {events} events, none converted")
+
+    for rec in best.values():
+        writer.write_record(rec)
     writer.close()
 
 

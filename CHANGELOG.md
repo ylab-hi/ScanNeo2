@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Multi-exon skips are called, and each altsplicing allele is written once**: `mult_exon_skip` reached no branch, so SplAdder wrote the file and nothing read it; it is now one deletion spanning the skipped run. An allele that several event classes imply is now written once instead of once per class, which drops about 1.2% of altsplicing rows as duplicates, so a sample can come out slightly lower. `mutex_exons` remains unconverted ([#259](https://github.com/ylab-hi/ScanNeo2/issues/259)). ([#250](https://github.com/ylab-hi/ScanNeo2/issues/250), [#260](https://github.com/ylab-hi/ScanNeo2/pull/260))
+- **Multi-exon skips are called, and each altsplicing allele is written once**: `mult_exon_skip` reached no branch, so SplAdder wrote the file and nothing read it; it is now one deletion spanning the skipped run. An allele that several events imply is now written once, keeping the record with the most junction support; that drops about 1.2% of a sample's altsplicing neoepitope rows as duplicates, so a sample can come out slightly lower, and `supporting` is no longer taken from an arbitrary one of the duplicates. `mutex_exons` remains unconverted ([#259](https://github.com/ylab-hi/ScanNeo2/issues/259)). ([#250](https://github.com/ylab-hi/ScanNeo2/issues/250), [#260](https://github.com/ylab-hi/ScanNeo2/pull/260))
 
 ## [0.8.1] - 2026-10-23
 
