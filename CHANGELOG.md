@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Multi-exon skips are called, and each altsplicing allele is written once**: `mult_exon_skip` reached no branch, so SplAdder wrote the file and nothing read it — 4,509 events on the TESLA cohort, now written as one deletion spanning the skipped run. Separately, several event classes can imply the same genomic change and each occurrence became its own record; alleles are now written once, removing 10,080 duplicate rows (1.2%). Altsplicing rows net **+2,078**, and three of eight samples come out slightly lower where deduplication outweighs the additions. `mutex_exons` remains unconverted ([#259](https://github.com/ylab-hi/ScanNeo2/issues/259)). ([#250](https://github.com/ylab-hi/ScanNeo2/issues/250), [#260](https://github.com/ylab-hi/ScanNeo2/pull/260))
+- **Multi-exon skips are called, and each altsplicing allele is written once**: `mult_exon_skip` reached no branch, so SplAdder wrote the file and nothing read it; it is now one deletion spanning the skipped run. Alleles that several event classes imply are no longer written once each, which removes about 1.2% of altsplicing rows as duplicates, so a sample can come out slightly lower. `mutex_exons` remains unconverted ([#259](https://github.com/ylab-hi/ScanNeo2/issues/259)). ([#250](https://github.com/ylab-hi/ScanNeo2/issues/250), [#260](https://github.com/ylab-hi/ScanNeo2/pull/260))
 
 ## [0.8.1] - 2026-10-23
 
