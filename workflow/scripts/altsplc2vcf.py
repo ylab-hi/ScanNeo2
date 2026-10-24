@@ -81,7 +81,6 @@ def main():
     # the output as the supporting-read column, so the record kept is the one
     # with the most junction support rather than whichever file was read first.
     best = {}
-    built = [0]
 
     def junction_support(rec):
         try:
@@ -90,7 +89,6 @@ def main():
             return -1.0
 
     def keep(rec):
-        built[0] += 1
         key = (rec.CHROM, rec.POS, rec.REF, rec.ALT[0].value)
         previous = best.get(key)
         if previous is None or junction_support(rec) > junction_support(previous):
@@ -110,7 +108,7 @@ def main():
 
                     fh = gzip.open(os.path.join(root, file), 'r')
                     next(fh)
-                    before, events = built[0], 0
+                    events = parsed = 0
                     for line in fh:
                         column = line.decode().rstrip().split('\t')
                         events += 1
@@ -143,6 +141,12 @@ def main():
                             except (IndexError, ValueError):
                                 print("malformed event - skipping event")
                                 continue
+
+                            # the row's coordinates were readable. Counted before
+                            # the guards below, which drop events for reasons of
+                            # their own, so that the check after the loop can tell
+                            # a deliberate skip from a file this can no longer read
+                            parsed += 1
 
                             # every record anchors on the base before the event,
                             # so an event starting at the first base of a
@@ -255,9 +259,12 @@ def main():
 
                     # a layout change in a column this reads would otherwise
                     # print one skip per row and still exit 0 with a valid but
-                    # empty vcf -- the silent drop this conversion exists to end
-                    if event_type in CONVERTED and events and built[0] == before:
-                        sys.exit(f"{file}: {events} events, none converted")
+                    # empty vcf -- the silent drop this conversion exists to end.
+                    # Keyed on whether any row could be read, not on whether a
+                    # record came out, since a file whose events are all
+                    # degenerate legitimately yields none
+                    if event_type in CONVERTED and events and not parsed:
+                        sys.exit(f"{file}: {events} events, none readable")
 
     for rec in best.values():
         writer.write_record(rec)
