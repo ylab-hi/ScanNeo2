@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Multi-exon skips are called, and each altsplicing allele is written once**: `mult_exon_skip` reached no branch, so SplAdder wrote the file and nothing read it; it is now one deletion spanning the skipped run. An allele that several events imply is now written once, keeping the record with the most junction support; that drops about 1.2% of a sample's altsplicing neoepitope rows as duplicates, so a sample can come out slightly lower, and `supporting` is no longer taken from an arbitrary one of the duplicates. `mutex_exons` remains unconverted ([#259](https://github.com/ylab-hi/ScanNeo2/issues/259)). ([#250](https://github.com/ylab-hi/ScanNeo2/issues/250), [#260](https://github.com/ylab-hi/ScanNeo2/pull/260))
 
+### Changed
+
+- **Normalized Mutect2 calls are deleted once selection has read them**: `normalize_calls_m2`'s output duplicates the whole call set and only the two `select_*` rules read it, so it is now `temp()`; forcing one of them alone rebuilds it. **The gatk env file gained a comment, which changes its hash, so Snakemake re-runs the three rules that use it, `split_n_cigar_reads` among them.** The environment itself is unchanged, so `--rerun-triggers mtime` skips that safely. ([#237](https://github.com/ylab-hi/ScanNeo2/issues/237), [#240](https://github.com/ylab-hi/ScanNeo2/issues/240), [#263](https://github.com/ylab-hi/ScanNeo2/pull/263))
+
 ## [0.8.1] - 2026-10-23
 
 ### Fixed

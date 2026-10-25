@@ -5,5 +5,11 @@ dependencies:
   # pinned to match the gatk/mutect + gatk/filtermutectcalls wrappers (both
   # v1.31.1 -> gatk4 4.4.0.0), so the read-orientation model produced here is
   # format-compatible with the Mutect2 f1r2 inputs and the FilterMutectCalls
-  # --ob-priors consumer
+  # --ob-priors consumer.
+  #
+  # normalize_calls_m2 relies on it too: splitting a multiallelic record carries
+  # each allele's own rejection into FILTER, via per-allele fields that are
+  # GATK-private, so the splitter must match the gatk4 that wrote them. Mutect2
+  # and FilterMutectCalls run from their wrappers' envs, so bumping a wrapper
+  # means bumping this pin with it.
   - gatk4=4.4.0.0

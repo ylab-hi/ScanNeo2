@@ -415,8 +415,15 @@ rule normalize_calls_m2:
         ref_idx="resources/refs/genome.fasta.fai",
         ref_dict="resources/refs/genome.dict",
     output:
-        vcf="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz",
-        tbi="results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz.tbi",
+        # a second copy of the whole call set, needed only by the select_* rules
+        # below. Removing it after those run costs a ~40 s rebuild if one of them
+        # is later forced alone.
+        vcf=temp(
+            "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz"
+        ),
+        tbi=temp(
+            "results/{sample}/{seqtype}/indel/mutect2/{group}_variants.norm.vcf.gz.tbi"
+        ),
     log:
         "logs/{sample}/indel/normalize_calls_m2_{seqtype}_{group}.log",
     conda:
