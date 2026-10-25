@@ -5,5 +5,10 @@ dependencies:
   # pinned to match the gatk/mutect + gatk/filtermutectcalls wrappers (both
   # v1.31.1 -> gatk4 4.4.0.0), so the read-orientation model produced here is
   # format-compatible with the Mutect2 f1r2 inputs and the FilterMutectCalls
-  # --ob-priors consumer
+  # --ob-priors consumer.
+  #
+  # normalize_calls_m2 needs the same pin for a second, independent reason:
+  # LeftAlignAndTrimVariants --split-multi-allelics reads AS_FilterStatus, a
+  # GATK-private annotation, so the tool reading it must be the version that
+  # wrote it.
   - gatk4=4.4.0.0
