@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Snakemake 9.24 is now the minimum**: `environment.yml` and `min_version` both pin the floor CI tests, so a run on 9.0–9.23 now fails outright rather than silently using a conda frontend those versions still honour. The SLURM profile no longer requests that frontend, which removes the deprecation notice every run printed, and the README and configuration docs no longer claim `--configfile` replaces the default config — it extends it. ([#248](https://github.com/ylab-hi/ScanNeo2/issues/248), [#264](https://github.com/ylab-hi/ScanNeo2/pull/264))
+
 - **Normalized Mutect2 calls are deleted once selection has read them**: `normalize_calls_m2`'s output duplicates the whole call set and only the two `select_*` rules read it, so it is now `temp()`; forcing one of them alone rebuilds it. **The gatk env file gained a comment, which changes its hash, so Snakemake re-runs the three rules that use it, `split_n_cigar_reads` among them.** The environment itself is unchanged, so `--rerun-triggers mtime` skips that safely. ([#237](https://github.com/ylab-hi/ScanNeo2/issues/237), [#240](https://github.com/ylab-hi/ScanNeo2/issues/240), [#263](https://github.com/ylab-hi/ScanNeo2/pull/263))
 
 ## [0.8.1] - 2026-10-23
