@@ -26,7 +26,6 @@
 
 executor: slurm
 software-deployment-method: conda
-conda-frontend: mamba
 
 jobs: 100 # max concurrently-submitted SLURM jobs
 latency-wait: 60 # tolerate shared-filesystem output latency after a job finishes
