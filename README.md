@@ -78,10 +78,9 @@ cd /path/to/your/working/directory/
 snakemake --cores all --software-deployment-method conda 
 ```
 
-Note that snakemake currently does not support Mamba v2. We recommend either using Mamba v1 or providing the option `--conda-frontend conda`.
-
-In addition, custom config files can be configured using `--configfile <path/to/configfile>`. In principle, this merely 
-overwrites the default config, and should include all key/value pairs of the valid config file.
+In addition, custom config files can be configured using `--configfile <path/to/configfile>`. This extends the default
+config rather than replacing it, so the file only needs the keys it overrides. Use `--replace-workflow-config` to replace
+it instead.
 
 For more detailed instructions and explanations on how to use ScanNeo2, please consult the [documentation site](https://ylab-hi.github.io/ScanNeo2/) (the GitHub [wiki](https://github.com/ylab-hi/ScanNeo2/wiki) is kept in sync as a fallback).
 

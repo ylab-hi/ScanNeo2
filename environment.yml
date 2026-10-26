@@ -3,6 +3,6 @@ channels:
  - conda-forge
  - bioconda
 dependencies:
- - snakemake>=9,<10
+ - snakemake>=9.24,<10
  - snakemake-wrapper-utils
  - snakemake-executor-plugin-slurm

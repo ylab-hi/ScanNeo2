@@ -9,8 +9,9 @@ RUN apt-get update && apt-get install -y \
 # # check out branch
 # RUN cd ScanNeo2 && git checkout mhcIItyping
 
-# install snakemake in conda environment
-RUN conda create -n scanneo2 -c bioconda snakemake snakemake-wrapper-utils && \
+# install snakemake in conda environment, bounded by the same floor the workflow
+# itself declares in min_version, and below the next major release
+RUN conda create -n scanneo2 -c bioconda "snakemake>=9.0.0,<10" snakemake-wrapper-utils && \
     echo "source activate scanneo2" >> ~/.bashrc
 
 # enable strict channels
