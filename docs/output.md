@@ -72,13 +72,19 @@ ScanNeo2 calls different variants (according to the configuration) and then coll
 
 [SplAdder](https://spladder.readthedocs.io/) detects alternative-splicing events from the RNA-seq alignment; intermediate splice-graph files land in `results/<sample>/rnaseq/altsplicing/`. The `splicing_to_vcf` rule converts SplAdder's output to per-group VCFs that are then sorted, augmented with `GRP` / `SRC` / `SEQ` INFO keys (same convention as the exitron path below; `SEQ` is always `rnaseq` here), and merged into `results/<sample>/variants/altsplicing.vcf.gz`.
 
-Five of SplAdder's event classes are converted: `alt_3prime`, `alt_5prime`, `intron_retention`, `exon_skip` and `mult_exon_skip`. A multi-exon skip is written as one deletion spanning the first skipped exon through the last, so that the transcript still joins the exons either side of the skip — one record per event, because nothing phases separate records and a deletion per exon would describe single-exon skips that were never observed.
+Of SplAdder's event classes, only `exon_skip` is currently converted. It deletes a whole annotated exon, so the record needs neither a base to anchor an insertion on nor a feature the transcript lacks, and it is sound against every transcript VEP annotates.
 
-That span also covers the introns between the skipped exons, which costs nothing in the transcript the event describes: those introns are spliced out either way. It matters at annotation. SplAdder reports an event against a gene rather than a transcript, and VEP annotates the record against every transcript of that gene, so where another transcript uses one of those introns as an exon, that exon is deleted too and the consequence reported for it belongs to no observed isoform. Such rows are not marked as different from the rest.
+The other classes are not converted for now. A VCF record applies to every transcript of its gene, and SplAdder reports an event against a gene rather than a transcript, so for these classes a record can describe an isoform that was never observed — and the resulting rows are indistinguishable from real ones in the output. They return individually as each becomes checkable; [#262](https://github.com/ylab-hi/ScanNeo2/issues/262) tracks that work.
 
-Several events can imply the same genomic change — an exon skipped on its own and again as part of a run, or two alternative 5' sites trimming to the same coordinates. Each distinct allele is written **once**, so a peptide is not counted repeatedly as a further candidate. Where event classes disagree about a shared allele, the record keeps the first `SRC` in alphabetical order.
+| class | why it is withheld |
+| --- | --- |
+| `alt_3prime`, `alt_5prime` | the insertion anchor is intronic in about half of records, which cannot express the event ([#257](https://github.com/ylab-hi/ScanNeo2/issues/257)) |
+| `intron_retention` | the intron is already exonic in the annotated transcript for a sizeable share of rows, so inserting it duplicates it |
+| `mult_exon_skip` | the deleted span can remove an exon belonging to another transcript |
+| `mutex_exons` | two isoforms that cannot both occur, with no faithful single-record encoding ([#259](https://github.com/ylab-hi/ScanNeo2/issues/259)) |
 
-`mutex_exons` is **not** converted. A VCF record is applied to every transcript of the gene, and a transcript carries one of the two alternative exons or the other, so no single record is right for all of them: deleting one alternative yields an isoform skipping both wherever the transcript held only that one, while substituting one exon's sequence for the other's misfires wherever a transcript happens to hold both. Across the TESLA cohort 83% of the transcripts involved are one-sided and 17% carry both, so either encoding produces unmarked artifacts for the remainder. The events are skipped until the output can be filtered by transcript structure.
+Where several events imply the same genomic change, each distinct allele is written once, keeping the record with the most junction support.
+
 
 ### EXITRON
 

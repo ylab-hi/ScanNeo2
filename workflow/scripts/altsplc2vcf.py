@@ -11,12 +11,24 @@ from pathlib import Path
     python altsplc_to_variants.py '<input_txts>' <genome_fasta>
 """
 
-# the spladder event classes this converts. mutex_exons is deliberately absent:
-# a record applies to every transcript of the gene, and a transcript carries one
-# alternative exon or the other, so no single record is right for all of them
-# (see issue #259). Classes outside this set are left alone.
-CONVERTED = ("alt_5prime", "alt_3prime", "exon_skip",
-             "intron_retention", "mult_exon_skip")
+# The spladder event classes this converts. Classes outside the set are left
+# alone, and the branches below still carry the code for them: each returns once
+# its own consequences can be told apart from artifacts, which is issue #262.
+#
+# A record applies to every transcript of its gene, so a class is only sound
+# where the event can be expressed against the transcripts VEP will annotate.
+# exon_skip is the one that holds unconditionally: it deletes a whole annotated
+# exon, needing neither an anchor to insert at nor an absent feature to supply.
+#
+#   alt_3prime, alt_5prime   the insertion anchor is intronic in 47.5% of
+#                            records, which cannot express the event (#257)
+#   intron_retention         the intron is already exonic in the transcript for
+#                            27.5% of rows, so inserting it duplicates it (#262)
+#   mult_exon_skip           the deleted span can swallow an exon belonging to
+#                            another transcript, ~2% of rows (#262)
+#   mutex_exons              two isoforms that cannot both occur, with no
+#                            faithful single-record encoding (#259)
+CONVERTED = ("exon_skip",)
 
 def add_info_field(header, key, number, dtype, desc):
     info = vcfpy.OrderedDict([
