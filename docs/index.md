@@ -40,7 +40,7 @@ In addition, the parameters can also be specified using the command line such as
 
 Given that the workflow has been properly deployed and configured, it can be executed as follows.
 
-For running the workflow while deploying any necessary software via conda (using the [Mamba package manager](https://github.com/mamba-org/mamba) by default), run Snakemake with
+For running the workflow while deploying any necessary software via conda, run Snakemake with
 
 ```
 snakemake --cores all --software-deployment-method conda
