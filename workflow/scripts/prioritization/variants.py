@@ -72,12 +72,6 @@ class Variants():
                         else:
                             transcript_count[transcript_id] = 1
 
-                        nmd = None
-                        csq = self.resolve_consequence(field['Consequence'])
-
-                        if csq is None:
-                            continue
-
                         # A vcf record carries no transcript, so vep annotates
                         # it against every transcript of the gene. An exon_skip
                         # record deletes a whole exon, which is only the event
@@ -87,10 +81,16 @@ class Variants():
                         # an isoform nothing supports (#262). Such an entry is
                         # dropped rather than written, since the junction reads
                         # say nothing about it either way.
-                        if entry.INFO['SRC'] == 'exon_skip':
-                            if not self.holds_exon(annotation, transcript_id,
-                                                   entry.POS, entry.INFO['END']):
-                                continue
+                        if (entry.INFO['SRC'] == 'exon_skip' and
+                            not self.holds_exon(annotation, transcript_id,
+                                                entry.POS, entry.INFO['END'])):
+                            continue
+
+                        nmd = None
+                        csq = self.resolve_consequence(field['Consequence'])
+
+                        if csq is None:
+                            continue
                         elif csq == "frameshift":
                             if transcript_id in annotation.transcriptome:
                                 transcript, transcript_bp = annotation.splice_with_variant(
