@@ -77,6 +77,20 @@ class Variants():
 
                         if csq is None:
                             continue
+
+                        # A vcf record carries no transcript, so vep annotates
+                        # it against every transcript of the gene. An exon_skip
+                        # record deletes a whole exon, which is only the event
+                        # spladder observed for a transcript that holds that
+                        # exon: in a transcript whose exon ends elsewhere the
+                        # same span truncates it instead, giving a peptide from
+                        # an isoform nothing supports (#262). Such an entry is
+                        # dropped rather than written, since the junction reads
+                        # say nothing about it either way.
+                        if entry.INFO['SRC'] == 'exon_skip':
+                            if not self.holds_exon(annotation, transcript_id,
+                                                   entry.POS, entry.INFO['END']):
+                                continue
                         elif csq == "frameshift":
                             if transcript_id in annotation.transcriptome:
                                 transcript, transcript_bp = annotation.splice_with_variant(
@@ -180,6 +194,27 @@ class Variants():
                         # check if variant is self dissimilar
                         if self.variant_effects.self_dissimilarity():
                             self.variant_effects.write_entry()
+
+
+    @staticmethod
+    def holds_exon(annotation, transcript_id, start, end):
+        """Does the transcript carry an exon at exactly this genomic span?
+
+        An altsplicing record anchors on the base before the event, so for an
+        exon skip POS is the skipped exon's first base minus one and END its
+        last base -- 0-based half-open (POS, END), the convention exon_map
+        already returns its genomic coordinates in.
+
+        A transcript the gtf does not describe cannot be checked, so it counts
+        as not holding the exon.
+        """
+        if (transcript_id not in annotation.transcriptome or
+            transcript_id not in annotation.exome):
+            return False
+
+        exons = annotation.exon_map(transcript_id)[1]
+        return any(g_start == start and g_end == end
+                   for _, _, g_start, g_end in exons)
 
 
     @staticmethod
