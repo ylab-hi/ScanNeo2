@@ -91,27 +91,40 @@ class Variants():
 
                         if csq is None:
                             continue
-                        elif csq == "frameshift":
+
+                        # The mutant peptide is built from fields vep does not
+                        # always fill, and without them mt_seq collapses to a
+                        # bare wildtype prefix -- not a neoepitope.
+
+                        # vep leaves this empty where it reports no protein
+                        # consequence for the transcript at all
+                        if not field["Amino_acids"]:
+                            continue
+
+                        # and collapses it to a single residue where wildtype
+                        # and mutant are the same one, such as an insertion at
+                        # a retained stop. There is no substitution to build
+                        # from, and determine_aa_change's split needs the pair.
+                        if '/' not in field["Amino_acids"]:
+                            continue
+
+                        # a frameshift's mutant is the wildtype up to the
+                        # variant plus this translation of what follows
+                        if csq == "frameshift":
+                            if field["DownstreamProtein"] == "":
+                                continue
+
                             if transcript_id in annotation.transcriptome:
                                 transcript, transcript_bp = annotation.splice_with_variant(
                                     transcript_id, chrom, start, stop, field["Allele"]
                                 )
 
-                            if field["DownstreamProtein"] == "":
-                                continue
+                        aa_change = field["Amino_acids"]
 
                         vaf = self.determine_variant_allele_frequency(entry, alt_i)
                         # determine allele depth (number of reads)
                         mt_ad = self.determine_allele_depth(entry, alt_i)
                         dp = self.determine_read_depth(entry)
-
-                        if field["Amino_acids"]:
-                            aa_change = field["Amino_acids"]
-
-                            if '/' not in aa_change:
-                                continue
-                        else:
-                            continue
 
                         # VEP reports an amino-acid change but leaves
                         # Protein_position (and HGVSp) empty where the protein
