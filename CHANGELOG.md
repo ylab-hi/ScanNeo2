@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Normalized Mutect2 calls are deleted once selection has read them**: `normalize_calls_m2`'s output duplicates the whole call set and only the two `select_*` rules read it, so it is now `temp()`; forcing one of them alone rebuilds it. **The gatk env file gained a comment, which changes its hash, so Snakemake re-runs the three rules that use it, `split_n_cigar_reads` among them.** The environment itself is unchanged, so `--rerun-triggers mtime` skips that safely. ([#237](https://github.com/ylab-hi/ScanNeo2/issues/237), [#240](https://github.com/ylab-hi/ScanNeo2/issues/240), [#263](https://github.com/ylab-hi/ScanNeo2/pull/263))
 
+### Fixed
+
+- **An `exon_skip` consequence is checked against the transcript it is annotated on**: a VCF record carries no transcript, so VEP annotates an exon skip against every transcript of its gene, and where that transcript's exon ends elsewhere the deleted span truncates the exon instead of skipping it — a peptide from an isoform the junction reads never supported. Those consequences are now dropped, removing roughly 5% of `exon_skip` neoepitopes. An entry VEP reports no mutant effect for is also excluded where those fields are read, instead of reaching the self-similarity comparison as a bare wildtype prefix. **`variants.py` changed, so prioritization re-runs for every source under the default triggers**, though only altsplicing output differs. ([#262](https://github.com/ylab-hi/ScanNeo2/issues/262), [#267](https://github.com/ylab-hi/ScanNeo2/pull/267))
+
 ## [0.8.1] - 2026-10-23
 
 ### Fixed
