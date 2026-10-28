@@ -83,7 +83,7 @@ The other classes are not converted for now. A VCF record applies to every trans
 | `mult_exon_skip` | the deleted span can remove an exon belonging to another transcript |
 | `mutex_exons` | two isoforms that cannot both occur, with no faithful single-record encoding ([#259](https://github.com/ylab-hi/ScanNeo2/issues/259)) |
 
-Where several events imply the same genomic change, each distinct allele is written once, keeping the record with the most junction support.
+Where several events imply the same genomic change, each distinct allele is written once **per group**, keeping the record with the most junction support. The per-group VCFs are then concatenated without a further deduplication step, so a sample with more than one group can carry the same allele once per group in the merged file.
 
 
 ### EXITRON
