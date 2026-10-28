@@ -72,32 +72,59 @@ class Variants():
                         else:
                             transcript_count[transcript_id] = 1
 
+                        # A vcf record carries no transcript, so vep annotates
+                        # it against every transcript of the gene. An exon_skip
+                        # record deletes a whole exon, which is only the event
+                        # spladder observed for a transcript that holds that
+                        # exon: in a transcript whose exon ends elsewhere the
+                        # same span truncates it instead, giving a peptide from
+                        # an isoform nothing supports (#262). Such an entry is
+                        # dropped rather than written, since the junction reads
+                        # say nothing about it either way.
+                        if (entry.INFO['SRC'] == 'exon_skip' and
+                            not self.holds_exon(annotation, transcript_id,
+                                                entry.POS, entry.INFO['END'])):
+                            continue
+
                         nmd = None
                         csq = self.resolve_consequence(field['Consequence'])
 
                         if csq is None:
                             continue
-                        elif csq == "frameshift":
+
+                        # The mutant peptide is built from fields vep does not
+                        # always fill, and without them mt_seq collapses to a
+                        # bare wildtype prefix -- not a neoepitope.
+
+                        # vep leaves this empty where it reports no protein
+                        # consequence for the transcript at all
+                        if not field["Amino_acids"]:
+                            continue
+
+                        # and collapses it to a single residue where wildtype
+                        # and mutant are the same one, such as an insertion at
+                        # a retained stop. There is no substitution to build
+                        # from, and determine_aa_change's split needs the pair.
+                        if '/' not in field["Amino_acids"]:
+                            continue
+
+                        # a frameshift's mutant is the wildtype up to the
+                        # variant plus this translation of what follows
+                        if csq == "frameshift":
+                            if field["DownstreamProtein"] == "":
+                                continue
+
                             if transcript_id in annotation.transcriptome:
                                 transcript, transcript_bp = annotation.splice_with_variant(
                                     transcript_id, chrom, start, stop, field["Allele"]
                                 )
 
-                            if field["DownstreamProtein"] == "":
-                                continue
+                        aa_change = field["Amino_acids"]
 
                         vaf = self.determine_variant_allele_frequency(entry, alt_i)
                         # determine allele depth (number of reads)
                         mt_ad = self.determine_allele_depth(entry, alt_i)
                         dp = self.determine_read_depth(entry)
-
-                        if field["Amino_acids"]:
-                            aa_change = field["Amino_acids"]
-
-                            if '/' not in aa_change:
-                                continue
-                        else:
-                            continue
 
                         # VEP reports an amino-acid change but leaves
                         # Protein_position (and HGVSp) empty where the protein
@@ -180,6 +207,27 @@ class Variants():
                         # check if variant is self dissimilar
                         if self.variant_effects.self_dissimilarity():
                             self.variant_effects.write_entry()
+
+
+    @staticmethod
+    def holds_exon(annotation, transcript_id, start, end):
+        """Does the transcript carry an exon at exactly this genomic span?
+
+        An altsplicing record anchors on the base before the event, so for an
+        exon skip POS is the skipped exon's first base minus one and END its
+        last base -- 0-based half-open (POS, END), the convention exon_map
+        already returns its genomic coordinates in.
+
+        A transcript the gtf does not describe cannot be checked, so it counts
+        as not holding the exon.
+        """
+        if (transcript_id not in annotation.transcriptome or
+            transcript_id not in annotation.exome):
+            return False
+
+        exons = annotation.exon_map(transcript_id)[1]
+        return any(g_start == start and g_end == end
+                   for _, _, g_start, g_end in exons)
 
 
     @staticmethod
