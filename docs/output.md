@@ -72,11 +72,11 @@ ScanNeo2 calls different variants (according to the configuration) and then coll
 
 [SplAdder](https://spladder.readthedocs.io/) detects alternative-splicing events from the RNA-seq alignment; intermediate splice-graph files land in `results/<sample>/rnaseq/altsplicing/`. The `splicing_to_vcf` rule converts SplAdder's output to per-group VCFs that are then sorted, augmented with `GRP` / `SRC` / `SEQ` INFO keys (same convention as the exitron path below; `SEQ` is always `rnaseq` here), and merged into `results/<sample>/variants/altsplicing.vcf.gz`.
 
-Of SplAdder's event classes, only `exon_skip` is currently converted. It deletes a whole annotated exon, so the record needs neither a base to anchor an insertion on nor a feature the transcript lacks, and it is sound against every transcript VEP annotates.
+Of SplAdder's event classes, only `exon_skip` is currently converted. It deletes a whole annotated exon, so the record needs neither a base to anchor an insertion on nor a feature the transcript lacks, which makes it much the soundest of the six — though not perfectly sound: a gene's transcripts share exon starts with differing ends, so for a minority of rows the deletion truncates an exon of some other transcript rather than removing the one the event names.
 
 The other classes are not converted for now. A VCF record applies to every transcript of its gene, and SplAdder reports an event against a gene rather than a transcript, so for these classes a record can describe an isoform that was never observed — and the resulting rows are indistinguishable from real ones in the output. They return individually as each becomes checkable; [#262](https://github.com/ylab-hi/ScanNeo2/issues/262) tracks that work.
 
-| class | why it is withheld |
+| class postponed | why |
 | --- | --- |
 | `alt_3prime`, `alt_5prime` | the insertion anchor is intronic in about half of records, which cannot express the event ([#257](https://github.com/ylab-hi/ScanNeo2/issues/257)) |
 | `intron_retention` | the intron is already exonic in the annotated transcript for a sizeable share of rows, so inserting it duplicates it |

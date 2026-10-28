@@ -15,17 +15,20 @@ from pathlib import Path
 # alone, and the branches below still carry the code for them: each returns once
 # its own consequences can be told apart from artifacts, which is issue #262.
 #
-# A record applies to every transcript of its gene, so a class is only sound
-# where the event can be expressed against the transcripts VEP will annotate.
-# exon_skip is the one that holds unconditionally: it deletes a whole annotated
-# exon, needing neither an anchor to insert at nor an absent feature to supply.
+# A record applies to every transcript of its gene, so a class is only as sound
+# as the event is expressible against the transcripts VEP will annotate. None is
+# wholly sound; exon_skip is much the closest, needing neither an anchor to
+# insert at nor an absent feature to supply:
 #
+#   exon_skip                94% of rows land on a transcript holding the
+#                            skipped exon; for the rest the span truncates some
+#                            other exon of the gene (#262)
 #   alt_3prime, alt_5prime   the insertion anchor is intronic in 47.5% of
 #                            records, which cannot express the event (#257)
 #   intron_retention         the intron is already exonic in the transcript for
 #                            27.5% of rows, so inserting it duplicates it (#262)
-#   mult_exon_skip           the deleted span can swallow an exon belonging to
-#                            another transcript, ~2% of rows (#262)
+#   mult_exon_skip           the deleted span can remove an exon belonging to
+#                            another transcript (#262)
 #   mutex_exons              two isoforms that cannot both occur, with no
 #                            faithful single-record encoding (#259)
 CONVERTED = ("exon_skip",)
@@ -108,15 +111,17 @@ def main():
 
     # sorted so that a tie on support resolves the same way every run, rather
     # than following the order the filesystem happens to return
+    matched = 0
     for root, dirs, files in sorted(os.walk(options.input)):
         for file in sorted(files):
             if file.endswith(".txt.gz"):
                 print(file)
                 # determine type of splicing from file
-                pattern = re.compile(r'merge_graphs_(\w+)_C[1-3].confirmed.txt.gz')
+                pattern = re.compile(r'merge_graphs_(\w+)_C[0-3].confirmed.txt.gz')
                 match = pattern.search(file)
                 if match:
                     event_type = match.group(1)
+                    matched += 1
 
                     fh = gzip.open(os.path.join(root, file), 'r')
                     next(fh)
@@ -277,6 +282,13 @@ def main():
                     # degenerate legitimately yields none
                     if event_type in CONVERTED and events and not parsed:
                         sys.exit(f"{file}: {events} events, none readable")
+
+    # no file matched the name spladder gives its confirmed events, so nothing
+    # was read at all. Left to pass, this writes a header-only vcf that the run
+    # reports as a source with no input, indistinguishable from a sample that
+    # genuinely has none
+    if not matched:
+        sys.exit(f"{options.input}: no merge_graphs_*_C[0-3].confirmed.txt.gz found")
 
     for rec in best.values():
         writer.write_record(rec)

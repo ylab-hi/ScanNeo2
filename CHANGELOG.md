@@ -8,11 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- **Multi-exon skips are called, and each altsplicing allele is written once**: `mult_exon_skip` reached no branch, so SplAdder wrote the file and nothing read it; it is now one deletion spanning the skipped run. An allele that several events imply is now written once, keeping the record with the most junction support; that drops about 1.2% of a sample's altsplicing neoepitope rows as duplicates, so a sample can come out slightly lower, and `supporting` is no longer taken from an arbitrary one of the duplicates. `mutex_exons` remains unconverted ([#259](https://github.com/ylab-hi/ScanNeo2/issues/259)). ([#250](https://github.com/ylab-hi/ScanNeo2/issues/250), [#260](https://github.com/ylab-hi/ScanNeo2/pull/260))
-
 ### Changed
+
+- **Altsplicing converts only `exon_skip` for now**: a record applies to every transcript of its gene, so for the other event classes it can describe an isoform that was never observed, and those rows are indistinguishable from real ones — so they are postponed until each can be checked per transcript ([#262](https://github.com/ylab-hi/ScanNeo2/issues/262)), which cuts altsplicing output to roughly an eighth. An allele that several events imply is now written once, keeping the record with the most junction support. ([#250](https://github.com/ylab-hi/ScanNeo2/issues/250), [#260](https://github.com/ylab-hi/ScanNeo2/pull/260), [#265](https://github.com/ylab-hi/ScanNeo2/pull/265))
 
 - **`environment.yml` installs the Snakemake version CI tests**, raising its floor to 9.24 while `min_version` stays at 9.0.0, since no release in that range differs in anything this workflow uses. The SLURM profile no longer asks for a conda frontend that no 9.x honours, which removes the deprecation notice every run printed, and the README and configuration docs no longer claim `--configfile` replaces the default config — it extends it. ([#248](https://github.com/ylab-hi/ScanNeo2/issues/248), [#264](https://github.com/ylab-hi/ScanNeo2/pull/264))
 
