@@ -86,6 +86,17 @@ class Variants():
                                                 entry.POS, entry.INFO['END'])):
                             continue
 
+                        # Likewise an intron_retention record inserts the
+                        # intron, which is the retention spladder observed only
+                        # for a transcript splicing exactly that intron. Where
+                        # the transcript already holds it as exon the insertion
+                        # duplicates it, and where an exon reaches into it the
+                        # result is neither isoform (#262).
+                        if (entry.INFO['SRC'] == 'intron_retention' and
+                            not self.holds_intron(annotation, transcript_id,
+                                                  entry.POS, entry.INFO['END'])):
+                            continue
+
                         nmd = None
                         csq = self.resolve_consequence(field['Consequence'])
 
@@ -141,7 +152,8 @@ class Variants():
 
                         wt_seq, var_start = self.trim_at_unknown_residue(
                             field["WildtypeProtein"],
-                            self.get_variant_startpos(field["Protein_position"]),
+                            self.get_variant_startpos(field["Protein_position"],
+                                                      aa_change, csq),
                             csq,
                         )
                         if wt_seq is None:
@@ -231,6 +243,31 @@ class Variants():
 
 
     @staticmethod
+    def holds_intron(annotation, transcript_id, start, end):
+        """Does the transcript carry an intron at exactly this genomic span?
+
+        An intron_retention record inserts the intron after the base before
+        it, so POS is the flanking exon's last base and END the intron's last
+        -- in exon_map's 0-based half-open terms, one exon ends at POS and the
+        next begins at END. Adjacency is required: an exon between the two
+        means the span is not one intron of this transcript.
+
+        A transcript the gtf does not describe cannot be checked, so it counts
+        as not holding the intron.
+        """
+        if (transcript_id not in annotation.transcriptome or
+            transcript_id not in annotation.exome):
+            return False
+
+        # exon_map walks the mRNA, which runs downstream-to-upstream on the
+        # minus strand; adjacency is a genomic question
+        exons = sorted((g_start, g_end) for _, _, g_start, g_end
+                       in annotation.exon_map(transcript_id)[1])
+        return any(left[1] == start and right[0] == end
+                   for left, right in zip(exons, exons[1:]))
+
+
+    @staticmethod
     def trim_at_unknown_residue(wt_seq, var_start, csq):
         """Keep an unknown residue (X) out of the wildtype and mutant.
 
@@ -288,16 +325,23 @@ class Variants():
 
 
     @staticmethod
-    def get_variant_startpos(protein_position):
-        if '-' not in protein_position: # single number
-            startpos = int(protein_position) - 1
-        else:
-            if protein_position.split('/')[0] == '-':
-                startpos = int(protein_position.split('-')[0])
-            else:
-                startpos = int(protein_position.split('-')[0]) - 1
+    def get_variant_startpos(protein_position, aa_change, csq):
+        """0-based index of the first residue the variant replaces.
 
-        return startpos
+        VEP writes a pure insertion as Amino_acids '-/X' at 'N-N+1': it sits
+        between residues N and N+1 and replaces neither, so the mutant
+        continues from index N. Anything else replaces residues from N
+        onwards, index N-1.
+
+        A frameshift keeps N-1 whatever its form: its mutant is spliced from
+        DownstreamProtein, which is anchored on VEP's 3'-shifted coordinates
+        rather than on Protein_position, so neither index places it reliably
+        (#269).
+        """
+        start = int(protein_position.split('-')[0])
+        if aa_change.startswith('-/') and csq != "frameshift":
+            return start
+        return start - 1
 
 
 
