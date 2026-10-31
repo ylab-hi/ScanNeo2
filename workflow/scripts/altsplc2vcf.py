@@ -25,13 +25,18 @@ from pathlib import Path
 #                            other exon of the gene (#262)
 #   alt_3prime, alt_5prime   the insertion anchor is intronic in 47.5% of
 #                            records, which cannot express the event (#257)
-#   intron_retention         the intron is already exonic in the transcript for
-#                            27.5% of rows, so inserting it duplicates it (#262)
+#   intron_retention         38% of rows land on a transcript splicing exactly
+#                            that intron; for the rest it is already exonic or
+#                            overlapped by an exon, so the insertion describes
+#                            no observed isoform (#262)
 #   mult_exon_skip           the deleted span can remove an exon belonging to
 #                            another transcript (#262)
 #   mutex_exons              two isoforms that cannot both occur, with no
 #                            faithful single-record encoding (#259)
-CONVERTED = ("exon_skip",)
+#
+# For a converted class, prioritization keeps only the consequences on a
+# transcript that holds the event's own feature (holds_exon, holds_intron).
+CONVERTED = ("exon_skip", "intron_retention")
 
 def add_info_field(header, key, number, dtype, desc):
     info = vcfpy.OrderedDict([
