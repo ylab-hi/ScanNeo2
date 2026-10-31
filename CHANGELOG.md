@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **An `exon_skip` consequence is checked against the transcript it is annotated on**: a VCF record carries no transcript, so VEP annotates an exon skip against every transcript of its gene, and where that transcript's exon ends elsewhere the deleted span truncates the exon instead of skipping it — a peptide from an isoform the junction reads never supported. Those consequences are now dropped, removing roughly 5% of `exon_skip` neoepitopes. An entry VEP reports no mutant effect for is also excluded where those fields are read, instead of reaching the self-similarity comparison as a bare wildtype prefix. **`variants.py` changed, so prioritization re-runs for every source under the default triggers**, though only altsplicing output differs. ([#262](https://github.com/ylab-hi/ScanNeo2/issues/262), [#267](https://github.com/ylab-hi/ScanNeo2/pull/267))
 
+- **`intron_retention` is converted again, kept only on transcripts that splice that exact intron**, and **a pure inframe insertion (`-/X`) is placed after residue N rather than before it**, which had shifted every such mutant peptide by one residue in every source. Frameshift peptides are unchanged; their anchoring is [#269](https://github.com/ylab-hi/ScanNeo2/issues/269). **`splicing_to_vcf` calls its script from `shell:`, so the script change does not re-trigger it: force it with `--forcerun splicing_to_vcf` to gain `intron_retention` records**; prioritization re-runs for every source under the default triggers. ([#262](https://github.com/ylab-hi/ScanNeo2/issues/262), [#270](https://github.com/ylab-hi/ScanNeo2/pull/270))
+
 ## [0.8.1] - 2026-10-23
 
 ### Fixed
