@@ -1,0 +1,38 @@
+name: Release milestone
+run-name: ${{ github.actor }} is checking the release milestone
+# A release PR comes from release/vX.Y.Z. The milestone of the same title holds
+# what must be done before that version ships, such as removing options
+# deprecated for it, so the release is blocked while any of it is still open.
+# A version without a milestone has nothing to check.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+permissions:
+  issues: read
+  pull-requests: read
+jobs:
+  milestone:
+    if: startsWith(github.head_ref, 'release/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every issue in the milestone is closed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          version="${HEAD_REF#release/}"
+          number=$(gh api "repos/$REPO/milestones?state=all&per_page=100" \
+            --jq ".[] | select(.title == \"$version\") | .number")
+          if [ -z "$number" ]; then
+            echo "::notice::No milestone titled $version, nothing to check."
+            exit 0
+          fi
+          open=$(gh api --paginate "repos/$REPO/issues?milestone=$number&state=open&per_page=100" \
+            --jq '.[] | "#\(.number) \(.title)"')
+          if [ -n "$open" ]; then
+            echo "::error::Milestone $version still has open items; close them, then re-run this job."
+            echo "$open"
+            exit 1
+          fi
+          echo "Milestone $version: every item is closed."
