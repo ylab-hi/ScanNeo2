@@ -36,8 +36,12 @@ rule mod_genome:
         "../envs/basic.yml"
     message:
         "Modify header in reference genome/annotation"
+    # SplAdder caches the parsed annotation next to it and reuses the cache
+    # whenever it exists, without comparing it to the annotation, so a
+    # rewritten genome.gtf would otherwise keep being read in its old form
     shell:
         """
+        rm -f {output.annotation}.pickle {output.annotation}.genes_excluded_exon_shared
         python3 workflow/scripts/reference/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation} >{log} 2>&1
         """
 

@@ -2,6 +2,7 @@ rule spladder:
     input:
         bam="results/{sample}/rnaseq/align/{group}_final_STAR.bam",
         bamidx="results/{sample}/rnaseq/align/{group}_final_STAR.bam.bai",
+        gtf="resources/refs/genome.gtf",
     output:
         directory("results/{sample}/rnaseq/altsplicing/spladder_run/{group}"),
     log:
@@ -18,7 +19,7 @@ rule spladder:
         bash workflow/scripts/run_spladder.sh \
             {input.bam} \
             {threads} \
-            resources/refs/genome.gtf \
+            {input.gtf} \
             {output} \
             {params.confidence} \
             {params.iteration} \
