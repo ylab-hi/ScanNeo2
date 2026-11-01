@@ -1,5 +1,6 @@
 from snakemake.utils import min_version, validate
 import pandas as pd
+import sys
 
 ##### set minimum snakemake version #####
 min_version("9.0.0")
@@ -10,6 +11,13 @@ configfile: "config/config.yaml"
 
 
 validate(config, schema="schemas/config.schema.yaml")
+
+if "nonchr" in config["reference"]:
+    print(
+        "WARNING: reference.nonchr is deprecated and ignored; only the primary "
+        "chromosomes are used (#274). Remove it from your config before v0.10.",
+        file=sys.stderr,
+    )
 
 
 ##### load sample sheet (issue #93) #####

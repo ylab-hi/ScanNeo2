@@ -3,7 +3,6 @@
 # General settings
 reference:
   release: 111      # Ensembl release used to download the reference genome and annotation
-  nonchr: false     # whether (=true) to include non-chromosomal/scaffold contigs
 threads: 30         # maximum number of threads any single rule may use
 mapq: 30            # minimum read mapping quality (MAPQ, Phred-scaled)
 basequal: 20        # minimum base-call quality (Phred-scaled)

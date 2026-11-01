@@ -12,10 +12,11 @@ properties:
         type: integer
         minimum: 1
         description: Ensembl release used to download the reference genome and annotation
+      # accepted so existing configs keep validating; remove in v0.10
       nonchr:
         type: boolean
-        description: whether to include non-chromosomal/scaffold contigs
-    required: [release, nonchr]
+        description: deprecated and ignored; only the primary chromosomes are used (#274)
+    required: [release]
     additionalProperties: false
 
   threads:

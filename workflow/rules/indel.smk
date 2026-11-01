@@ -32,6 +32,7 @@ checkpoint split_bam_ti_build:
 rule detect_long_indel_ti_build_RNA:
     input:
         bam="results/{sample}/rnaseq/indel/transindel/{group}_build_split/{chr}.bam",
+        gtf="resources/refs/genome.gtf",
     output:
         bam=temp(
             "results/{sample}/rnaseq/indel/transindel/{group}_build_perchr/{chr}.bam"
@@ -48,7 +49,7 @@ rule detect_long_indel_ti_build_RNA:
             -i {input.bam} \
             -o {output.bam} \
             -r resources/refs/genome.fasta \
-            -g resources/refs/genome.gtf >{log} 2>&1
+            -g {input.gtf} >{log} 2>&1
         """
 
 

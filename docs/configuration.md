@@ -3,7 +3,7 @@
 In the following the parameters in the `config.yaml` are discussed. In principle, the `config.yaml` consists of different blocks. ScanNeo2 always utilizes the `config.yaml` that is located in `config/config.yaml`. However, the option `--configfile` allows specifying custom config files. Such a file extends `config/config.yaml` rather than replacing it, so it only needs the parameters it overrides; the rest are inherited. Use `--replace-workflow-config` to replace the default outright.
 
 ## GENERAL
-On the top level, the parameters are applied system-wide when applicable. This includes the reference genome within the `reference` attribute.  The `release` option corresponds to the ENSEMBL release version and `nonchr` indicates to whether (=true) or not (=false) DNA sequence that is not assigned to chromosomes should be included in the analysis. Other options include the number of cores (`threads`), the mapping quality (`mapq`), and the average Phred scores (`basequal`). 
+On the top level, the parameters are applied system-wide when applicable. This includes the reference genome within the `reference` attribute.  The `release` option corresponds to the ENSEMBL release version. Only the primary chromosomes are used, in both the genome and the annotation; the former `nonchr` option is ignored and will be removed in v0.10. Other options include the number of cores (`threads`), the mapping quality (`mapq`), and the average Phred scores (`basequal`). 
 
 ```
 threads: 30
