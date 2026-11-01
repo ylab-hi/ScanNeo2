@@ -34,13 +34,11 @@ rule mod_genome:
         "logs/ref/mod_genome.log",
     conda:
         "../envs/basic.yml"
-    params:
-        nonchr=f"""{int(config['reference']['nonchr'])}""",
     message:
         "Modify header in reference genome/annotation"
     shell:
         """
-        python3 workflow/scripts/reference/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation} {params.nonchr} >{log} 2>&1
+        python3 workflow/scripts/reference/modify_ensembl_header.py {input.genome} {output.genome} {input.annotation} {output.annotation} >{log} 2>&1
         """
 
 

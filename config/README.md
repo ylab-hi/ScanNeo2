@@ -31,7 +31,7 @@ its parameter table is rendered automatically by the Snakemake Workflow Catalog.
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `reference.release` | int | `111` | Ensembl release used to download the reference genome and annotation. |
-| `reference.nonchr` | bool | `false` | Include non-chromosomal / scaffold contigs in the reference. |
+| `reference.nonchr` | bool | — | **Deprecated, ignored; removed in v0.10.** Only the primary chromosomes are used, in both genome and annotation ([#274](https://github.com/ylab-hi/ScanNeo2/issues/274)). |
 
 ## `threads`, `mapq`, `basequal` — global limits
 
