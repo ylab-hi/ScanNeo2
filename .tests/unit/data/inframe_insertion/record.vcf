@@ -1,0 +1,71 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##FILTER=<ID=FAIL,Description="Fail the site if all alleles fail but for different reasons.">
+##FILTER=<ID=base_qual,Description="alt median base quality">
+##FILTER=<ID=clustered_events,Description="Clustered events observed in the tumor">
+##FILTER=<ID=contamination,Description="contamination">
+##FILTER=<ID=duplicate,Description="evidence for alt allele is overrepresented by apparent duplicates">
+##FILTER=<ID=fragment,Description="abs(ref - alt) median fragment length">
+##FILTER=<ID=germline,Description="Evidence indicates this site is germline, not somatic">
+##FILTER=<ID=haplotype,Description="Variant near filtered variant on same haplotype.">
+##FILTER=<ID=low_allele_frac,Description="Allele fraction is below specified threshold">
+##FILTER=<ID=map_qual,Description="ref - alt median mapping quality">
+##FILTER=<ID=multiallelic,Description="Site filtered because too many alt alleles pass tumor LOD">
+##FILTER=<ID=n_ratio,Description="Ratio of N to alt exceeds specified ratio">
+##FILTER=<ID=normal_artifact,Description="artifact_in_normal">
+##FILTER=<ID=orientation,Description="orientation bias detected by the orientation bias mixture model">
+##FILTER=<ID=panel_of_normals,Description="Blacklisted site in panel of normals">
+##FILTER=<ID=position,Description="median distance of alt variants from end of reads">
+##FILTER=<ID=possible_numt,Description="Allele depth is below expected coverage of NuMT in autosome">
+##FILTER=<ID=slippage,Description="Site filtered due to contraction of short tandem repeat region">
+##FILTER=<ID=strand_bias,Description="Evidence for alt allele comes from one read direction only">
+##FILTER=<ID=strict_strand,Description="Evidence for alt allele is not represented in both directions">
+##FILTER=<ID=weak_evidence,Description="Mutation does not meet likelihood threshold">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=AF,Number=A,Type=Float,Description="Allele fractions of alternate alleles in the tumor">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
+##FORMAT=<ID=F1R2,Number=R,Type=Integer,Description="Count of reads in F1R2 pair orientation supporting each allele">
+##FORMAT=<ID=F2R1,Number=R,Type=Integer,Description="Count of reads in F2R1 pair orientation supporting each allele">
+##FORMAT=<ID=FAD,Number=R,Type=Integer,Description="Count of fragments supporting each allele.">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=PGT,Number=1,Type=String,Description="Physical phasing haplotype information, describing how the alternate alleles are phased in relation to one another; will always be heterozygous and is not intended to describe called alleles">
+##FORMAT=<ID=PID,Number=1,Type=String,Description="Physical phasing ID information, where each unique ID within a given sample (but not across samples) connects records within a phasing group">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=PS,Number=1,Type=Integer,Description="Phasing set (typically the position of the first variant in the set)">
+##FORMAT=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+##INFO=<ID=AS_FilterStatus,Number=A,Type=String,Description="Filter status for each allele, as assessed by ApplyVQSR. Note that the VCF filter field will reflect the most lenient/sensitive status across all alleles.">
+##INFO=<ID=AS_SB_TABLE,Number=1,Type=String,Description="Allele-specific forward/reverse read counts for strand bias tests. Includes the reference and alleles separated by |.">
+##INFO=<ID=AS_UNIQ_ALT_READ_COUNT,Number=A,Type=Integer,Description="Number of reads with unique start and mate end positions for each alt at a variant site">
+##INFO=<ID=CONTQ,Number=1,Type=Float,Description="Phred-scaled qualities that alt allele are not due to contamination">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth; some reads may have been filtered">
+##INFO=<ID=ECNT,Number=1,Type=Integer,Description="Number of events in this haplotype">
+##INFO=<ID=GERMQ,Number=1,Type=Integer,Description="Phred-scaled quality that alt alleles are not germline variants">
+##INFO=<ID=MBQ,Number=R,Type=Integer,Description="median base quality by allele">
+##INFO=<ID=MFRL,Number=R,Type=Integer,Description="median fragment length by allele">
+##INFO=<ID=MMQ,Number=R,Type=Integer,Description="median mapping quality by allele">
+##INFO=<ID=MPOS,Number=A,Type=Integer,Description="median distance from end of read">
+##INFO=<ID=NALOD,Number=A,Type=Float,Description="Negative log 10 odds of artifact in normal with same allele fraction as tumor">
+##INFO=<ID=NCount,Number=1,Type=Integer,Description="Count of N bases in the pileup">
+##INFO=<ID=NLOD,Number=A,Type=Float,Description="Normal log 10 likelihood ratio of diploid het or hom alt genotypes">
+##INFO=<ID=OCM,Number=1,Type=Integer,Description="Number of alt reads whose original alignment doesn't match the current contig.">
+##INFO=<ID=PON,Number=0,Type=Flag,Description="site found in panel of normals">
+##INFO=<ID=POPAF,Number=A,Type=Float,Description="negative log 10 population allele frequencies of alt alleles">
+##INFO=<ID=ROQ,Number=1,Type=Float,Description="Phred-scaled qualities that alt allele are not due to read orientation artifact">
+##INFO=<ID=RPA,Number=R,Type=Integer,Description="Number of times tandem repeat unit is repeated, for each allele (including reference)">
+##INFO=<ID=RU,Number=1,Type=String,Description="Tandem repeat unit (bases)">
+##INFO=<ID=SEQQ,Number=1,Type=Integer,Description="Phred-scaled quality that alt alleles are not sequencing errors">
+##INFO=<ID=STR,Number=0,Type=Flag,Description="Variant is a short tandem repeat">
+##INFO=<ID=STRANDQ,Number=1,Type=Integer,Description="Phred-scaled quality of strand bias artifact">
+##INFO=<ID=STRQ,Number=1,Type=Integer,Description="Phred-scaled quality that alt alleles in STRs are not polymerase slippage errors">
+##INFO=<ID=TLOD,Number=A,Type=Float,Description="Log 10 likelihood ratio score of variant existing versus not existing">
+##contig=<ID=chr11,length=135086622,assembly=genome.fasta>
+##INFO=<ID=GRP,Number=1,Type=String,Description="Name of the group">
+##INFO=<ID=SRC,Number=1,Type=String,Description="Source of the variant">
+##INFO=<ID=SEQ,Number=1,Type=String,Description="Sequencing type the variant was called from">
+##INFO=<ID=CSQ,Number=.,Type=String,Description="Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|DISTANCE|STRAND|FLAGS|VARIANT_CLASS|SYMBOL_SOURCE|HGNC_ID|CANONICAL|MANE|MANE_SELECT|MANE_PLUS_CLINICAL|TSL|APPRIS|CCDS|ENSP|SWISSPROT|TREMBL|UNIPARC|UNIPROT_ISOFORM|GENE_PHENO|SIFT|PolyPhen|DOMAINS|miRNA|HGVS_OFFSET|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomADe_AF|gnomADe_AFR_AF|gnomADe_AMR_AF|gnomADe_ASJ_AF|gnomADe_EAS_AF|gnomADe_FIN_AF|gnomADe_MID_AF|gnomADe_NFE_AF|gnomADe_REMAINING_AF|gnomADe_SAS_AF|gnomADg_AF|gnomADg_AFR_AF|gnomADg_AMI_AF|gnomADg_AMR_AF|gnomADg_ASJ_AF|gnomADg_EAS_AF|gnomADg_FIN_AF|gnomADg_MID_AF|gnomADg_NFE_AF|gnomADg_REMAINING_AF|gnomADg_SAS_AF|MAX_AF|MAX_AF_POPS|CLIN_SIG|SOMATIC|PHENO|PUBMED|MOTIF_NAME|MOTIF_POS|HIGH_INF_POS|MOTIF_SCORE_CHANGE|TRANSCRIPTION_FACTORS|NMD|WildtypeProtein|DownstreamProtein|ProteinLengthChange">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	melanoma_patient1_tumor
+chr11	46542984	.	G	GGATGCCAGAAGAGCGGGAGGACAGCATGTGCAGGAAATTGTGGAGGAGAGGCGTCCGGCGAACTGGCTGTGA	.	PASS	AS_FilterStatus=SITE;AS_SB_TABLE=127%2C85|13%2C37;DP=262;ECNT=1;GERMQ=93;MBQ=32,24;MFRL=208,157;MMQ=60,60;MPOS=2;POPAF=7.3;ROQ=93;TLOD=170.65;SRC=short_indel;GRP=tumor;SEQ=rnaseq;AC=1;AN=2;CSQ=GATGCCAGAAGAGCGGGAGGACAGCATGTGCAGGAAATTGTGGAGGAGAGGCGTCCGGCGAACTGGCTGTGA|inframe_insertion|MODERATE|AMBRA1|ENSG00000110497|Transcript|ENST00000458649|protein_coding|7/18||ENST00000458649.6:c.1032_1033insTCACAGCCAGTTCGCCGGACGCCTCTCCTCCACAATTTCCTGCACATGCTGTCCTCCCGCTCTTCTGGCATC|ENSP00000415327.2:p.Val344_Gln345insSerGlnProValArgArgThrProLeuLeuHisAsnPheLeuHisMetLeuSerSerArgSerSerGlyIle|1451-1452|1032-1033|344-345|-/SQPVRRTPLLHNFLHMLSSRSSGI|-/TCACAGCCAGTTCGCCGGACGCCTCTCCTCCACAATTTCCTGCACATGCTGTCCTCCCGCTCTTCTGGCATC|||-1||insertion|HGNC|HGNC:25990|||||2|A1|CCDS91466.1|ENSP00000415327|Q9C0C7.165||UPI0001627788|Q9C0C7-1||||||||||||||||||||||||||||||||||||||||||||||MKVVPEKNAVRILWGRERGARAMGAQRLLQELVEDKTRWMKWEGKRVELPDSPRSTFLLAFSPDRTLLASTHVNHNIYITEVKTGKCVHSLIGHRRTPWCVTFHPTISGLIASGCLDGEVRIWDLHGGSESWFTDSNNAIASLAFHPTAQLLLIATANEIHFWDWSRREPFAVVKTASEMERVRLVRFDPLGHYLLTAIVNPSNQQGDDEPEIPIDGTELSHYRQRALLQSQPVRRTPLLHNFLHMLSSRSSGIQVGEQSTVQDSATPSPPPPPPQPSTERPRTSAYIRLRQRVSYPTAECCQHLGILCLCSRCSGTRVPSLLPHQDSVPPASARATTPSFSFVQTEPFHPPEQASSTQQDQGLLNRPSAFSTVQSSTAGNTLRNLSLGPTRRSLGGPLSSHPSRYHREIAPGLTGSEWTRTVLSLNSRSEAESMPPPRTSASSVSLLSVLRQQEGGSQASVYTSATEGRGFPASGLATESDGGNGSSQNNSGSIRHELQCDLRRFFLEYDRLQELDQSLSGEAPQTQQAQEMLNNNIESERPGPSHQPTPHSSENNSNLSRGHLNRCRACHNLLTFNNDTLRWERTTPNYSSGEASSSWQVPSSFESVPSSGSQLPPLERTEGQTPSSSRLELSSSASPQEERTVGVAFNQETGHWERIYTQSSRSGTVSQEALHQDMPEESSEEDSLRRRLLESSLISLSRYDGAGSREHPIYPDPARLSPAAYYAQRMIQYLSRRDSIRQRSMRYQQNRLRSSTSSSSSDNQGPSVEGTDLEFEDFEDNGDRSRHRAPRNARMSAPSLGRFVPRRFLLPEYLPYAGIFHERGQPGLATHSSVNRVLAGAVIGDGQSAVASNIANTTYRLQWWDFTKFDLPEISNASVNVLVQNCKIYNDASCDISADGQLLAAFIPSSQRGFPDEGILAVYSLAPHNLGEMLYTKRFGPNAISVSLSPMGRYVMVGLASRRILLHPSTEHMVAQVFRLQQAHGGETSMRRVFNVLYPMPADQRRHVSINSARWLPEPGLGLAYGTNKGDLVICRPEALNSGVEYYWDQLNETVFTVHSNSRSSERPGTSRATWRTDRDMGLMNAIGLQPRNPATSVTSQGTQTLALQLQNAETQTEREVPEPGTAASGPGEGEGSEYGASGEDALSRIQRLMAEGGMTAVVQREQSTTMASMGGFGNNIIVSHRIHRSSQTGTEPGAAHTSSPQPSTSRGLLPEAGQLAERGLSPRTASWDQPGTPGREPTQPTLPSSSPVPIPVSLPSAEGPTLHCELTNNNHLLDGGSSRGDAAGPRGEPRNR||	GT:AD:AF:DP:F1R2:F2R1:FAD:SB	0/1:212,50:0.364:262:105,37:0,0:126,49:127,85,13,37

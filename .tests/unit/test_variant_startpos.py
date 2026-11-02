@@ -25,7 +25,7 @@ import variants  # noqa: E402
 
 startpos = variants.Variants.get_variant_startpos
 
-# HES4 ENST00000304952, residues 1-75
+# HES4 ENST00000304952, residues 1-74
 HES4 = "MAADTPGKPSASPMAGAPASASRTPDKPRSAAEHRKSSKPVMEKRRRARINESLAQLKTLILDALRKESSRHSK"
 
 
