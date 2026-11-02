@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **The reference annotation now holds only the primary chromosomes, like the genome**: it kept scaffold contigs absent from the genome and the alignments, and SplAdder then attached each gene's introns to another gene and inserted no novel junction, so every altsplicing event other than intron retention was a switch between annotated isoforms. With the fix, roughly half of the confirmed events carry a novel intron. `reference.nonchr` is deprecated and ignored until v0.10.0, so a config that set it to `true` loses the scaffold sequences too. **The genome is rewritten with a new modification time, so the whole pipeline re-runs from the reference indices onward; `--rerun-triggers mtime` does not avoid it.** ([#274](https://github.com/ylab-hi/ScanNeo2/issues/274), [#275](https://github.com/ylab-hi/ScanNeo2/pull/275))
 
+- **A pure inframe insertion is placed after residue N, not before it**: VEP writes it as `-/X` at `N-N+1`, and the mutant peptide was built one residue early, so every peptide spanning an inserted stretch was wrong, from any source. `var_start` for these rows now points at the first inserted residue; frameshifts are unchanged ([#269](https://github.com/ylab-hi/ScanNeo2/issues/269)). **`variants.py` changed, so prioritization re-runs for every source under the default triggers**, though only inframe-insertion rows differ. ([#278](https://github.com/ylab-hi/ScanNeo2/pull/278))
+
 ## [0.8.1] - 2026-10-23
 
 ### Fixed
