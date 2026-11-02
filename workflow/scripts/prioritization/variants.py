@@ -141,7 +141,8 @@ class Variants():
 
                         wt_seq, var_start = self.trim_at_unknown_residue(
                             field["WildtypeProtein"],
-                            self.get_variant_startpos(field["Protein_position"]),
+                            self.get_variant_startpos(field["Protein_position"],
+                                                      aa_change, csq),
                             csq,
                         )
                         if wt_seq is None:
@@ -288,16 +289,23 @@ class Variants():
 
 
     @staticmethod
-    def get_variant_startpos(protein_position):
-        if '-' not in protein_position: # single number
-            startpos = int(protein_position) - 1
-        else:
-            if protein_position.split('/')[0] == '-':
-                startpos = int(protein_position.split('-')[0])
-            else:
-                startpos = int(protein_position.split('-')[0]) - 1
+    def get_variant_startpos(protein_position, aa_change, csq):
+        """0-based index of the first residue the variant replaces.
 
-        return startpos
+        VEP writes a pure insertion as Amino_acids '-/X' at 'N-N+1': it sits
+        between residues N and N+1 and replaces neither, so the mutant
+        continues from index N. Anything else replaces residues from N
+        onwards, index N-1.
+
+        A frameshift keeps N-1 whatever its form: its mutant is spliced from
+        DownstreamProtein, which is anchored on VEP's 3'-shifted coordinates
+        rather than on Protein_position, so neither index places it reliably
+        (#269).
+        """
+        start = int(protein_position.split('-')[0])
+        if aa_change.startswith('-/') and csq != "frameshift":
+            return start
+        return start - 1
 
 
 

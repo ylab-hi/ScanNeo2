@@ -11,9 +11,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      # pandas and blosum at the prioritization env's versions, so tests run
-      # filtering.py's real code with the libraries the workflow uses
-      - name: Install pytest + report.py / filtering.py runtime deps
-        run: pip install pytest pyyaml pandas==2.2.3 blosum==2.0.2
+      # pandas, blosum, vcfpy and pyfaidx at the prioritization env's versions,
+      # so tests run filtering.py's and variants.py's real code with the
+      # libraries the workflow uses; pyfaidx 0.7.0 imports pkg_resources
+      - name: Install pytest + report.py / filtering.py / variants.py runtime deps
+        run: pip install pytest pyyaml pandas==2.2.3 blosum==2.0.2 vcfpy==0.14.2 pyfaidx==0.7.0 "setuptools<81"
       - name: Run unit tests
         run: pytest .tests/unit/ -v
