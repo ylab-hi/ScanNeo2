@@ -12,6 +12,7 @@ import configargparse
 # classes
 import reference
 import variants
+import altsplicing
 import fusions
 import proteins
 import effects
@@ -45,10 +46,12 @@ class Compile:
             vartype == "somatic.short.indels" or
             vartype == "long.indels" or
             vartype == "exitrons" or
-            vartype == "altsplicing" or
             vartype == "custom"):
 
             variants.Variants(inputfile, options, vartype)
+
+        elif vartype == "altsplicing":
+            altsplicing.AltSplicing(inputfile, options, vartype)
 
         elif vartype == "fusions":
             fusions.Fusions(inputfile, options, vartype)
@@ -118,7 +121,11 @@ def parse_arguments():
     p.add("--indels", required=False, help="indel file", default="")
     p.add("--long_indels", required=False, help="long indel file", default="")
     p.add("--exitrons", required=False, help="exitron file", default="")
-    p.add("--altsplicing", required=False, help="alternative splicing file", default="")
+    p.add("--altsplicing", required=False, default="",
+          help="SplAdder run directories, one per RNA group, named after the group")
+    p.add("--graph", required=False, help="annotation graph (.gg) built from the genome's GTF")
+    p.add("--splicing_confidence", required=False, type=int, default=3,
+          help="SplAdder confidence level the events were called at")
     p.add("--custom", required=False, help="custom variants file", default="")
     p.add('-f', '--fusions', required=False, help='fusion file', default="")
     p.add("--proteins", required=False, help="custom (wildtype, mutant) protein-pair TSV", default="")

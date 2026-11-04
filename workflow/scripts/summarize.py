@@ -14,16 +14,26 @@ Run by the `summarize` rule:
 
 import argparse
 import csv
+import glob
 import gzip
 import json
 import os
 
 def count_input_records(path):
-    """Records in a source input: VCF body lines, or TSV data rows.
+    """Records in a source input: VCF body lines, TSV data rows, or the events
+    of a SplAdder run directory.
 
     VCF headers start with '#'. The fusion TSV's header does too; the custom
     protein TSV has a plain header row, which is skipped as the first line.
+    Altsplicing reads a SplAdder run directory, whose confirmed events are the
+    data rows of its merge_graphs_<class>_C<n>.confirmed.txt.gz files.
     """
+    if os.path.isdir(path):
+        n = 0
+        for events in glob.glob(os.path.join(path, "merge_graphs_*_C*.confirmed.txt.gz")):
+            with gzip.open(events, "rt") as fh:
+                n += sum(1 for line in fh if line.strip()) - 1
+        return n
     opener = gzip.open if path.endswith(".gz") else open
     vcf = path.endswith((".vcf", ".vcf.gz"))
     n = 0

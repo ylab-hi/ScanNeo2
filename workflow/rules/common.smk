@@ -1606,19 +1606,6 @@ def get_fusions(wildcards):
     return fusions
 
 
-########### ALT SPLICING ##########
-def get_altsplicing(wildcards):
-    altsplicing = []
-    if SAMPLES[wildcards.sample]["rnaseq"] is not None:
-        if config["altsplicing"]["activate"]:
-            altsplicing += expand(
-                "results/{sample}/rnaseq/altsplicing/spladder/{group}_altsplicing.vcf.gz",
-                sample=wildcards.sample,
-                group=somatic_groups(wildcards.sample, "rnaseq"),
-            )
-    return altsplicing
-
-
 ########### NEOANTIGEN PRIORIZATION ##########
 def get_prioritization_snvs(wildcards):
     snv = []
@@ -1672,12 +1659,15 @@ def get_prioritization_exitrons(wildcards):
 
 
 def get_prioritization_altsplicing(wildcards):
+    """The SplAdder run directory of each tumor RNA group; varbor reads the
+    events from there and names each row's group after its directory."""
     altsplicing = []
     if config["altsplicing"]["activate"]:
         if len(SAMPLES[wildcards.sample]["rnaseq"]) != 0:
             altsplicing += expand(
-                "results/{sample}/annotation/altsplicing.vcf",
+                "results/{sample}/rnaseq/altsplicing/spladder_run/{group}",
                 sample=wildcards.sample,
+                group=somatic_groups(wildcards.sample, "rnaseq"),
             )
         else:
             print(

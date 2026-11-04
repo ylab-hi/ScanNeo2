@@ -20,3 +20,5 @@ dependencies:
  - pip:
    - gffutils==0.12
    - blosum==2.0.2
+   # the release tarball rather than git+https, so building the env needs no git
+   - varbor @ https://github.com/genogrove/varbor/archive/refs/tags/v0.2.0.tar.gz
