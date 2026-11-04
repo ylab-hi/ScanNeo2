@@ -116,6 +116,10 @@ rule prioritize_source:
         mhcII_ba=get_mhcII_ba_tools,
         mhcI_im=get_mhcI_immunogenicity_tools,
         proteome_db=PROTEOME_BLASTDB,
+        # only altsplicing annotates against the graph, so only it depends on it
+        graph=lambda wildcards: (
+            "resources/refs/genome.gg" if wildcards.source == "altsplicing" else []
+        ),
     output:
         directory("results/{sample}/prioritization/{source}/"),
     log:
@@ -134,6 +138,12 @@ rule prioritize_source:
         mhc_class=f"""{config["prioritization"]["class"]}""",
         mhcI_len=f"""{config["prioritization"]["lengths"]["MHC-I"]}""",
         mhcII_len=f"""{config["prioritization"]["lengths"]["MHC-II"]}""",
+        splicing=lambda wildcards, input: (
+            f"--graph {input.graph} "
+            f"--splicing_confidence {config['altsplicing']['confidence']}"
+            if wildcards.source == "altsplicing"
+            else ""
+        ),
     message:
         "Prioritize {wildcards.source} on sample:{wildcards.sample}"
     # The combined tables are removed first: they are not this job's output, so
@@ -155,7 +165,7 @@ rule prioritize_source:
             --counts "{input.counts}" \
             --threads {threads} \
             --output_dir {output} \
-            --reference {input.refgenome} >{log} 2>&1
+            --reference {input.refgenome} {params.splicing} >{log} 2>&1
         """
 
 

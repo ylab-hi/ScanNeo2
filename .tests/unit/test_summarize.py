@@ -33,6 +33,20 @@ def test_input_records_fusion_tsv_hash_header(tmp_path):
     assert summarize.count_input_records(p) == 3
 
 
+def test_input_records_spladder_run_counts_confirmed_events(tmp_path):
+    import gzip
+    run = tmp_path / "spladder_run" / "tumor"
+    run.mkdir(parents=True)
+    header = "chrm\tstrand\tevent_id\tis_annotated\tgene_name\te1_start\te1_end\n"
+    with gzip.open(run / "merge_graphs_exon_skip_C3.confirmed.txt.gz", "wt") as fh:
+        fh.write(header + "chr1\t+\texon_skip.1\t3\tG\t1\t9\nchr1\t+\texon_skip.2\t0\tG\t1\t9\n")
+    with gzip.open(run / "merge_graphs_intron_retention_C3.confirmed.txt.gz", "wt") as fh:
+        fh.write(header + "chr2\t-\tintron_retention.7\t2\tH\t5\t8\n")
+    # the same events as GFF3 must not be counted again
+    (run / "merge_graphs_exon_skip_C3.confirmed.gff3").write_text("chr1\t.\tgene\t1\t9\t.\t+\t.\tID=exon_skip.1\n")
+    assert summarize.count_input_records(str(run)) == 3
+
+
 def test_input_records_protein_tsv_plain_header(tmp_path):
     p = write(tmp_path / "p.tsv", "id\twildtype_protein\tmutant_protein\nx\tMK\tMR\n")
     assert summarize.count_input_records(p) == 1

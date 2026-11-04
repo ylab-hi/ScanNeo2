@@ -70,20 +70,16 @@ ScanNeo2 calls different variants (according to the configuration) and then coll
 
 ### ALTERNATIVE SPLICING
 
-[SplAdder](https://spladder.readthedocs.io/) detects alternative-splicing events from the RNA-seq alignment; intermediate splice-graph files land in `results/<sample>/rnaseq/altsplicing/`. The `splicing_to_vcf` rule converts SplAdder's output to per-group VCFs that are then sorted, augmented with `GRP` / `SRC` / `SEQ` INFO keys (same convention as the exitron path below; `SEQ` is always `rnaseq` here), and merged into `results/<sample>/variants/altsplicing.vcf.gz`.
+[SplAdder](https://spladder.readthedocs.io/) detects alternative-splicing events from the RNA-seq alignment; its output lands in `results/<sample>/rnaseq/altsplicing/spladder_run/<group>/`. Unlike the other sources, the events are not written to a VCF: [varbor](https://github.com/genogrove/varbor) reads them directly and applies each to the annotated transcripts.
 
-Of SplAdder's event classes, only `exon_skip` is currently converted. It deletes a whole annotated exon, so the record needs neither a base to anchor an insertion on nor a feature the transcript lacks, which makes it much the soundest of the six — though not perfectly sound: a gene's transcripts share exon starts with differing ends, so for a minority of rows the deletion truncates an exon of some other transcript rather than removing the one the event names.
+- **The annotation graph:** `resources/refs/genome.gg`, built once from the reference annotation, holds the transcripts and their shared exons.
+- **One rule for every class:** each event has two isoforms. The one an annotated transcript carries is the source, and the other, which no transcript carries, is the target. Events whose isoforms are both annotated are left out, as switches between annotated isoforms.
+- **What gets reported:** every transcript carrying the source has that stretch replaced by the target and is translated from its annotated coding start. Effects that change the protein are written to the variant-effects table, with nonsense-mediated decay judged on the changed exon structure.
 
-The other classes are not converted for now. A VCF record applies to every transcript of its gene, and SplAdder reports an event against a gene rather than a transcript, so for these classes a record can describe an isoform that was never observed — and the resulting rows are indistinguishable from real ones in the output. They return individually as each becomes checkable; [#262](https://github.com/ylab-hi/ScanNeo2/issues/262) tracks that work.
-
-| class postponed | why |
-| --- | --- |
-| `alt_3prime`, `alt_5prime` | the insertion anchor is intronic in about half of records, which cannot express the event ([#257](https://github.com/ylab-hi/ScanNeo2/issues/257)) |
-| `intron_retention` | the intron is already exonic in the annotated transcript for a sizeable share of rows, so inserting it duplicates it |
-| `mult_exon_skip` | the deleted span can remove an exon belonging to another transcript |
-| `mutex_exons` | two isoforms that cannot both occur, with no faithful single-record encoding ([#259](https://github.com/ylab-hi/ScanNeo2/issues/259)) |
-
-Where several events imply the same genomic change, each distinct allele is written once per group, keeping the record with the most junction support. A sample with several groups keeps one record per group, which the `group` column distinguishes in the same way it separates a variant called from both DNA and RNA.
+All six SplAdder classes are used: `exon_skip`, `mult_exon_skip`, `alt_3prime`, `alt_5prime`, `intron_retention` and `mutex_exons`. In the tables:
+- `source` is the event's class;
+- `group` is the RNA group;
+- `ao` is the read count of the target's least-supported novel junction. It is empty where SplAdder gives no count naming both ends of the junction: a retained intron, and an alternative site's single-exon count.
 
 
 ### EXITRON

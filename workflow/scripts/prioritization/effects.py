@@ -46,7 +46,10 @@ class VariantEffects:
     def change_entry(self, chrom, start, end, gene_id, gene_name, 
                      transcript_id, transcript, transcript_bp, source, 
                      group, var_type, var_start, wt_seq, mt_seq, vaf, ao, 
-                     dp, nmd_event, seqtype=None):
+                     dp, nmd_event, seqtype=None, decay=None):
+        """`decay` is a decay call made on the transcript's changed exon
+        structure (varbor's NMD record); it is used instead of recomputing
+        on the reference transcript, whose exon junctions the change moved."""
 
         self.data = {}
         self.data["chrom"] = chrom
@@ -76,7 +79,10 @@ class VariantEffects:
         self.data["aa_var_start"], self.data["aa_var_end"] = var_bnds
 
         self.determine_subsequence()
-        self.determine_NMD(nmd_event)
+        if decay is None:
+            self.determine_NMD(nmd_event)
+        else:
+            self.set_NMD(decay)
 
         # determine TPM
         self.get_counts()
@@ -242,6 +248,24 @@ class VariantEffects:
 
 
     
+    def set_NMD(self, decay):
+        """The NMD columns from a decay call made elsewhere.
+
+        A reading frame without a stop codon is a non-stop decay target, a
+        different pathway with no stop to place, so it has no PTC columns.
+        """
+        if decay.status == "nonstop":
+            self.data["NMD"] = "nonstop_variant"
+            self.data["PTC_exon_number"] = None
+            self.data["PTC_dist_ejc"] = None
+            self.data["NMD_escape_rule"] = None
+            return
+        self.data["NMD"] = "NMD_variant" if decay.status == "decay" else "NMD_escaping_variant"
+        self.data["PTC_exon_number"] = f"{decay.exon}"
+        # a single-exon transcript has no junction to measure from
+        self.data["PTC_dist_ejc"] = None if decay.escape == 1 else decay.dist_ejc
+        self.data["NMD_escape_rule"] = decay.escape
+
     @staticmethod
     def determine_cds(transcript, transcript_bp, start_codon_offset):
         """Carve the CDS from the spliced mRNA given the known start codon

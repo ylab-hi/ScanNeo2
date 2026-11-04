@@ -72,20 +72,6 @@ class Variants():
                         else:
                             transcript_count[transcript_id] = 1
 
-                        # A vcf record carries no transcript, so vep annotates
-                        # it against every transcript of the gene. An exon_skip
-                        # record deletes a whole exon, which is only the event
-                        # spladder observed for a transcript that holds that
-                        # exon: in a transcript whose exon ends elsewhere the
-                        # same span truncates it instead, giving a peptide from
-                        # an isoform nothing supports (#262). Such an entry is
-                        # dropped rather than written, since the junction reads
-                        # say nothing about it either way.
-                        if (entry.INFO['SRC'] == 'exon_skip' and
-                            not self.holds_exon(annotation, transcript_id,
-                                                entry.POS, entry.INFO['END'])):
-                            continue
-
                         nmd = None
                         csq = self.resolve_consequence(field['Consequence'])
 
@@ -208,27 +194,6 @@ class Variants():
                         # check if variant is self dissimilar
                         if self.variant_effects.self_dissimilarity():
                             self.variant_effects.write_entry()
-
-
-    @staticmethod
-    def holds_exon(annotation, transcript_id, start, end):
-        """Does the transcript carry an exon at exactly this genomic span?
-
-        An altsplicing record anchors on the base before the event, so for an
-        exon skip POS is the skipped exon's first base minus one and END its
-        last base -- 0-based half-open (POS, END), the convention exon_map
-        already returns its genomic coordinates in.
-
-        A transcript the gtf does not describe cannot be checked, so it counts
-        as not holding the exon.
-        """
-        if (transcript_id not in annotation.transcriptome or
-            transcript_id not in annotation.exome):
-            return False
-
-        exons = annotation.exon_map(transcript_id)[1]
-        return any(g_start == start and g_end == end
-                   for _, _, g_start, g_end in exons)
 
 
     @staticmethod
@@ -414,12 +379,7 @@ class Variants():
 
         # transIndel
         elif (entry.INFO['SRC'] == "long_indel" or
-            entry.INFO['SRC'] == "exitron" or
-            entry.INFO['SRC'] == "alt_5prime" or
-            entry.INFO['SRC'] == "alt_3prime" or
-            entry.INFO['SRC'] == "intron_retention" or
-            entry.INFO['SRC'] == "exon_skip" or
-            entry.INFO['SRC'] == "mult_exon_skip"):
+            entry.INFO['SRC'] == "exitron"):
 
             mt_ad = entry.INFO['AO']
             #wt_ad = str(int(float(entry.INFO['DP']) - float(mt_ad)))

@@ -51,6 +51,26 @@ rule mod_genome:
 #      rm resources/refs/genome_tmp.gtf
 
 
+# The annotation as a graph of transcripts and their shared exons, for the
+# sources varbor annotates. A declared output of genome.gtf, so it is rebuilt
+# whenever the annotation changes.
+rule annotation_graph:
+    input:
+        "resources/refs/genome.gtf",
+    output:
+        "resources/refs/genome.gg",
+    log:
+        "logs/ref/annotation_graph.log",
+    conda:
+        "../envs/prioritization.yml"
+    message:
+        "Building the annotation graph"
+    shell:
+        """
+        python -c "from varbor import graph; graph.build('{input}').serialize('{output}')" >{log} 2>&1
+        """
+
+
 rule genome_index:
     input:
         "resources/refs/genome.fasta",
